@@ -10,7 +10,7 @@ const GROQ_FALLBACK_MODELS = [
   'llama-3.1-8b-instant',
   'llama-3.3-70b-versatile',
   'mixtral-8x7b-32768',
-  'gemma2-9b-it'
+  'llama-3.2-11b-vision-preview'
 ];
 
 async function getChatResponse(messages) {
@@ -110,69 +110,35 @@ Ensure the output is valid, parsable JSON. Do not write any markdown code fences
 ### STRICT APPOINTMENT RULE:
 Within the generated systemPrompt, explicitly state in the Scheduler section that the chatbot must NEVER suggest scheduling or output the '[TRIGGER_BOOKING]' keyword on greetings, hello, pricing FAQs, office locations, or general consulting questions. The bot must ONLY output '[TRIGGER_BOOKING]' at the absolute end of the response when the user explicitly requests to book a consultation slot, schedule a call, or book a meeting right now.`;
 
-  // 2. Execute synthesis using selected Provider (with graceful fallbacks)
+  // 2. Execute synthesis using selected Provider (with graceful bidirectional failover)
   let rawText = "";
 
   if (provider === 'openrouter') {
     console.log("Using OpenRouter provider for prompt synthesis...");
     try {
-      const axios = require('axios');
-      const openRouterUrl = settings.openRouterUrl || process.env.OPENROUTER_URL || 'https://openrouter.ai/api/v1/chat/completions';
-      let model = settings.openRouterModel || process.env.OPENROUTER_MODEL || 'meta-llama/llama-3.1-8b-instruct:free';
-      const openRouterKey = settings.openRouterKey || process.env.OPENROUTER_API_KEY || '';
-      
-      // Auto-translate invalid or placeholder model names to a valid, responsive free model
-      if (model === 'openrouter/free' || model === 'free') {
-        model = 'meta-llama/llama-3.1-8b-instruct:free';
-      }
-
-      if (!openRouterKey) {
-        throw new Error("OpenRouter API key is missing. Please specify it in Settings.");
-      }
-      
-      const headers = {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${openRouterKey}`,
-        'HTTP-Referer': 'http://localhost:3000',
-        'X-Title': 'AnalytixHub Chatbot Generator'
-      };
-      
-      console.log(`Routing request to OpenRouter: ${openRouterUrl} (Model: ${model})`);
-
-      const response = await axios.post(openRouterUrl, {
-        model: model,
-        messages: [
-          {
-            role: 'system',
-            content: 'You are a precise JSON generator. You output only raw, valid JSON. Never output markdown brackets, code fences, or explanations.'
-          },
-          {
-            role: 'user',
-            content: metaPrompt
-          }
-        ],
-        temperature: 0.3,
-        stream: false
-      }, { headers, timeout: 10000 }); // Fast 10-second timeout to prevent long hangs
-
-      if (response && response.data && response.data.choices && response.data.choices[0] && response.data.choices[0].message) {
-        rawText = (response.data.choices[0].message.content || "").trim();
-      } else {
-        throw new Error("Invalid response schema from OpenRouter completions server");
-      }
+      rawText = await callOpenRouterSynthesis(settings, metaPrompt);
     } catch (orErr) {
       console.warn("OpenRouter prompt synthesis failed. Falling back to Groq:", orErr.message);
-      // Failover to Groq
       try {
         rawText = await callGroqSynthesis(apiKey, settings.groqModel, metaPrompt);
       } catch (groqErr) {
         console.error("Failover to Groq also failed:", groqErr.message);
-        throw new Error(`Synthesis failed on both OpenRouter and Groq fallback. OpenRouter Error: ${orErr.message}. Groq Error: ${groqErr.message}`);
+        throw new Error(`Synthesis failed on both OpenRouter and Groq. OpenRouter Error: ${orErr.message}. Groq Error: ${groqErr.message}`);
       }
     }
   } else {
-    // Default to Groq synthesis
-    rawText = await callGroqSynthesis(apiKey, settings.groqModel, metaPrompt);
+    console.log("Using Groq provider for prompt synthesis...");
+    try {
+      rawText = await callGroqSynthesis(apiKey, settings.groqModel, metaPrompt);
+    } catch (groqErr) {
+      console.warn("Groq prompt synthesis failed. Falling back to OpenRouter:", groqErr.message);
+      try {
+        rawText = await callOpenRouterSynthesis(settings, metaPrompt);
+      } catch (orErr) {
+        console.error("Failover to OpenRouter also failed:", orErr.message);
+        throw new Error(`Synthesis failed on both Groq and OpenRouter. Groq Error: ${groqErr.message}. OpenRouter Error: ${orErr.message}`);
+      }
+    }
   }
 
   // Ensure rawText is a safe string before manipulating
@@ -209,6 +175,56 @@ Within the generated systemPrompt, explicitly state in the Scheduler section tha
     console.error("Failed to parse synthesized configuration JSON:", parseErr);
     console.log("RAW TEXT WAS:", rawText);
     throw new Error(`AI prompt parsing failed: ${parseErr.message}`);
+  }
+}
+
+/**
+ * Helper to call OpenRouter completions API for prompt generation
+ */
+async function callOpenRouterSynthesis(settings, promptText) {
+  const axios = require('axios');
+  const openRouterUrl = settings.openRouterUrl || process.env.OPENROUTER_URL || 'https://openrouter.ai/api/v1/chat/completions';
+  let model = settings.openRouterModel || process.env.OPENROUTER_MODEL || 'openrouter/free';
+  const openRouterKey = settings.openRouterKey || process.env.OPENROUTER_API_KEY || '';
+
+  // Handle placeholders gracefully (let 'openrouter/free' auto-route directly!)
+  if (model === 'free') {
+    model = 'openrouter/free';
+  }
+
+  if (!openRouterKey) {
+    throw new Error("OpenRouter API key is missing. Please specify it in Settings.");
+  }
+  
+  const headers = {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${openRouterKey}`,
+    'HTTP-Referer': 'http://localhost:3000',
+    'X-Title': 'AnalytixHub Chatbot Generator'
+  };
+  
+  console.log(`Routing request to OpenRouter: ${openRouterUrl} (Model: ${model})`);
+
+  const response = await axios.post(openRouterUrl, {
+    model: model,
+    messages: [
+      {
+        role: 'system',
+        content: 'You are a precise JSON generator. You output only raw, valid JSON. Never output markdown brackets, code fences, or explanations.'
+      },
+      {
+        role: 'user',
+        content: promptText
+      }
+    ],
+    temperature: 0.3,
+    stream: false
+  }, { headers, timeout: 25000 }); // Richer 25-second timeout for complex synthesis
+
+  if (response && response.data && response.data.choices && response.data.choices[0] && response.data.choices[0].message) {
+    return (response.data.choices[0].message.content || "").trim();
+  } else {
+    throw new Error("Invalid response schema from OpenRouter completions server");
   }
 }
 
