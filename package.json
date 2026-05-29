@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Premium Groq-Powered AI Chatbot & Scheduler Widget for AnalytixHub",
   "main": "server.js",
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js"
