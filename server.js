@@ -15,6 +15,7 @@ app.use(cors());
 app.use(express.json());
 
 // Serve Static Frontends (Admin Dashboard, Chat Widget, Embed script)
+app.get('/', (req, res) => res.redirect('/demo.html'));
 app.get('/admin', (req, res) => res.redirect('/admin/admin.html'));
 app.get('/admin/', (req, res) => res.redirect('/admin/admin.html'));
 app.use(express.static(path.join(__dirname, 'public')));
