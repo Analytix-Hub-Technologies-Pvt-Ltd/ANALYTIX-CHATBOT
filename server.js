@@ -1,4 +1,16 @@
 require('dotenv').config();
+
+// Bulletproof global Web File API polyfill for Node.js environments < 20
+if (typeof globalThis.File === 'undefined') {
+  globalThis.File = class File extends Blob {
+    constructor(chunks, name, options) {
+      super(chunks, options);
+      this.name = name;
+      this.lastModified = (options && options.lastModified) || Date.now();
+    }
+  };
+}
+
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
