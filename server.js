@@ -1,8 +1,16 @@
 require('dotenv').config();
 
-// Bulletproof global Web File API polyfill for Node.js environments < 20
+// Ultimate global Web Blob & File API polyfills for older Node.js environments
+if (typeof globalThis.Blob === 'undefined') {
+  try {
+    globalThis.Blob = require('buffer').Blob;
+  } catch (e) {
+    globalThis.Blob = class Blob {};
+  }
+}
+
 if (typeof globalThis.File === 'undefined') {
-  globalThis.File = class File extends Blob {
+  globalThis.File = class File extends globalThis.Blob {
     constructor(chunks, name, options) {
       super(chunks, options);
       this.name = name;
