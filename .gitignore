@@ -1,0 +1,7 @@
+node_modules/
+.env
+data/db.json
+*.log
+test_booking.js
+test_sendmail.js
+.vscode/

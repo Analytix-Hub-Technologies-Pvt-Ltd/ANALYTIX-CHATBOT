@@ -1,0 +1,27 @@
+{
+  "settings": {
+    "groqKey": "",
+    "groqModel": "llama-3.3-70b-versatile",
+    "smtpHost": "smtp.mailtrap.io",
+    "smtpPort": 587,
+    "smtpUser": "",
+    "smtpPass": "",
+    "smtpSecure": false,
+    "smtpFrom": "AnalytixHub Chatbot <no-reply@analytixhub.org>",
+    "adminEmail": "contactus@analytixhub.org",
+    "welcomeMessage": "Hello! Welcome to AnalytixHub. How can I assist you today?",
+    "botName": "AnalytixHub Assistant",
+    "primaryColor": "#4f46e5",
+    "systemPrompt": "Insert System Prompt instructions here...",
+    "synthesisProvider": "groq",
+    "openRouterUrl": "https://openrouter.ai/api/v1/chat/completions",
+    "openRouterModel": "openrouter/free",
+    "openRouterKey": "",
+    "emailProvider": "smtp",
+    "msGraphTenantId": "",
+    "msGraphClientId": "",
+    "msGraphClientSecret": "",
+    "msGraphSenderEmail": ""
+  },
+  "bookings": []
+}

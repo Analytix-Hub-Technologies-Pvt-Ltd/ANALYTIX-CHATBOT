@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AnalytixHub AI Assistant</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Widget Stylesheet -->
+  <link rel="stylesheet" href="widget.css?v=1.0.1">
+</head>
+<body>
+  <div class="chat-widget-container">
+    <!-- Chat Header -->
+    <header class="chat-header" id="widget-header">
+      <div class="bot-info-wrapper">
+        <div class="bot-avatar-wrapper">
+          <div class="bot-avatar-glowing"></div>
+          <i data-lucide="bot" class="avatar-icon"></i>
+          <span class="bot-status-dot"></span>
+        </div>
+        <div class="bot-meta">
+          <h3 id="bot-display-name">AH Bot</h3>
+          <span>AnalytixHub Consultant</span>
+        </div>
+      </div>
+      <button class="header-action-btn" id="close-btn" title="Minimize Chat">
+        <i data-lucide="minus"></i>
+      </button>
+    </header>
+
+    <!-- Main Dynamic Body: Toggles between Chat Thread and Calendar Panel -->
+    <div class="chat-body-wrapper">
+      
+      <!-- VIEW 1: CONVERSATIONAL FEED -->
+      <div class="chat-feed-view active" id="chat-feed-panel">
+        <div class="chat-messages-container" id="chat-messages">
+          <!-- Welcome Message -->
+          <div class="msg-row bot">
+            <div class="msg-bubble welcome-bubble" id="welcome-msg-bubble">
+              Hello! I am AH Bot, your AnalytixHub AI assistant. How can I help you today?
+            </div>
+            <span class="msg-time" id="welcome-msg-time">12:00 PM</span>
+          </div>
+        </div>
+
+        <!-- Dynamic Typing Indicator -->
+        <div class="typing-indicator-row hidden" id="typing-indicator">
+          <div class="typing-indicator-bubble">
+            <span class="dot"></span>
+            <span class="dot"></span>
+            <span class="dot"></span>
+          </div>
+        </div>
+
+        <!-- Quick Reply Suggestions -->
+        <div class="suggestions-container" id="suggestions-container">
+          <button class="book-cta-btn" onclick="triggerInlineBooking()">
+            <i data-lucide="calendar"></i> Book a Consultation
+          </button>
+          <div class="suggestions-row">
+            <button class="suggest-chip" onclick="sendQuickReply('What services do you offer?')">
+              <i data-lucide="layers"></i> Our Services
+            </button>
+            <button class="suggest-chip" onclick="sendQuickReply('Where is AnalytixHub located?')">
+              <i data-lucide="map-pin"></i> Office Location
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW 2: INLINE SCHEDULER WIDGET -->
+      <div class="scheduler-view" id="scheduler-panel">
+        <div class="scheduler-header">
+          <button class="back-btn" onclick="closeScheduler()">
+            <i data-lucide="arrow-left"></i>
+            <span>Back to Chat</span>
+          </button>
+          <h4>Book a Consultation</h4>
+        </div>
+        
+        <div class="scheduler-steps-container">
+          <!-- Step 1: Select Date & Time slot -->
+          <div class="scheduler-step active" id="sched-step-dateTime">
+            <div class="step-label">Select Date & Time (IST)</div>
+            
+            <!-- Calendar Grid -->
+            <div class="calendar-card">
+              <div class="calendar-header">
+                <button type="button" class="cal-nav-btn" onclick="navigateMonth(-1)"><i data-lucide="chevron-left"></i></button>
+                <span class="cal-month-year" id="cal-month-year">May 2026</span>
+                <button type="button" class="cal-nav-btn" onclick="navigateMonth(1)"><i data-lucide="chevron-right"></i></button>
+              </div>
+              <div class="calendar-days-lbl">
+                <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
+              </div>
+              <div class="calendar-grid" id="calendar-grid-cells">
+                <!-- Dynamically populated dates -->
+              </div>
+            </div>
+
+            <!-- Time Slots -->
+            <div class="time-slots-section">
+              <div class="sub-label"><i data-lucide="clock" style="width:14px;height:14px;"></i> Available Time Slots</div>
+              <div class="slots-grid" id="time-slots-grid">
+                <div class="slots-info-msg">Please select a date first.</div>
+              </div>
+            </div>
+
+            <button class="scheduler-next-btn" id="btn-goto-details" disabled onclick="gotoDetailsStep()">
+              <span>Provide Details</span>
+              <i data-lucide="arrow-right"></i>
+            </button>
+          </div>
+
+          <!-- Step 2: Customer Contact Info -->
+          <div class="scheduler-step" id="sched-step-details">
+            <div class="step-label">Your Information</div>
+            
+            <div class="booking-summary-banner">
+              <i data-lucide="calendar" style="color:var(--primary);width:16px;height:16px;"></i>
+              <span id="booking-summary-text">Friday, May 29 at 10:15 AM</span>
+            </div>
+
+            <form id="widget-booking-form" onsubmit="submitBooking(event)">
+              <div class="widget-form-group">
+                <label for="sched-name">Full Name *</label>
+                <input type="text" id="sched-name" required placeholder="John Doe">
+              </div>
+              <div class="widget-form-group">
+                <label for="sched-email">Email Address *</label>
+                <input type="email" id="sched-email" required placeholder="johndoe@email.com">
+              </div>
+              <div class="widget-form-group">
+                <label for="sched-phone">Phone Number</label>
+                <input type="tel" id="sched-phone" placeholder="+91 98765 43210">
+              </div>
+              <div class="widget-form-group">
+                <label for="sched-purpose">Consultation Purpose</label>
+                <select id="sched-purpose">
+                  <option value="Generative AI & LLMs">Generative AI & LLM Solutions</option>
+                  <option value="Data Modernization">Data & Cloud Modernization</option>
+                  <option value="Business Intelligence">Business Intelligence Dashboards</option>
+                  <option value="Data Engineering">Data Engineering & Pipelines</option>
+                  <option value="General Analytics Consultancy" selected>General Analytics Consultation</option>
+                </select>
+              </div>
+
+              <div class="form-btn-row">
+                <button type="button" class="btn-back-step" onclick="gotoDateTimeStep()">Back</button>
+                <button type="submit" class="btn-confirm-booking" id="btn-submit-booking">
+                  <span>Confirm Consultation</span>
+                  <i data-lucide="check-circle-2"></i>
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Step 3: Success Confirmation Screen -->
+          <div class="scheduler-step text-center" id="sched-step-success">
+            <div class="success-icon-wrapper animate-bounce">
+              <i data-lucide="party-popper"></i>
+            </div>
+            <h3>Appointment Scheduled!</h3>
+            <p class="success-desc">Your consultation booking is locked in. Our team of data experts is looking forward to speaking with you!</p>
+            
+            <div class="success-card">
+              <div class="success-row">
+                <span class="lbl">Date & Time:</span>
+                <span class="val" id="success-datetime">Friday, May 29, 10:15 AM</span>
+              </div>
+              <div class="success-row">
+                <span class="lbl">Topic:</span>
+                <span class="val" id="success-purpose">Generative AI</span>
+              </div>
+              <div class="success-row">
+                <span class="lbl">Notifications:</span>
+                <span class="val text-green">Email Confirmed Sent</span>
+              </div>
+            </div>
+
+            <button class="scheduler-done-btn" onclick="closeScheduler(true)">
+              <span>Return to Chat</span>
+            </button>
+          </div>
+        </div>
+      </div>
+      
+    </div>
+
+    <!-- Chat Footer (Input bar) -->
+    <footer class="chat-footer" id="widget-footer">
+      <form class="chat-input-form" id="chat-input-form">
+        <input type="text" id="chat-input" placeholder="Ask about services or locations..." autocomplete="off">
+        <button type="submit" class="chat-send-btn" id="send-btn" title="Send Message">
+          <i data-lucide="send"></i>
+        </button>
+      </form>
+      <div class="footer-branding">
+        <span>Powered by AnalytixHub AI</span>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    lucide.createIcons();
+  </script>
+  <!-- Widget Scripts -->
+  <script src="widget.js?v=1.0.1"></script>
+</body>
+</html>

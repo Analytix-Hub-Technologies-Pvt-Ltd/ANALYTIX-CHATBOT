@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AnalytixHub Chatbot - Admin Control Center</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Admin Stylesheet -->
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+  <div class="admin-container">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-logo">
+          <i data-lucide="cpu" class="logo-icon animate-pulse"></i>
+        </div>
+        <div class="brand-text">
+          <h2>AnalytixHub</h2>
+          <span>AI Chatbot Control</span>
+        </div>
+      </div>
+      
+      <nav class="sidebar-nav">
+        <button class="nav-btn active" data-tab="dashboard">
+          <i data-lucide="layout-dashboard"></i>
+          <span>Dashboard</span>
+        </button>
+        <button class="nav-btn" data-tab="bookings">
+          <i data-lucide="calendar-days"></i>
+          <span>Appointments</span>
+        </button>
+        <button class="nav-btn" data-tab="settings">
+          <i data-lucide="sliders"></i>
+          <span>Chatbot Settings</span>
+        </button>
+        <button class="nav-btn" data-tab="trainer">
+          <i data-lucide="globe"></i>
+          <span>AI Brain Trainer</span>
+        </button>
+        <button class="nav-btn" data-tab="embed">
+          <i data-lucide="code-2"></i>
+          <span>Widget Embed</span>
+        </button>
+      </nav>
+      
+      <div class="sidebar-footer">
+        <div class="status-indicator online">
+          <span class="dot"></span>
+          <span>System Online</span>
+        </div>
+        <p class="ver-text">v1.0.0 (Groq Powered)</p>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <header class="content-header">
+        <div class="header-title">
+          <h1 id="tab-title">Dashboard Overview</h1>
+          <p id="tab-subtitle">Real-time chatbot performance and scheduled leads.</p>
+        </div>
+        <div class="header-actions">
+          <button class="action-btn outline" onclick="window.open('/widget/widget.html', '_blank')">
+            <i data-lucide="external-link"></i>
+            <span>Test Live Widget</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- TAB: DASHBOARD -->
+      <section id="tab-content-dashboard" class="tab-panel active">
+        <!-- KPI Cards Grid -->
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-icon-wrapper blue">
+              <i data-lucide="message-square-code"></i>
+            </div>
+            <div class="kpi-data">
+              <span class="kpi-label">Total Conversations</span>
+              <h3 id="stat-conversations">--</h3>
+              <span class="kpi-trend positive"><i data-lucide="trending-up"></i> +12% this week</span>
+            </div>
+          </div>
+          
+          <div class="kpi-card">
+            <div class="kpi-icon-wrapper purple">
+              <i data-lucide="calendar-check"></i>
+            </div>
+            <div class="kpi-data">
+              <span class="kpi-label">Consultations Booked</span>
+              <h3 id="stat-bookings">0</h3>
+              <span class="kpi-trend positive"><i data-lucide="trending-up"></i> New leads added</span>
+            </div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-icon-wrapper green">
+              <i data-lucide="zap"></i>
+            </div>
+            <div class="kpi-data">
+              <span class="kpi-label">Groq AI Latency</span>
+              <h3>&lt; 95ms</h3>
+              <span class="kpi-trend neutral">Sub-second streaming</span>
+            </div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-icon-wrapper yellow" id="mailer-icon-wrapper">
+              <i data-lucide="mail-search"></i>
+            </div>
+            <div class="kpi-data">
+              <span class="kpi-label">Mailer Dispatcher</span>
+              <h3 id="stat-mailer">Inactive</h3>
+              <span class="kpi-trend" id="stat-mailer-desc">Pending SMTP setup</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dashboard Split View -->
+        <div class="dashboard-split">
+          <!-- Recent Bookings Table -->
+          <div class="dashboard-panel-card lead-card">
+            <div class="panel-header">
+              <h3><i data-lucide="clock"></i> Recent Scheduled Appointments</h3>
+              <button class="text-link-btn" onclick="switchTab('bookings')">View All</button>
+            </div>
+            <div class="table-container small">
+              <table id="recent-bookings-table">
+                <thead>
+                  <tr>
+                    <th>Customer</th>
+                    <th>Date & Time</th>
+                    <th>Purpose</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td colspan="3" class="table-empty">No appointments scheduled yet.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          
+          <!-- System Quick Glance -->
+          <div class="dashboard-panel-card config-summary-card">
+            <div class="panel-header">
+              <h3><i data-lucide="settings"></i> Active Config Summary</h3>
+            </div>
+            <div class="summary-list">
+              <div class="summary-item">
+                <span class="lbl">LLM Model:</span>
+                <span class="val highlight" id="summary-model">llama-3.3-70b-versatile</span>
+              </div>
+              <div class="summary-item">
+                <span class="lbl">Agent Name:</span>
+                <span class="val" id="summary-agent-name">AH Bot</span>
+              </div>
+              <div class="summary-item">
+                <span class="lbl">Brand Color:</span>
+                <span class="val flex-center">
+                  <span class="color-dot" id="summary-color-dot"></span>
+                  <span id="summary-color-hex">#2563EB</span>
+                </span>
+              </div>
+              <div class="summary-item">
+                <span class="lbl">Notifications:</span>
+                <span class="val text-ellipsis" id="summary-notify-email">contactus@analytixhub.org</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB: APPOINTMENTS -->
+      <section id="tab-content-bookings" class="tab-panel">
+        <div class="dashboard-panel-card">
+          <div class="panel-header search-bar-header">
+            <h3><i data-lucide="list"></i> All Consultation Bookings</h3>
+            <div class="search-box">
+              <i data-lucide="search"></i>
+              <input type="text" id="bookings-search" placeholder="Search by name, email or date...">
+            </div>
+          </div>
+          
+          <div class="table-container">
+            <table id="all-bookings-table">
+              <thead>
+                <tr>
+                  <th>Client Details</th>
+                  <th>Date & Time</th>
+                  <th>Consultation Topic</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="bookings-tbody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB: SETTINGS -->
+      <section id="tab-content-settings" class="tab-panel">
+        <form id="settings-form" onsubmit="saveSettings(event)">
+          <div class="settings-grid">
+            <!-- Col 1: Credentials & Mailer -->
+            <div class="settings-col">
+              <!-- Groq Credentials -->
+              <div class="dashboard-panel-card">
+                <div class="card-header-accent">
+                  <i data-lucide="key" class="accent-orange"></i>
+                  <h4>Groq LLM Configuration</h4>
+                </div>
+                
+                <div class="form-group">
+                  <label for="groqKey">Groq API Key</label>
+                  <div class="input-password-wrapper">
+                    <input type="password" id="groqKey" placeholder="Enter your gsk_... key here" autocomplete="off">
+                    <button type="button" class="toggle-password" onclick="togglePassVisibility('groqKey')">
+                      <i data-lucide="eye" id="eye-groqKey"></i>
+                    </button>
+                  </div>
+                  <span class="input-hint">Generate a key in your <a href="https://console.groq.com/keys" target="_blank">Groq Console</a></span>
+                </div>
+
+                <div class="form-group">
+                  <label for="groqModel">Groq LLM Model</label>
+                  <select id="groqModel">
+                    <option value="llama-3.1-8b-instant">llama-3.1-8b-instant (Recommended - Free Tier High Limits)</option>
+                    <option value="llama-3.3-70b-versatile">llama-3.3-70b-versatile (High IQ - Premium/Heavy)</option>
+                    <option value="llama3-8b-8192">llama3-8b-8192 (Legacy Fast)</option>
+                    <option value="mixtral-8x7b-32768">mixtral-8x7b-32768 (MoE Context)</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- OpenRouter Cloud Configuration -->
+              <div class="dashboard-panel-card">
+                <div class="card-header-accent">
+                  <i data-lucide="cpu" class="accent-purple"></i>
+                  <h4>OpenRouter Cloud Configuration</h4>
+                </div>
+                
+                <div class="form-group">
+                  <label for="synthesisProvider">AI Synthesis Provider</label>
+                  <select id="synthesisProvider" onchange="toggleSynthesisFields()">
+                    <option value="groq">Groq Cloud API (Recommended - Fast & Free)</option>
+                    <option value="openrouter">OpenRouter Cloud API (100+ Models & Free Tiers)</option>
+                  </select>
+                  <span class="input-hint">Select the engine used to crawl websites and generate custom chatbot prompts.</span>
+                </div>
+                
+                <div id="openrouter-settings-group" class="hidden">
+                  <div class="form-group">
+                    <label for="openRouterUrl">OpenRouter API Endpoint</label>
+                    <input type="text" id="openRouterUrl" placeholder="https://openrouter.ai/api/v1/chat/completions">
+                  </div>
+                  
+                  <div class="form-group">
+                    <label for="openRouterModel">OpenRouter Model Name</label>
+                    <input type="text" id="openRouterModel" placeholder="meta-llama/llama-3.1-8b-instruct:free">
+                    <span class="input-hint">Specify the target open-source model (e.g. <code>meta-llama/llama-3.1-8b-instruct:free</code> or <code>qwen/qwen-2.5-72b-instruct</code>).</span>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="openRouterKey">OpenRouter API Key</label>
+                    <div class="input-password-wrapper">
+                      <input type="password" id="openRouterKey" placeholder="Enter your sk-or-v1-... key" autocomplete="off">
+                      <button type="button" class="toggle-password" onclick="togglePassVisibility('openRouterKey')">
+                        <i data-lucide="eye" id="eye-openRouterKey"></i>
+                      </button>
+                    </div>
+                    <span class="input-hint">Generate an API key in your <a href="https://openrouter.ai/keys" target="_blank">OpenRouter Dashboard</a></span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Email Protocol Selector Card -->
+              <div class="dashboard-panel-card">
+                <div class="card-header-accent">
+                  <i data-lucide="mail-check" class="accent-blue"></i>
+                  <h4>Email & Meeting Integration</h4>
+                </div>
+                
+                <div class="form-group">
+                  <label for="emailProvider">Preferred Delivery Protocol</label>
+                  <select id="emailProvider" onchange="toggleEmailProviderFields()">
+                    <option value="smtp">Standard SMTP Mailer (Ethereal, Gmail, Sendgrid, etc.)</option>
+                    <option value="msgraph">Microsoft Graph API (Office 365 Enterprise-Grade)</option>
+                  </select>
+                  <span class="input-hint">Select whether to send emails via standard SMTP, or natively via Microsoft Graph with real Teams calendar links.</span>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label for="adminEmail">Administrator Alert Email</label>
+                  <input type="email" id="adminEmail" placeholder="contactus@analytixhub.org">
+                  <span class="input-hint">Receives booking alerts with customer details</span>
+                </div>
+
+                <!-- Shared Connection Tester Tool -->
+                <div class="smtp-tester" style="margin-top: 20px;">
+                  <label id="tester-label">SMTP Connection Tester</label>
+                  <div class="tester-input-group">
+                    <input type="email" id="test-email-address" placeholder="recipient@domain.com">
+                    <button type="button" class="btn secondary" id="btn-test-email" onclick="testSMTPConnection()">
+                      <i data-lucide="mail"></i>
+                      <span id="btn-test-email-text">Send Test Email</span>
+                    </button>
+                  </div>
+                  <div id="test-result-msg" class="test-result-alert hidden"></div>
+                </div>
+              </div>
+
+              <!-- SMTP Mailer Settings Card -->
+              <div id="smtp-settings-card" class="dashboard-panel-card">
+                <div class="card-header-accent">
+                  <i data-lucide="send" class="accent-blue"></i>
+                  <h4>SMTP Server Parameters</h4>
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group col-8">
+                    <label for="smtpHost">SMTP Server Host</label>
+                    <input type="text" id="smtpHost" placeholder="smtp.mailgun.org or smtp.gmail.com">
+                  </div>
+                  <div class="form-group col-4">
+                    <label for="smtpPort">Port</label>
+                    <input type="number" id="smtpPort" placeholder="587" value="587">
+                  </div>
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group col-6">
+                    <label for="smtpUser">SMTP Username</label>
+                    <input type="text" id="smtpUser" placeholder="user@domain.com">
+                  </div>
+                  <div class="form-group col-6">
+                    <label for="smtpPass">SMTP Password</label>
+                    <div class="input-password-wrapper">
+                      <input type="password" id="smtpPass" placeholder="••••••••••••" autocomplete="new-password">
+                      <button type="button" class="toggle-password" onclick="togglePassVisibility('smtpPass')">
+                        <i data-lucide="eye" id="eye-smtpPass"></i>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group col-8">
+                    <label for="smtpFrom">"From" Header Email</label>
+                    <input type="text" id="smtpFrom" placeholder="AnalytixHub Chatbot &lt;no-reply@analytixhub.org&gt;">
+                  </div>
+                  <div class="form-group col-4 flex-center flex-bottom">
+                    <label class="checkbox-container">
+                      <input type="checkbox" id="smtpSecure">
+                      <span class="checkbox-checkmark"></span>
+                      <span class="checkbox-label">Use SSL (Port 465)</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div style="margin-top: 18px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 18px;">
+                  <label>Sandbox / Testing Mailer</label>
+                  <button type="button" class="btn primary" id="btn-generate-test-smtp" onclick="generateTestSMTPAccount()" style="width: 100%; background: linear-gradient(135deg, #10b981, #059669); border: none; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2); font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <i data-lucide="sparkles"></i>
+                    <span>Generate Free Sandbox SMTP</span>
+                  </button>
+                  <span class="input-hint" style="margin-top: 6px; display: block;">No mail server? Provision a secure, temporary SMTP sandbox with one click to test email dispatch!</span>
+                </div>
+              </div>
+
+              <!-- Microsoft Graph API Settings Card -->
+              <div id="msgraph-settings-card" class="dashboard-panel-card hidden">
+                <div class="card-header-accent">
+                  <i data-lucide="microsoft" class="accent-orange" style="color: #f25f22;"></i>
+                  <h4>Microsoft Graph API (Office 365)</h4>
+                </div>
+                <p class="trainer-desc" style="font-size: 12px; margin-bottom: 12px;">Enterprise-grade integration to schedule Teams meetings and send emails natively via Microsoft 365 Graph API.</p>
+
+                <div class="form-group">
+                  <label for="msGraphTenantId">Azure Directory (tenant) ID</label>
+                  <input type="text" id="msGraphTenantId" placeholder="e.g. 9188040d-6c67-4c5b-b112-36a304b66dad">
+                </div>
+
+                <div class="form-group">
+                  <label for="msGraphClientId">Azure Application (client) ID</label>
+                  <input type="text" id="msGraphClientId" placeholder="e.g. 9199bf20-a13f-4107-85dc-02114787ef48">
+                </div>
+
+                <div class="form-group">
+                  <label for="msGraphClientSecret">Azure App Client Secret</label>
+                  <div class="input-password-wrapper">
+                    <input type="password" id="msGraphClientSecret" placeholder="••••••••••••" autocomplete="new-password">
+                    <button type="button" class="toggle-password" onclick="togglePassVisibility('msGraphClientSecret')">
+                      <i data-lucide="eye" id="eye-msGraphClientSecret"></i>
+                    </button>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="msGraphSenderEmail">Microsoft 365 Sender Email</label>
+                  <input type="email" id="msGraphSenderEmail" placeholder="support@company.onmicrosoft.com">
+                  <span class="input-hint">The primary Microsoft 365 email account authorized to send invites.</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Col 2: Theme, Bot Customizer, and System Prompt -->
+            <div class="settings-col">
+              <!-- Chatbot Design Customizer -->
+              <div class="dashboard-panel-card">
+                <div class="card-header-accent">
+                  <i data-lucide="palette" class="accent-purple"></i>
+                  <h4>Chat Widget Customization</h4>
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group col-8">
+                    <label for="botName">Chatbot Name</label>
+                    <input type="text" id="botName" placeholder="AH Bot">
+                  </div>
+                  <div class="form-group col-4">
+                    <label for="primaryColor">Theme Color</label>
+                    <div class="color-picker-wrapper">
+                      <input type="color" id="primaryColor" value="#2563eb">
+                      <input type="text" id="primaryColorHex" value="#2563eb" oninput="document.getElementById('primaryColor').value = this.value">
+                    </div>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="welcomeMessage">First Welcome Message</label>
+                  <input type="text" id="welcomeMessage" placeholder="Hello! I am AH Bot, how can I help you today?">
+                </div>
+              </div>
+
+              <!-- AI Knowledge Base System Prompt -->
+              <div class="dashboard-panel-card">
+                <div class="card-header-accent">
+                  <i data-lucide="brain-circuit" class="accent-green"></i>
+                  <h4>AI Knowledge Base & System Prompt</h4>
+                </div>
+
+                <div class="form-group">
+                  <label for="systemPrompt">System Guidelines & Web context</label>
+                  <textarea id="systemPrompt" rows="18" placeholder="Loaded with AnalytixHub details by default..."></textarea>
+                  <span class="input-hint">Modify this instructions text to update what the chatbot knows about AnalytixHub (addresses, prices, services, etc.)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Settings Sticky Bar -->
+          <div class="settings-sticky-footer">
+            <div class="footer-msg" id="settings-status-msg"></div>
+            <button type="submit" class="btn primary flex-center">
+              <i data-lucide="save"></i>
+              <span>Save Configurations</span>
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <!-- TAB: AI BRAIN TRAINER -->
+      <section id="tab-content-trainer" class="tab-panel">
+        <div class="trainer-container">
+          <div class="trainer-left">
+            <!-- Website Input Card -->
+            <div class="dashboard-panel-card trainer-card">
+              <div class="card-header-accent">
+                <i data-lucide="globe" class="accent-orange"></i>
+                <h4>Crawl & Train Chatbot</h4>
+              </div>
+              <p class="trainer-desc">Input any public website URL. Our system will recursively crawl the pages, analyze the brand services, and generate a customized high-fidelity AI Helpdesk prompt instantly.</p>
+              
+              <div class="form-group" style="margin-top: 15px;">
+                <label for="crawl-url">Website URL</label>
+                <div class="input-glow-wrapper">
+                  <input type="text" id="crawl-url" placeholder="https://example.com" value="https://analytixhub.org">
+                </div>
+                <span class="input-hint">Make sure the website is public and starts with http:// or https://</span>
+              </div>
+              
+              <button type="button" class="btn primary trainer-submit-btn" id="btn-start-crawl" onclick="startWebsiteTraining()" style="width: 100%; justify-content: center; height: 46px; font-size: 14px;">
+                <i data-lucide="wand-2"></i>
+                <span>Launch AI Crawler & Train</span>
+              </button>
+            </div>
+            
+            <!-- Live Progress Log Console -->
+            <div class="dashboard-panel-card console-card hidden" id="crawl-console-panel">
+              <div class="panel-header">
+                <h3><i data-lucide="terminal"></i> AI Crawler Live Logs</h3>
+                <span class="console-badge" id="console-status">Indexing...</span>
+              </div>
+              <div class="console-body" id="console-logs-container">
+                <!-- Dynamically written logs -->
+              </div>
+            </div>
+
+            <!-- Scraped Corporate Identity Details Card -->
+            <div class="dashboard-panel-card results-details-card hidden" id="crawl-identity-panel" style="margin-top: 24px;">
+              <div class="card-header-accent">
+                <i data-lucide="building-2" class="accent-blue"></i>
+                <h4>Scraped Corporate Identity</h4>
+              </div>
+              <div class="scraped-details-body" style="margin-top: 15px; display: flex; flex-direction: column; gap: 14px;">
+                <div class="scraped-info-item">
+                  <label style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 4px;">Scraped Address</label>
+                  <div style="font-size: 13px; color: white; display: flex; align-items: flex-start; gap: 8px;">
+                    <i data-lucide="map-pin" style="width: 16px; height: 16px; color: var(--accent-orange); flex-shrink: 0; margin-top: 2px;"></i>
+                    <div>
+                      <span id="scraped-location">Not specified</span>
+                      <div id="scraped-mapLink-wrapper" style="margin-top: 6px;">
+                        <a id="scraped-mapLink" href="#" target="_blank" class="btn secondary" style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; font-size: 11px; height: 28px; line-height: 1;">
+                          <i data-lucide="map" style="width: 12px; height: 12px;"></i> View Map Location
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="form-row" style="margin-bottom: 0;">
+                  <div class="scraped-info-item col-6">
+                    <label style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; display: block; margin-bottom: 4px;">Contact Email</label>
+                    <div style="font-size: 13px; color: white; display: flex; align-items: center; gap: 8px;">
+                      <i data-lucide="mail" style="width: 14px; height: 14px; color: var(--primary-hover);"></i>
+                      <span id="scraped-email">Not specified</span>
+                    </div>
+                  </div>
+                  
+                  <div class="scraped-info-item col-6">
+                    <label style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; display: block; margin-bottom: 4px;">Phone Number</label>
+                    <div style="font-size: 13px; color: white; display: flex; align-items: center; gap: 8px;">
+                      <i data-lucide="phone" style="width: 14px; height: 14px; color: var(--accent-green);"></i>
+                      <span id="scraped-phone">Not specified</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="scraped-info-item">
+                  <label style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; display: block; margin-bottom: 6px;">Extracted Primary Services</label>
+                  <div class="scraped-services-tags" id="scraped-services-container" style="display: flex; flex-wrap: wrap; gap: 6px;">
+                    <!-- Dynamic service badges -->
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="trainer-right">
+            <!-- Results Preview / Edit Configuration Panel -->
+            <div class="dashboard-panel-card full-height results-card hidden" id="crawl-results-panel">
+              <div class="card-header-accent">
+                <i data-lucide="sparkles" class="accent-green"></i>
+                <h4>Generated Chatbot Configuration</h4>
+              </div>
+              
+              <div class="stats-row">
+                <div class="stat-badge"><i data-lucide="file-text"></i> <span id="res-pages-count">0</span> Pages Crawled</div>
+                <div class="stat-badge"><i data-lucide="align-left"></i> <span id="res-words-count">0</span> Words Scanned</div>
+              </div>
+              
+              <form id="trainer-save-form" onsubmit="deployTrainerConfig(event)">
+                <div class="form-row">
+                  <div class="form-group col-8">
+                    <label for="trainer-botName">Generated Bot Name</label>
+                    <input type="text" id="trainer-botName" required>
+                  </div>
+                  <div class="form-group col-4">
+                    <label for="trainer-color">Theme Color</label>
+                    <div class="color-picker-wrapper">
+                      <input type="color" id="trainer-color" value="#0d9488">
+                      <input type="text" id="trainer-colorHex" value="#0d9488" oninput="document.getElementById('trainer-color').value = this.value">
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="form-group">
+                  <label for="trainer-welcomeMessage">Dynamic First Greeting</label>
+                  <input type="text" id="trainer-welcomeMessage" required>
+                </div>
+                
+                <div class="form-group flex-grow">
+                  <label for="trainer-systemPrompt">Synthesized System Prompt</label>
+                  <textarea id="trainer-systemPrompt" rows="12" style="font-family: monospace; font-size: 12px; line-height: 1.4;" required></textarea>
+                  <span class="input-hint">This instructions set will overwrite your current chatbot brain. Feel free to polish it.</span>
+                </div>
+                
+                <div class="deploy-action-bar">
+                  <button type="submit" class="btn primary flex-center" style="width: 100%; justify-content: center; padding: 12px; font-size: 14px;">
+                    <i data-lucide="check-circle-2"></i>
+                    <span>Approve & Deploy to Chat Widget</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+            
+            <!-- Empty State / Standby Panel -->
+            <div class="dashboard-panel-card full-height standby-card flex-center flex-col" id="crawl-standby-panel" style="justify-content: center; min-height: 380px; text-align: center; display: flex;">
+              <div class="standby-logo" style="margin-bottom: 20px;">
+                <i data-lucide="brain-circuit" class="logo-large-icon animate-pulse" style="width: 54px; height: 54px; color: var(--accent-purple);"></i>
+              </div>
+              <h3>Bot Brain Standby Mode</h3>
+              <p style="color: var(--text-muted); margin-top: 10px; max-width: 320px; font-size: 13px;">Launch the AI Crawler to fetch website data and synthesize a custom context. Generated configurations will appear here for audit before deployment.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB: EMBED CODE -->
+      <section id="tab-content-embed" class="tab-panel">
+        <div class="embed-split">
+          <!-- Instructions & Code -->
+          <div class="embed-details-panel">
+            <div class="dashboard-panel-card">
+              <h3><i data-lucide="help-circle"></i> WordPress Integration Guide</h3>
+              <p class="embed-desc">To embed this elegant AI chatbot on your AnalytixHub WordPress site, follow these simple steps:</p>
+              
+              <ol class="embed-steps">
+                <li>Log in to your <strong>WordPress Dashboard</strong>.</li>
+                <li>Go to <strong>Plugins > Add New</strong>, search for <strong>"Header and Footer Code Manager"</strong> (or any header/footer injection plugin) and install it.</li>
+                <li>Create a new snippet, choose <strong>"Footer"</strong> as the location, set scope to <strong>"Entire Site"</strong>, and paste the code block below.</li>
+                <li>Click <strong>Save</strong>. The chat launcher bubble will instantly appear on your website!</li>
+              </ol>
+            </div>
+
+            <div class="dashboard-panel-card">
+              <h3><i data-lucide="code-2"></i> Embed Script Code</h3>
+              <div class="code-box-wrapper">
+                <pre><code id="embed-code-block">&lt;script src="http://localhost:3000/embed.js"&gt;&lt;/script&gt;</code></pre>
+                <button class="copy-btn" onclick="copyEmbedCode()">
+                  <i data-lucide="copy" id="copy-icon"></i>
+                  <span id="copy-text">Copy Script</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Widget Tester Iframe Preview -->
+          <div class="embed-preview-panel">
+            <div class="dashboard-panel-card full-height flex-col">
+              <div class="preview-header">
+                <h3><i data-lucide="smartphone"></i> Sandbox Live Test</h3>
+                <span class="preview-tag">Interactive Preview</span>
+              </div>
+              <div class="iframe-container flex-grow">
+                <!-- Sandbox Iframe rendering the Widget directly -->
+                <iframe id="sandbox-iframe" src="/widget/widget.html"></iframe>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Lucide Replacement script -->
+  <script>
+    lucide.createIcons();
+  </script>
+  <!-- Client script -->
+  <script src="admin.js"></script>
+</body>
+</html>
