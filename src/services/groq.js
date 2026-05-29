@@ -90,6 +90,13 @@ Your generated systemPrompt MUST match the exact formatting style, bulleted stru
 ${db.DEFAULT_SYSTEM_PROMPT}
 ---
 
+### 🚨 CRITICAL CUSTOMIZATION RULES:
+1. **NO LEAKED TEMPLATE DETAILS**: You MUST replace ALL references to "AnalytixHub", "AH Bot", "contactus@analytixhub.org", and the Chennai office address from the template with the details extracted from the crawled website (${url}). Do NOT leave any trace of AnalytixHub or its contact details in your final output!
+2. **PHYSICAL LOCATION DISCOVERY**: If the crawled website content does not specify a physical address, location, or map link, do NOT invent one or copy the template's Chennai address. Instead, state clearly in the location section that the business operates fully online, or list contact email/forms as the primary contact method.
+3. **BRAND IDENTITY**: The chatbot name, visual color, and system instructions must match the brand of the crawled website (${url}). For example, if crawling a referral/affiliate software site like Referbro, the bot name should represent Referbro (e.g. "Referbro Assistant") and answer questions specifically about their referral and affiliate offerings, NOT analytics roadmaps!
+4. **DO NOT invent jobs**: If the crawled website lists active jobs, summarize them. If not, state that no active roles are listed.
+---
+
 You must return a raw JSON object with EXACTLY the following structure (do not include any additional keys or conversational text outside the JSON):
 {
   "botName": "A catchy, professional, brand-aligned name for the chatbot (2-3 words max, e.g., 'EcoShop Assistant' or 'Velo Helpdesk')",
