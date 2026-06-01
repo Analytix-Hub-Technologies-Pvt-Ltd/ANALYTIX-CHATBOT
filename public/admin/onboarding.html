@@ -811,6 +811,32 @@
             </div>
 
             <div class="form-group">
+              <label>Cohesive Branding Theme Combos</label>
+              <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px;">
+                <button type="button" class="preset-combo-btn" onclick="selectOnboardingCombo('#2563eb', '#090d16', this)" style="display: flex; align-items: center; gap: 6px; padding: 5px 10px; background: rgba(255,255,255,0.04); border: 1px solid var(--border-color); border-radius: 20px; color: white; cursor: pointer; font-size: 11px; transition: all 0.2s ease;">
+                  <span style="width: 8px; height: 8px; border-radius: 50%; background: #2563eb; display: inline-block;"></span>
+                  <span style="width: 8px; height: 8px; border-radius: 50%; background: #090d16; display: inline-block; border: 1px solid rgba(255,255,255,0.2);"></span>
+                  Midnight Royal
+                </button>
+                <button type="button" class="preset-combo-btn" onclick="selectOnboardingCombo('#10b981', '#030706', this)" style="display: flex; align-items: center; gap: 6px; padding: 5px 10px; background: rgba(255,255,255,0.04); border: 1px solid var(--border-color); border-radius: 20px; color: white; cursor: pointer; font-size: 11px; transition: all 0.2s ease;">
+                  <span style="width: 8px; height: 8px; border-radius: 50%; background: #10b981; display: inline-block;"></span>
+                  <span style="width: 8px; height: 8px; border-radius: 50%; background: #030706; display: inline-block; border: 1px solid rgba(255,255,255,0.2);"></span>
+                  Obsidian Emerald
+                </button>
+                <button type="button" class="preset-combo-btn" onclick="selectOnboardingCombo('#8b5cf6', '#0c0714', this)" style="display: flex; align-items: center; gap: 6px; padding: 5px 10px; background: rgba(255,255,255,0.04); border: 1px solid var(--border-color); border-radius: 20px; color: white; cursor: pointer; font-size: 11px; transition: all 0.2s ease;">
+                  <span style="width: 8px; height: 8px; border-radius: 50%; background: #8b5cf6; display: inline-block;"></span>
+                  <span style="width: 8px; height: 8px; border-radius: 50%; background: #0c0714; display: inline-block; border: 1px solid rgba(255,255,255,0.2);"></span>
+                  Cyberpunk Indigo
+                </button>
+                <button type="button" class="preset-combo-btn" onclick="selectOnboardingCombo('#ea580c', '#0e0b09', this)" style="display: flex; align-items: center; gap: 6px; padding: 5px 10px; background: rgba(255,255,255,0.04); border: 1px solid var(--border-color); border-radius: 20px; color: white; cursor: pointer; font-size: 11px; transition: all 0.2s ease;">
+                  <span style="width: 8px; height: 8px; border-radius: 50%; background: #ea580c; display: inline-block;"></span>
+                  <span style="width: 8px; height: 8px; border-radius: 50%; background: #0e0b09; display: inline-block; border: 1px solid rgba(255,255,255,0.2);"></span>
+                  Eclipse Amber
+                </button>
+              </div>
+            </div>
+
+            <div class="form-group">
               <label for="welcomeMessage">Welcome Message Bubble</label>
               <div class="input-wrapper">
                 <textarea id="welcomeMessage" required placeholder="Hi there! Welcome to Apex. How can I assist you today?" oninput="updateLivePreview()"></textarea>
@@ -1105,6 +1131,33 @@
       document.getElementById("customColorHex").value = color.toUpperCase();
       
       applyThemeColor(color);
+    }
+
+    function selectOnboardingCombo(primary, bg, btn) {
+      // Remove active from any preset circles
+      document.querySelectorAll(".preset-circle").forEach(c => c.classList.remove("active"));
+      
+      // Sync primary color
+      selectedColor = primary;
+      document.getElementById("customColorPicker").value = primary;
+      document.getElementById("customColorHex").value = primary.toUpperCase();
+      applyThemeColor(primary);
+
+      // Sync background color
+      selectedBgColor = bg;
+      document.getElementById("onboardingBgColorPicker").value = bg;
+      document.getElementById("onboardingBgColorHex").value = bg.toUpperCase();
+      applyBgColorPreview(bg);
+      
+      // Visual feedback for combo buttons
+      document.querySelectorAll(".preset-combo-btn").forEach(b => {
+        b.style.borderColor = "var(--border-color)";
+        b.style.background = "rgba(255,255,255,0.04)";
+      });
+      if (btn) {
+        btn.style.borderColor = primary;
+        btn.style.background = hexToRgba(primary, 0.1);
+      }
     }
 
     function handleCustomColorInput(color) {

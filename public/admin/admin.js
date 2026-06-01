@@ -967,3 +967,19 @@ async function checkOnboarding() {
     console.error("Onboarding check error:", error);
   }
 }
+
+function applyColorCombo(primary, bg) {
+  const pColor = document.getElementById("primaryColor");
+  const pHex = document.getElementById("primaryColorHex");
+  if (pColor && pHex) {
+    pColor.value = primary;
+    pHex.value = primary.toUpperCase();
+  }
+
+  const bColor = document.getElementById("backgroundColor");
+  const bHex = document.getElementById("backgroundColorHex");
+  if (bColor && bHex) {
+    bColor.value = bg;
+    bHex.value = bg.toUpperCase();
+  }
+}
