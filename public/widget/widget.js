@@ -549,6 +549,9 @@ function formatTextMarkdown(text) {
   // Format Bullet Points starting with "* " or "- " at line starts into beautiful custom list items
   html = html.replace(/^\s*[\*\-]\s+(.*?)$/gm, '<div class="custom-list-item">$1</div>');
   
+  // Strip trailing newlines directly following custom list items to prevent unwanted vertical <br> breaks
+  html = html.replace(/(<div class="custom-list-item">.*?<\/div>)\n/g, '$1');
+  
   // Format markdown links [text](url) into premium styled buttons
   html = html.replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" class="inline-link-btn"><i data-lucide="external-link"></i> $1</a>');
   
