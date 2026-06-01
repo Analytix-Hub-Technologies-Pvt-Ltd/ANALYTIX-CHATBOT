@@ -89,15 +89,55 @@ async function loadWidgetSettings() {
     document.getElementById("welcome-msg-time").innerText = getCurrentTimeFormatted();
  
     // Inject custom CSS styling overrides dynamically to match chosen brand color and backgrounds
+    const isLight = isLightColor(backgroundColor);
+    const textMain = isLight ? "#0f172a" : "#f1f5f9";
+    const textMuted = isLight ? "#475569" : "#94a3b8";
+    const textDimmed = isLight ? "#64748b" : "#475569";
+    const borderColor = isLight ? "rgba(0, 0, 0, 0.08)" : "rgba(255, 255, 255, 0.05)";
+    const bubbleBotBg = isLight ? "rgba(0, 0, 0, 0.03)" : "rgba(255, 255, 255, 0.03)";
+    const customListItemBg = isLight ? "rgba(0, 0, 0, 0.02)" : "rgba(255, 255, 255, 0.02)";
+    const customListItemBorder = isLight ? "rgba(0, 0, 0, 0.05)" : "rgba(255, 255, 255, 0.05)";
+
     const style = document.createElement("style");
     style.innerHTML = `
       :root {
         --primary: ${primaryColor} !important;
         --primary-glow: ${hexToRgba(primaryColor, 0.15)} !important;
         --primary-hover: ${lightenHexColor(primaryColor, 15)} !important;
-        --glass-bg: ${hexToRgba(backgroundColor, 0.96)} !important;
-        --bg-dark: ${darkenHexColor(backgroundColor, 10)} !important;
-        --bg-darker: ${darkenHexColor(backgroundColor, 20)} !important;
+        --glass-bg: ${hexToRgba(backgroundColor, 0.98)} !important;
+        --bg-dark: ${isLight ? lightenHexColor(backgroundColor, 5) : darkenHexColor(backgroundColor, 10)} !important;
+        --bg-darker: ${isLight ? lightenHexColor(backgroundColor, 10) : darkenHexColor(backgroundColor, 20)} !important;
+        --text-main: ${textMain} !important;
+        --text-muted: ${textMuted} !important;
+        --text-dimmed: ${textDimmed} !important;
+        --border-color: ${borderColor} !important;
+      }
+      
+      .msg-row.bot .msg-bubble {
+        background: ${bubbleBotBg} !important;
+        border-color: ${borderColor} !important;
+      }
+      
+      .chat-messages-container::-webkit-scrollbar-thumb {
+        background: ${isLight ? "rgba(0, 0, 0, 0.12)" : "rgba(255, 255, 255, 0.12)"} !important;
+      }
+      
+      .chat-messages-container::-webkit-scrollbar-thumb:hover {
+        background: ${isLight ? "rgba(0, 0, 0, 0.22)" : "rgba(255, 255, 255, 0.22)"} !important;
+      }
+      
+      .custom-list-item {
+        background: ${customListItemBg} !important;
+        border-color: ${customListItemBorder} !important;
+      }
+      
+      .custom-list-item:hover {
+        background: ${isLight ? "rgba(0, 0, 0, 0.04)" : "rgba(255, 255, 255, 0.05)"} !important;
+      }
+      
+      .contact-location-card-premium {
+        background: ${isLight ? "rgba(0, 0, 0, 0.01)" : "rgba(255, 255, 255, 0.02)"} !important;
+        border-color: ${isLight ? "rgba(0, 0, 0, 0.06)" : "rgba(255, 255, 255, 0.08)"} !important;
       }
     `;
     document.head.appendChild(style);
@@ -601,4 +641,15 @@ function darkenHexColor(hex, percent) {
   G = (num >> 8 & 0x00FF) - amt,
   B = (num & 0x0000FF) - amt;
   return "#" + (0x1000000 + (R<255?R<0?0:R:255)*0x10000 + (G<255?G<0?0:G:255)*0x100 + (B<255?B<0?0:B:255)).toString(16).slice(1);
+}
+
+function isLightColor(hex) {
+  if (!hex) return false;
+  const cleanHex = hex.replace('#', '');
+  if (cleanHex.length !== 6) return false;
+  const r = parseInt(cleanHex.substring(0, 2), 16);
+  const g = parseInt(cleanHex.substring(2, 4), 16);
+  const b = parseInt(cleanHex.substring(4, 6), 16);
+  const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+  return yiq >= 180;
 }
