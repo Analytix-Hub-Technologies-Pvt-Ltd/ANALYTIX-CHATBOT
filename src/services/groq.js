@@ -127,7 +127,10 @@ You must return a raw JSON object with EXACTLY the following structure (do not i
 Ensure the output is valid, parsable JSON. Do not write any markdown code fences (like \`\`\`json) or text before/after the JSON. Just return the raw JSON string.
 
 ### STRICT APPOINTMENT RULE:
-Within the generated systemPrompt, explicitly state in the Scheduler section that the chatbot must NEVER suggest scheduling or output the '[TRIGGER_BOOKING]' keyword on greetings, hello, pricing FAQs, office locations, or general consulting questions. The bot must ONLY output '[TRIGGER_BOOKING]' at the absolute end of the response when the user explicitly requests to book a consultation slot, schedule a call, or book a meeting right now.`;
+Within the generated systemPrompt, explicitly state in the Scheduler section that the chatbot must NEVER suggest scheduling or output the '[TRIGGER_BOOKING]' keyword on greetings, hello, pricing FAQs, office locations, or general consulting questions. The bot must ONLY output '[TRIGGER_BOOKING]' at the absolute end of the response when the user explicitly requests to book a consultation slot, schedule a call, or book a meeting right now.
+
+### STRICT RESPONSE FORMATTING TEMPLATE RULE:
+Instruct the chatbot to format EVERY single response using a clean, elite consulting template: (1) A polite direct answer/greeting of 1-2 sentences, (2) Core details presented using clean bullet points with emojis, (3) A brief consulting value-add or insight, and (4) A standardized friendly call to action check-in question.`;
 
   // 2. Execute synthesis using selected Provider (with graceful bidirectional failover)
   let rawText = "";
