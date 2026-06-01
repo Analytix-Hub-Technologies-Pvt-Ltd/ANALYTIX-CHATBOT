@@ -1,8 +1,45 @@
+// Hook global fetch to inject token automatically
+const originalFetch = window.fetch;
+window.fetch = async function(url, options = {}) {
+  const token = localStorage.getItem('ah_chatbot_auth_token');
+  if (token) {
+    options.headers = options.headers || {};
+    options.headers['Authorization'] = `Bearer ${token}`;
+  }
+  const response = await originalFetch(url, options);
+  if (response.status === 401) {
+    // If unauthorized (session expired), redirect to login page!
+    localStorage.clear();
+    window.location.href = '/admin/login.html';
+  }
+  return response;
+};
+
 // Global State
 let bookingsData = [];
 let settingsData = {};
 
+// Logout helper
+function logout() {
+  const token = localStorage.getItem('ah_chatbot_auth_token');
+  if (token) {
+    fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
+  }
+  localStorage.clear();
+  window.location.href = '/admin/login.html';
+}
+
 document.addEventListener("DOMContentLoaded", () => {
+  // Enforce authentication
+  const token = localStorage.getItem('ah_chatbot_auth_token');
+  if (!token) {
+    window.location.href = '/admin/login.html';
+    return;
+  }
+
+  // Enforce onboarding check
+  checkOnboarding();
+
   // Init Lucide Icons
   lucide.createIcons();
   
@@ -25,12 +62,43 @@ document.addEventListener("DOMContentLoaded", () => {
   loadSettings();
   loadBookings();
   
-  // Set dynamic host in embed code block based on active address bar
+  // Set dynamic host in embed code block based on active address bar and unique botId
   const embedCode = document.getElementById("embed-code-block");
+  const reactCode = document.getElementById("react-code-block");
+  const origin = window.location.origin;
+  const botId = localStorage.getItem('ah_chatbot_bot_id') || 'bot-default';
+
   if (embedCode) {
-    const origin = window.location.origin;
-    embedCode.innerText = `<script src="${origin}/embed.js"></script>`;
+    embedCode.innerText = `<script src="${origin}/embed.js" data-bot-id="${botId}"></script>`;
   }
+
+  if (reactCode) {
+    reactCode.innerText = `import React, { useEffect } from 'react';
+
+export function ChatbotWidget() {
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = "${origin}/embed.js";
+    script.setAttribute('data-bot-id', "${botId}");
+    script.async = true;
+    document.body.appendChild(script);
+
+    return () => {
+      document.body.removeChild(script);
+      window.__ah_chatbot_initialized = false;
+      const wrapper = document.querySelector('.ah-chatbot-wrapper');
+      if (wrapper) wrapper.remove();
+    };
+  }, []);
+
+  return null;
+}`;
+  }
+
+  const universalDisplays = document.querySelectorAll(".universal-script-display");
+  universalDisplays.forEach(el => {
+    el.innerText = `<script src="${origin}/embed.js" data-bot-id="${botId}"></script>`;
+  });
 });
 
 // -------------------------------------------------------------
@@ -77,9 +145,12 @@ function switchTab(tabName) {
   } else if (tabName === 'bookings') {
     loadBookings();
   } else if (tabName === 'embed') {
-    // Reload Sandbox Preview Iframe to pick up new saved configurations
+    // Reload Sandbox Preview Iframe to pick up new saved configurations with dynamic botId
     const iframe = document.getElementById("sandbox-iframe");
-    if (iframe) iframe.src = iframe.src;
+    if (iframe) {
+      const botId = localStorage.getItem('ah_chatbot_bot_id') || 'bot-default';
+      iframe.src = `/widget/widget.html?botId=${botId}`;
+    }
   }
 }
 
@@ -143,6 +214,8 @@ async function loadSettings() {
     document.getElementById("botName").value = settingsData.botName || "AH Bot";
     document.getElementById("primaryColor").value = settingsData.primaryColor || "#2563eb";
     document.getElementById("primaryColorHex").value = settingsData.primaryColor || "#2563eb";
+    document.getElementById("backgroundColor").value = settingsData.backgroundColor || "#090d16";
+    document.getElementById("backgroundColorHex").value = settingsData.backgroundColor || "#090d16";
     document.getElementById("welcomeMessage").value = settingsData.welcomeMessage || "";
     
     // Populate Knowledge System Prompt
@@ -308,6 +381,7 @@ async function saveSettings(e) {
     adminEmail: document.getElementById("adminEmail").value.trim(),
     botName: document.getElementById("botName").value.trim(),
     primaryColor: document.getElementById("primaryColor").value,
+    backgroundColor: document.getElementById("backgroundColor").value,
     welcomeMessage: document.getElementById("welcomeMessage").value.trim(),
     systemPrompt: document.getElementById("systemPrompt").value
   };
@@ -495,6 +569,46 @@ function copyEmbedCode() {
     
     setTimeout(() => {
       textSpan.innerText = "Copy Script";
+      icon.setAttribute("data-lucide", "copy");
+      lucide.createIcons();
+    }, 2000);
+  }).catch(err => {
+    console.error("Copy failed", err);
+  });
+}
+
+function copyReactCode() {
+  const code = document.getElementById("react-code-block").innerText;
+  navigator.clipboard.writeText(code).then(() => {
+    const textSpan = document.getElementById("copy-react-text");
+    const icon = document.getElementById("copy-react-icon");
+    textSpan.innerText = "Copied Component!";
+    icon.setAttribute("data-lucide", "check");
+    lucide.createIcons();
+    
+    setTimeout(() => {
+      textSpan.innerText = "Copy Component";
+      icon.setAttribute("data-lucide", "copy");
+      lucide.createIcons();
+    }, 2000);
+  }).catch(err => {
+    console.error("Copy failed", err);
+  });
+}
+
+function copyUniversalCode(btn) {
+  const codeContainer = btn.previousElementSibling;
+  if (!codeContainer) return;
+  const code = codeContainer.innerText;
+  navigator.clipboard.writeText(code).then(() => {
+    const textSpan = btn.querySelector("span");
+    const icon = btn.querySelector("i");
+    textSpan.innerText = "Copied!";
+    icon.setAttribute("data-lucide", "check");
+    lucide.createIcons();
+    
+    setTimeout(() => {
+      textSpan.innerText = "Copy";
       icon.setAttribute("data-lucide", "copy");
       lucide.createIcons();
     }, 2000);
@@ -746,6 +860,35 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // Bidirectionally sync settings panel color picker and text inputs
+  const primaryColor = document.getElementById("primaryColor");
+  const primaryColorHex = document.getElementById("primaryColorHex");
+  if (primaryColor && primaryColorHex) {
+    primaryColor.addEventListener("input", (e) => {
+      primaryColorHex.value = e.target.value.toUpperCase();
+    });
+    primaryColorHex.addEventListener("input", (e) => {
+      const val = e.target.value;
+      if (val.startsWith("#") && (val.length === 4 || val.length === 7)) {
+        primaryColor.value = val;
+      }
+    });
+  }
+
+  const backgroundColor = document.getElementById("backgroundColor");
+  const backgroundColorHex = document.getElementById("backgroundColorHex");
+  if (backgroundColor && backgroundColorHex) {
+    backgroundColor.addEventListener("input", (e) => {
+      backgroundColorHex.value = e.target.value.toUpperCase();
+    });
+    backgroundColorHex.addEventListener("input", (e) => {
+      const val = e.target.value;
+      if (val.startsWith("#") && (val.length === 4 || val.length === 7)) {
+        backgroundColor.value = val;
+      }
+    });
+  }
+
   // Auto-run trainer on pasting URL
   const urlInput = document.getElementById("crawl-url");
   if (urlInput) {
@@ -792,5 +935,35 @@ function toggleEmailProviderFields() {
     msGraphCard.classList.add("hidden");
     if (testerLabel) testerLabel.innerText = "SMTP Connection Tester";
     if (btnText) btnText.innerText = "Send Test Email";
+  }
+}
+
+async function checkOnboarding() {
+  try {
+    const res = await fetch("/api/auth/me");
+    if (!res.ok) throw new Error("Authentication failed");
+    const data = await res.json();
+    if (data && data.onboarded === false) {
+      window.location.href = '/admin/onboarding.html';
+    } else {
+      // Dynamic profile greeting if element exists
+      const greetings = document.querySelectorAll(".profile-greeting-name");
+      greetings.forEach(el => {
+        el.innerText = data.fullName || data.username || "Admin";
+      });
+
+      // Dynamic sidebar organization name
+      const sidebarOrg = document.getElementById("sidebar-org-name");
+      if (sidebarOrg && data.organizationName) {
+        sidebarOrg.innerText = data.organizationName;
+      }
+
+      // Dynamic browser tab title
+      if (data.organizationName) {
+        document.title = `${data.organizationName} - Admin Control Center`;
+      }
+    }
+  } catch (error) {
+    console.error("Onboarding check error:", error);
   }
 }

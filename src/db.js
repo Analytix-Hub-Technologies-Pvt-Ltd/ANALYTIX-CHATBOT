@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 
 const DB_PATH = path.join(__dirname, '..', 'data', 'db.json');
 
@@ -65,30 +66,56 @@ Currently, there are no active job openings or available positions at AnalytixHu
 - If the visitor is just asking a general question (e.g. asking for locations, services, strategy, or pricing), do NOT output "[TRIGGER_BOOKING]". Simply guide them politely.
 - Always instruct the user to use the form that appears in the calendar window rather than attempting to schedule dates or confirm times manually in your text response.`;
 
-const DEFAULT_DB = {
-  settings: {
-    groqKey: "",
-    groqModel: "llama-3.1-8b-instant",
-    synthesisProvider: "groq",
-    openRouterUrl: "https://openrouter.ai/api/v1/chat/completions",
-    openRouterModel: "meta-llama/llama-3.1-8b-instruct:free",
-    openRouterKey: "",
-    smtpHost: "",
-    smtpPort: 587,
-    smtpUser: "",
-    smtpPass: "",
-    smtpSecure: false,
-    smtpFrom: "AnalytixHub Chatbot <no-reply@analytixhub.org>",
-    adminEmail: "contactus@analytixhub.org",
-    welcomeMessage: "Hello! I am AH Bot, your AnalytixHub AI assistant. How can I help you today?",
-    botName: "AH Bot",
-    primaryColor: "#2563eb",
-    systemPrompt: DEFAULT_SYSTEM_PROMPT
-  },
-  bookings: []
+const DEFAULT_SETTINGS = {
+  groqKey: "",
+  groqModel: "llama-3.1-8b-instant",
+  synthesisProvider: "groq",
+  openRouterUrl: "https://openrouter.ai/api/v1/chat/completions",
+  openRouterModel: "meta-llama/llama-3.1-8b-instruct:free",
+  openRouterKey: "",
+  smtpHost: "",
+  smtpPort: 587,
+  smtpUser: "",
+  smtpPass: "",
+  smtpSecure: false,
+  smtpFrom: "AnalytixHub Chatbot <no-reply@analytixhub.org>",
+  adminEmail: "contactus@analytixhub.org",
+  welcomeMessage: "Hello! Welcome to our conversational assistant. How can I help you today?",
+  botName: "AH Bot",
+  primaryColor: "#2563eb",
+  backgroundColor: "#090d16",
+  systemPrompt: DEFAULT_SYSTEM_PROMPT
 };
 
-// Ensure database file exists
+const DEFAULT_DB = {
+  users: [
+    {
+      id: "admin-user-id",
+      username: "admin",
+      passwordHash: "c7ad44cbad762a5da0a452f9e854fdc1e0e69a8e23f8024e5f4d1e2e4ff94e09", // sha256 of "admin123" using "default_salt"
+      salt: "default_salt",
+      botId: "bot-default",
+      createdAt: new Date().toISOString()
+    }
+  ],
+  bots: {
+    "bot-default": {
+      settings: DEFAULT_SETTINGS,
+      bookings: []
+    }
+  }
+};
+
+// Cryptography helper methods
+function generateSalt() {
+  return crypto.randomBytes(16).toString('hex');
+}
+
+function hashPassword(password, salt) {
+  return crypto.createHmac('sha256', salt).update(password).digest('hex');
+}
+
+// Ensure database file exists and perform auto-migration if needed
 function initDb() {
   const dir = path.dirname(DB_PATH);
   if (!fs.existsSync(dir)) {
@@ -98,54 +125,98 @@ function initDb() {
   if (!fs.existsSync(DB_PATH)) {
     fs.writeFileSync(DB_PATH, JSON.stringify(DEFAULT_DB, null, 2), 'utf-8');
   } else {
-    // Check for missing keys in existing settings to guarantee backward compatibility
     try {
       const data = JSON.parse(fs.readFileSync(DB_PATH, 'utf-8'));
       let modified = false;
-      
-      if (!data.settings) {
-        data.settings = { ...DEFAULT_DB.settings };
-        modified = true;
-      } else {
-        // Migrate Ollama fields to OpenRouter fields
-        if (data.settings.ollamaUrl !== undefined) {
-          data.settings.openRouterUrl = data.settings.ollamaUrl === "http://localhost:11434/api/chat"
-            ? "https://openrouter.ai/api/v1/chat/completions"
-            : data.settings.ollamaUrl;
-          delete data.settings.ollamaUrl;
-          modified = true;
-        }
-        if (data.settings.ollamaModel !== undefined) {
-          data.settings.openRouterModel = data.settings.ollamaModel === "llama3"
-            ? "meta-llama/llama-3.1-8b-instruct:free"
-            : data.settings.ollamaModel;
-          delete data.settings.ollamaModel;
-          modified = true;
-        }
-        if (data.settings.ollamaKey !== undefined) {
-          data.settings.openRouterKey = data.settings.ollamaKey;
-          delete data.settings.ollamaKey;
-          modified = true;
-        }
 
-        for (const key of Object.keys(DEFAULT_DB.settings)) {
-          if (data.settings[key] === undefined) {
-            data.settings[key] = DEFAULT_DB.settings[key];
+      // Schema Auto-Migration: Old single-bot layout to multi-tenant structure
+      if (data.settings && !data.bots) {
+        console.log("Database Auto-Migration: Migrating legacy schema into new multi-tenant SaaS layout...");
+        
+        // Setup migrated default bot
+        const migratedBot = {
+          settings: { ...DEFAULT_SETTINGS, ...data.settings },
+          bookings: data.bookings || []
+        };
+
+        data.bots = {
+          "bot-default": migratedBot
+        };
+
+        data.users = [
+          {
+            id: "admin-user-id",
+            username: "admin",
+            passwordHash: "c7ad44cbad762a5da0a452f9e854fdc1e0e69a8e23f8024e5f4d1e2e4ff94e09", // "admin123"
+            salt: "default_salt",
+            botId: "bot-default",
+            createdAt: new Date().toISOString()
+          }
+        ];
+
+        delete data.settings;
+        delete data.bookings;
+        modified = true;
+      }
+
+      // Guarantee fallback standard arrays
+      if (!data.users) {
+        data.users = [...DEFAULT_DB.users];
+        modified = true;
+      }
+
+      if (!data.bots) {
+        data.bots = { ...DEFAULT_DB.bots };
+        modified = true;
+      }
+
+      // Check each bot settings for standard retrocompatibility keys
+      for (const botId of Object.keys(data.bots)) {
+        const bot = data.bots[botId];
+        if (!bot.settings) {
+          bot.settings = { ...DEFAULT_SETTINGS };
+          modified = true;
+        } else {
+          // Backward compatibility model mapping (Ollama -> OpenRouter)
+          if (bot.settings.ollamaUrl !== undefined) {
+            bot.settings.openRouterUrl = bot.settings.ollamaUrl === "http://localhost:11434/api/chat"
+              ? "https://openrouter.ai/api/v1/chat/completions"
+              : bot.settings.ollamaUrl;
+            delete bot.settings.ollamaUrl;
             modified = true;
           }
+          if (bot.settings.ollamaModel !== undefined) {
+            bot.settings.openRouterModel = bot.settings.ollamaModel === "llama3"
+              ? "meta-llama/llama-3.1-8b-instruct:free"
+              : bot.settings.ollamaModel;
+            delete bot.settings.ollamaModel;
+            modified = true;
+          }
+          if (bot.settings.ollamaKey !== undefined) {
+            bot.settings.openRouterKey = bot.settings.ollamaKey;
+            delete bot.settings.ollamaKey;
+            modified = true;
+          }
+
+          // Merge any missing settings keys
+          for (const key of Object.keys(DEFAULT_SETTINGS)) {
+            if (bot.settings[key] === undefined) {
+              bot.settings[key] = DEFAULT_SETTINGS[key];
+              modified = true;
+            }
+          }
+        }
+        if (!bot.bookings) {
+          bot.bookings = [];
+          modified = true;
         }
       }
-      
-      if (!data.bookings) {
-        data.bookings = [];
-        modified = true;
-      }
-      
+
       if (modified) {
         fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2), 'utf-8');
       }
     } catch (e) {
-      // Re-initialize if JSON is corrupt
+      console.error("Database initialization parse warning. Re-seeding default database:", e);
       fs.writeFileSync(DB_PATH, JSON.stringify(DEFAULT_DB, null, 2), 'utf-8');
     }
   }
@@ -160,32 +231,101 @@ function readDb() {
 
 // Write database atomically
 function writeDb(data) {
-  const dir = path.dirname(DB_PATH);
   const tempPath = `${DB_PATH}.tmp`;
   fs.writeFileSync(tempPath, JSON.stringify(data, null, 2), 'utf-8');
   fs.renameSync(tempPath, DB_PATH);
 }
 
 module.exports = {
-  getSettings() {
+  // Authentication Actions
+  getUsers() {
     const db = readDb();
-    return db.settings;
+    return db.users || [];
   },
 
-  saveSettings(newSettings) {
+  getUserByUsername(username) {
     const db = readDb();
-    db.settings = { ...db.settings, ...newSettings };
+    return (db.users || []).find(u => u.username.toLowerCase() === username.toLowerCase());
+  },
+
+  addUser(username, password) {
+    const db = readDb();
+    
+    // Check if user already exists
+    if ((db.users || []).some(u => u.username.toLowerCase() === username.toLowerCase())) {
+      throw new Error("Username already exists.");
+    }
+
+    const salt = generateSalt();
+    const passwordHash = hashPassword(password, salt);
+    const botId = `bot-${require('uuid').v4()}`;
+
+    const newUser = {
+      id: require('uuid').v4(),
+      username,
+      passwordHash,
+      salt,
+      botId,
+      createdAt: new Date().toISOString()
+    };
+
+    // Instantiate their default isolated chatbot settings and bookings structure
+    const defaultBotSettings = {
+      ...DEFAULT_SETTINGS,
+      botName: `${username.split('@')[0]} Assistant`,
+      welcomeMessage: `Hi there! I am your AI assistant. How can I help you today?`
+    };
+
+    db.users.push(newUser);
+    db.bots[botId] = {
+      settings: defaultBotSettings,
+      bookings: []
+    };
+
     writeDb(db);
-    return db.settings;
+    return newUser;
   },
 
-  getBookings() {
+  updateUser(userId, data) {
     const db = readDb();
-    return db.bookings;
+    const userIndex = (db.users || []).findIndex(u => u.id === userId);
+    if (userIndex === -1) {
+      throw new Error("User not found.");
+    }
+    db.users[userIndex] = { ...db.users[userIndex], ...data };
+    writeDb(db);
+    return db.users[userIndex];
   },
 
-  addBooking(booking) {
+  // Multi-tenant scoped settings & bookings CRUD
+  getSettings(botId = 'bot-default') {
     const db = readDb();
+    const bot = db.bots[botId] || db.bots['bot-default'];
+    return bot.settings;
+  },
+
+  saveSettings(botId = 'bot-default', newSettings) {
+    const db = readDb();
+    if (!db.bots[botId]) {
+      db.bots[botId] = { settings: DEFAULT_SETTINGS, bookings: [] };
+    }
+    db.bots[botId].settings = { ...db.bots[botId].settings, ...newSettings };
+    writeDb(db);
+    return db.bots[botId].settings;
+  },
+
+  getBookings(botId = 'bot-default') {
+    const db = readDb();
+    const bot = db.bots[botId] || db.bots['bot-default'];
+    return bot.bookings;
+  },
+
+  addBooking(botId = 'bot-default', booking) {
+    const db = readDb();
+    if (!db.bots[botId]) {
+      db.bots[botId] = { settings: DEFAULT_SETTINGS, bookings: [] };
+    }
+    
     const newBooking = {
       id: booking.id || require('uuid').v4(),
       name: booking.name,
@@ -197,18 +337,25 @@ module.exports = {
       emailSent: booking.emailSent || false,
       createdAt: new Date().toISOString()
     };
-    db.bookings.push(newBooking);
+
+    db.bots[botId].bookings.push(newBooking);
     writeDb(db);
     return newBooking;
   },
 
-  deleteBooking(id) {
+  deleteBooking(botId = 'bot-default', id) {
     const db = readDb();
-    const initialLength = db.bookings.length;
-    db.bookings = db.bookings.filter(b => b.id !== id);
+    const bot = db.bots[botId];
+    if (!bot) return false;
+    
+    const initialLength = bot.bookings.length;
+    bot.bookings = bot.bookings.filter(b => b.id !== id);
     writeDb(db);
-    return db.bookings.length < initialLength;
+    return bot.bookings.length < initialLength;
   },
-  
+
+  // Password Utility Methods
+  hashPassword,
   DEFAULT_SYSTEM_PROMPT
 };
+

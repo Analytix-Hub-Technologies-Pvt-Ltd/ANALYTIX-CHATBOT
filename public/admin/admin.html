@@ -22,7 +22,7 @@
           <i data-lucide="cpu" class="logo-icon animate-pulse"></i>
         </div>
         <div class="brand-text">
-          <h2>AnalytixHub</h2>
+          <h2 id="sidebar-org-name">AnalytixHub</h2>
           <span>AI Chatbot Control</span>
         </div>
       </div>
@@ -47,6 +47,10 @@
         <button class="nav-btn" data-tab="embed">
           <i data-lucide="code-2"></i>
           <span>Widget Embed</span>
+        </button>
+        <button class="nav-btn" onclick="logout()" style="color: #fca5a5; margin-top: 20px; cursor: pointer;">
+          <i data-lucide="log-out"></i>
+          <span>Sign Out</span>
         </button>
       </nav>
       
@@ -436,6 +440,13 @@
                       <input type="text" id="primaryColorHex" value="#2563eb" oninput="document.getElementById('primaryColor').value = this.value">
                     </div>
                   </div>
+                  <div class="form-group col-4">
+                    <label for="backgroundColor">Background Color</label>
+                    <div class="color-picker-wrapper">
+                      <input type="color" id="backgroundColor" value="#090d16">
+                      <input type="text" id="backgroundColorHex" value="#090d16" oninput="document.getElementById('backgroundColor').value = this.value">
+                    </div>
+                  </div>
                 </div>
 
                 <div class="form-group">
@@ -633,6 +644,73 @@
                 <li>Create a new snippet, choose <strong>"Footer"</strong> as the location, set scope to <strong>"Entire Site"</strong>, and paste the code block below.</li>
                 <li>Click <strong>Save</strong>. The chat launcher bubble will instantly appear on your website!</li>
               </ol>
+            </div>
+
+            <div class="dashboard-panel-card" style="margin-top: 20px;">
+              <h3><i data-lucide="atom" class="accent-blue"></i> React Framework Integration</h3>
+              <p class="embed-desc">For modern React SPA applications, copy and paste this component wrapper to dynamically mount the floating widget on page load:</p>
+              <div class="code-box-wrapper" style="margin-top: 12px; position: relative;">
+                <pre><code id="react-code-block" style="font-family: monospace; font-size: 11px; line-height: 1.4; display: block; overflow-x: auto; max-height: 250px; white-space: pre; color: #38bdf8;">Loading component script...</code></pre>
+                <button class="copy-btn" onclick="copyReactCode()" style="position: absolute; top: 10px; right: 10px; padding: 6px 12px; background: rgba(0,0,0,0.4); border: 1px solid var(--border-color); border-radius: 6px; color: white; font-size: 11px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                  <i data-lucide="copy" id="copy-react-icon" style="width: 12px; height: 12px;"></i>
+                  <span id="copy-react-text">Copy Component</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="dashboard-panel-card" style="margin-top: 20px;">
+              <h3><i data-lucide="globe-2" class="accent-orange"></i> Universal Website Platforms</h3>
+              <p class="embed-desc">For other popular site builders and content management systems, follow these quick setup guidelines:</p>
+              
+              <div class="platforms-tabs-container" style="display: flex; flex-direction: column; gap: 12px; margin-top: 10px;">
+                <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); padding: 12px; border-radius: 8px;">
+                  <strong style="color: white; font-size: 13px; display: flex; align-items: center; gap: 6px;"><i data-lucide="file-code" style="width: 14px; height: 14px; color: var(--accent-green);"></i> HTML / JS (Static Sites)</strong>
+                  <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px; margin-bottom: 8px;">Paste the universal script snippet right before the closing <code>&lt;/body&gt;</code> tag of your primary <code>index.html</code> template file.</p>
+                  <div style="display: flex; gap: 8px; align-items: center; background: rgba(0,0,0,0.3); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color);">
+                    <code class="universal-script-display" style="font-family: monospace; font-size: 11px; color: #34d399; flex-grow: 1; overflow-x: auto; white-space: nowrap;">Loading code snippet...</code>
+                    <button class="inline-copy-btn" onclick="copyUniversalCode(this)" style="background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-muted); padding: 4px 8px; border-radius: 4px; font-size: 10px; cursor: pointer; display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+                      <i data-lucide="copy" style="width: 11px; height: 11px;"></i>
+                      <span>Copy</span>
+                    </button>
+                  </div>
+                </div>
+                
+                <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); padding: 12px; border-radius: 8px;">
+                  <strong style="color: white; font-size: 13px; display: flex; align-items: center; gap: 6px;"><i data-lucide="shopping-bag" style="width: 14px; height: 14px; color: var(--accent-purple);"></i> Shopify Storefronts</strong>
+                  <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px; margin-bottom: 8px;">Go to <strong>Online Store > Themes > Edit Code</strong>. Open the primary <code>theme.liquid</code> file, paste the script before the closing <code>&lt;/body&gt;</code> tag, and click <strong>Save</strong>.</p>
+                  <div style="display: flex; gap: 8px; align-items: center; background: rgba(0,0,0,0.3); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color);">
+                    <code class="universal-script-display" style="font-family: monospace; font-size: 11px; color: #34d399; flex-grow: 1; overflow-x: auto; white-space: nowrap;">Loading code snippet...</code>
+                    <button class="inline-copy-btn" onclick="copyUniversalCode(this)" style="background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-muted); padding: 4px 8px; border-radius: 4px; font-size: 10px; cursor: pointer; display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+                      <i data-lucide="copy" style="width: 11px; height: 11px;"></i>
+                      <span>Copy</span>
+                    </button>
+                  </div>
+                </div>
+                
+                <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); padding: 12px; border-radius: 8px;">
+                  <strong style="color: white; font-size: 13px; display: flex; align-items: center; gap: 6px;"><i data-lucide="globe" style="width: 14px; height: 14px; color: #3b82f6;"></i> Webflow Layouts</strong>
+                  <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px; margin-bottom: 8px;">Navigate to your Webflow dashboard, open <strong>Project Settings > Custom Code</strong>, paste the script into the <strong>Footer Code</strong> editor, and click publish.</p>
+                  <div style="display: flex; gap: 8px; align-items: center; background: rgba(0,0,0,0.3); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color);">
+                    <code class="universal-script-display" style="font-family: monospace; font-size: 11px; color: #34d399; flex-grow: 1; overflow-x: auto; white-space: nowrap;">Loading code snippet...</code>
+                    <button class="inline-copy-btn" onclick="copyUniversalCode(this)" style="background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-muted); padding: 4px 8px; border-radius: 4px; font-size: 10px; cursor: pointer; display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+                      <i data-lucide="copy" style="width: 11px; height: 11px;"></i>
+                      <span>Copy</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); padding: 12px; border-radius: 8px;">
+                  <strong style="color: white; font-size: 13px; display: flex; align-items: center; gap: 6px;"><i data-lucide="layers" style="width: 14px; height: 14px; color: var(--accent-orange);"></i> Squarespace Sites</strong>
+                  <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px; margin-bottom: 8px;">Go to <strong>Settings > Developer Tools > Code Injection</strong>. Paste the universal script code inside the <strong>Footer</strong> text-area box and click <strong>Save</strong>.</p>
+                  <div style="display: flex; gap: 8px; align-items: center; background: rgba(0,0,0,0.3); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color);">
+                    <code class="universal-script-display" style="font-family: monospace; font-size: 11px; color: #34d399; flex-grow: 1; overflow-x: auto; white-space: nowrap;">Loading code snippet...</code>
+                    <button class="inline-copy-btn" onclick="copyUniversalCode(this)" style="background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-muted); padding: 4px 8px; border-radius: 4px; font-size: 10px; cursor: pointer; display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+                      <i data-lucide="copy" style="width: 11px; height: 11px;"></i>
+                      <span>Copy</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div class="dashboard-panel-card">

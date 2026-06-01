@@ -937,6 +937,10 @@ tr:hover td {
   overflow-y: auto;
 }
 
+.embed-details-panel .dashboard-panel-card {
+  flex-shrink: 0;
+}
+
 .embed-desc {
   color: var(--text-muted);
   margin-bottom: 16px;

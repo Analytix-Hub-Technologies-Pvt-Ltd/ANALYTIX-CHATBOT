@@ -9,12 +9,11 @@ const db = require('../db');
 const GROQ_FALLBACK_MODELS = [
   'llama-3.1-8b-instant',
   'llama-3.3-70b-versatile',
-  'mixtral-8x7b-32768',
-  'llama-3.2-11b-vision-preview'
+  'mixtral-8x7b-32768'
 ];
 
-async function getChatResponse(messages) {
-  const settings = db.getSettings();
+async function getChatResponse(messages, botId = 'bot-default') {
+  const settings = db.getSettings(botId);
   const apiKey = settings.groqKey || process.env.GROQ_API_KEY;
 
   if (!apiKey) {
@@ -70,8 +69,8 @@ async function getChatResponse(messages) {
  * @param {string} corpus - The clean website text corpus
  * @returns {Promise<Object>} - Config object with botName, welcomeMessage, primaryColor, systemPrompt
  */
-async function generateWebsiteBrain(corpus, url = "") {
-  const settings = db.getSettings();
+async function generateWebsiteBrain(corpus, url = "", botId = 'bot-default') {
+  const settings = db.getSettings(botId);
   const provider = settings.synthesisProvider || 'groq';
   const apiKey = settings.groqKey || process.env.GROQ_API_KEY;
 

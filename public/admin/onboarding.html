@@ -1,0 +1,1226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AnalytixHub Chatbot - Initialize Your Assistant</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <style>
+    :root {
+      --bg-dark: #0b0f19;
+      --card-bg: rgba(18, 24, 38, 0.85);
+      --border-color: rgba(255, 255, 255, 0.08);
+      --primary: #2563eb;
+      --primary-glow: rgba(37, 99, 235, 0.2);
+      --accent-purple: #8b5cf6;
+      --accent-purple-glow: rgba(139, 92, 246, 0.2);
+      --text-white: #f8fafc;
+      --text-muted: #94a3b8;
+      --error-red: #ef4444;
+      --success-green: #10b981;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-white);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow-x: hidden;
+      position: relative;
+      padding: 40px 20px;
+    }
+
+    /* Ambient background blobs */
+    .ambient-glow-1 {
+      position: absolute;
+      width: 500px;
+      height: 500px;
+      border-radius: 50%;
+      background: radial-gradient(circle, var(--primary-glow) 0%, transparent 70%);
+      top: -150px;
+      left: -100px;
+      z-index: 1;
+      pointer-events: none;
+      transition: background 0.8s ease;
+    }
+
+    .ambient-glow-2 {
+      position: absolute;
+      width: 600px;
+      height: 600px;
+      border-radius: 50%;
+      background: radial-gradient(circle, var(--accent-purple-glow) 0%, transparent 70%);
+      bottom: -200px;
+      right: -100px;
+      z-index: 1;
+      pointer-events: none;
+      animation: pulse-slow 12s infinite alternate-reverse;
+    }
+
+    @keyframes pulse-slow {
+      0% { transform: scale(1) translate(0, 0); opacity: 0.6; }
+      100% { transform: scale(1.1) translate(15px, 25px); opacity: 0.8; }
+    }
+
+    .onboarding-wrapper {
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      max-width: 1000px;
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 30px;
+      align-items: center;
+    }
+
+    @media (max-width: 868px) {
+      .onboarding-wrapper {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Glassmorphic Portal Card */
+    .portal-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 24px;
+      padding: 40px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(25px);
+      -webkit-backdrop-filter: blur(25px);
+      display: flex;
+      flex-direction: column;
+      height: 620px;
+      position: relative;
+    }
+
+    .portal-header {
+      margin-bottom: 25px;
+    }
+
+    .brand-section {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .brand-logo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--primary), var(--accent-purple));
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+    }
+
+    .brand-logo i {
+      color: white;
+      width: 20px;
+      height: 20px;
+    }
+
+    .brand-section h3 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      background: linear-gradient(to right, #ffffff, #e2e8f0);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .portal-header h2 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      margin-bottom: 6px;
+    }
+
+    .portal-header p {
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    /* Step Indicator Bar */
+    .step-indicator {
+      display: flex;
+      justify-content: space-between;
+      position: relative;
+      margin-bottom: 35px;
+    }
+
+    .step-indicator::before {
+      content: '';
+      position: absolute;
+      top: 15px;
+      left: 10px;
+      right: 10px;
+      height: 2px;
+      background: rgba(255, 255, 255, 0.08);
+      z-index: 1;
+    }
+
+    .step-progress-bar {
+      position: absolute;
+      top: 15px;
+      left: 10px;
+      height: 2px;
+      background: linear-gradient(to right, var(--primary), var(--accent-purple));
+      z-index: 1;
+      width: 0%;
+      transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .step-node {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+    }
+
+    .step-circle {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--bg-dark);
+      border: 2px solid rgba(255, 255, 255, 0.12);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
+      transition: all 0.3s ease;
+    }
+
+    .step-node.active .step-circle {
+      border-color: var(--primary);
+      color: white;
+      box-shadow: 0 0 10px var(--primary-glow);
+      background: var(--primary);
+    }
+
+    .step-node.completed .step-circle {
+      border-color: var(--accent-purple);
+      color: white;
+      background: var(--accent-purple);
+      box-shadow: 0 0 10px var(--accent-purple-glow);
+    }
+
+    .step-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      transition: color 0.3s ease;
+    }
+
+    .step-node.active .step-label {
+      color: white;
+    }
+
+    /* Onboarding Content Panes */
+    .onboarding-panes {
+      flex: 1;
+      overflow-y: auto;
+      margin-bottom: 20px;
+      padding-right: 5px;
+    }
+
+    .pane {
+      display: none;
+    }
+
+    .pane.active {
+      display: block;
+      animation: slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(12px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    /* Form Elements */
+    .form-group {
+      margin-bottom: 22px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .input-wrapper i {
+      position: absolute;
+      left: 14px;
+      color: var(--text-muted);
+      width: 18px;
+      height: 18px;
+      transition: color 0.3s ease;
+    }
+
+    .input-wrapper input, .input-wrapper select, .input-wrapper textarea {
+      width: 100%;
+      padding: 12px 14px 12px 42px;
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      color: white;
+      font-size: 14px;
+      outline: none;
+      transition: all 0.3s ease;
+    }
+
+    .input-wrapper textarea {
+      height: 80px;
+      resize: none;
+    }
+
+    .input-wrapper input:focus, .input-wrapper select:focus, .input-wrapper textarea:focus {
+      border-color: var(--primary);
+      background: rgba(0, 0, 0, 0.4);
+      box-shadow: 0 0 0 3px var(--primary-glow);
+    }
+
+    .input-wrapper input:focus + i, .input-wrapper select:focus + i, .input-wrapper textarea:focus + i {
+      color: var(--primary);
+    }
+
+    /* Theme Customizer Specific Elements */
+    .color-presets-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .preset-circle {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: all 0.2s ease;
+    }
+
+    .preset-circle:hover {
+      transform: scale(1.15);
+    }
+
+    .preset-circle.active {
+      border-color: white;
+      box-shadow: 0 0 10px rgba(255,255,255,0.4);
+      transform: scale(1.1);
+    }
+
+    .custom-hex-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .color-picker-input {
+      width: 44px;
+      height: 38px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      background: transparent;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    /* Footer Buttons Bar */
+    .portal-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      padding-top: 20px;
+    }
+
+    .footer-btn {
+      padding: 12px 24px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border: none;
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: white;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary), var(--primary));
+      color: white;
+      box-shadow: 0 4px 15px var(--primary-glow);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px var(--primary-glow);
+    }
+
+    .btn-primary:active {
+      transform: translateY(1px);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* Spinner Animation */
+    .spinner {
+      animation: spin 1s linear infinite;
+      display: none;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Alert Banner */
+    .alert {
+      padding: 12px 16px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .alert.hidden {
+      display: none;
+    }
+
+    .alert-error {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #fca5a5;
+    }
+
+    /* Right Column - Premium Chatbot Live Widget Preview */
+    .preview-card-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .preview-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .widget-preview-box {
+      width: 100%;
+      max-width: 340px;
+      height: 480px;
+      border-radius: 20px;
+      background: #0f172a;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .widget-header {
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--primary);
+      transition: background-color 0.4s ease;
+      position: relative;
+    }
+
+    .widget-header::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: rgba(255,255,255,0.06);
+    }
+
+    .widget-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .widget-avatar i {
+      color: white;
+      width: 18px;
+      height: 18px;
+    }
+
+    .widget-title-area {
+      flex: 1;
+    }
+
+    .widget-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      color: white;
+    }
+
+    .widget-status {
+      font-size: 10px;
+      color: rgba(255, 255, 255, 0.8);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .widget-status::before {
+      content: '';
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #10b981;
+    }
+
+    .widget-body {
+      flex: 1;
+      padding: 16px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      background: #0f172a;
+    }
+
+    .widget-bubble {
+      max-width: 80%;
+      padding: 10px 14px;
+      border-radius: 14px;
+      font-size: 12.5px;
+      line-height: 1.4;
+    }
+
+    .bubble-bot {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      color: var(--text-white);
+      border-bottom-left-radius: 2px;
+      align-self: flex-start;
+    }
+
+    .bubble-user {
+      background: var(--primary);
+      color: white;
+      border-bottom-right-radius: 2px;
+      align-self: flex-end;
+      transition: background-color 0.4s ease;
+    }
+
+    /* Inline booking slots mock inside preview bubble */
+    .mock-booking-card {
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 10px;
+      padding: 8px;
+      margin-top: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .mock-booking-card h6 {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    .mock-slots {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 4px;
+    }
+
+    .mock-slot {
+      padding: 4px;
+      font-size: 10px;
+      text-align: center;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 4px;
+      color: var(--text-white);
+    }
+
+    .mock-slot.highlight {
+      background: var(--primary);
+      color: white;
+      border-color: transparent;
+      font-weight: 600;
+      transition: background-color 0.4s ease;
+    }
+
+    .widget-footer {
+      padding: 12px;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #0f172a;
+    }
+
+    .widget-input-mock {
+      flex: 1;
+      padding: 8px 12px;
+      border-radius: 20px;
+      background: rgba(0,0,0,0.25);
+      border: 1px solid rgba(255,255,255,0.06);
+      color: var(--text-muted);
+      font-size: 12px;
+    }
+
+    .widget-send-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      transition: background-color 0.4s ease;
+    }
+
+    .widget-send-btn i {
+      width: 14px;
+      height: 14px;
+    }
+
+    .floating-launcher-mock {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: var(--primary);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      cursor: pointer;
+      transition: background-color 0.4s ease;
+    }
+
+    .floating-launcher-mock i {
+      width: 24px;
+      height: 24px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="ambient-glow-1" id="bg-glow-1"></div>
+  <div class="ambient-glow-2"></div>
+
+  <div class="onboarding-wrapper">
+    <!-- LEFT PANEL: THE ONBOARDING WIZARD -->
+    <div class="portal-card">
+      <div class="portal-header">
+        <div class="brand-section">
+          <div class="brand-logo">
+            <i data-lucide="cpu" class="animate-pulse"></i>
+          </div>
+          <h3>AnalytixHub AI Platform</h3>
+        </div>
+        <h2>Configure Your Workspace</h2>
+        <p>Let's initialize your profile, company details, and AI chatbot branding.</p>
+      </div>
+
+      <!-- Step Navigation Node indicator -->
+      <div class="step-indicator">
+        <div class="step-progress-bar" id="step-progress"></div>
+        <div class="step-node active" id="node-1" onclick="jumpToStep(1)">
+          <div class="step-circle">1</div>
+          <span class="step-label">Profile</span>
+        </div>
+        <div class="step-node" id="node-2" onclick="jumpToStep(2)">
+          <div class="step-circle">2</div>
+          <span class="step-label">Business</span>
+        </div>
+        <div class="step-node" id="node-3" onclick="jumpToStep(3)">
+          <div class="step-circle">3</div>
+          <span class="step-label">Assistant</span>
+        </div>
+      </div>
+
+      <!-- Error alert bar -->
+      <div id="alert-box" class="alert alert-error hidden">
+        <i data-lucide="alert-circle" style="width: 18px; height: 18px; flex-shrink: 0;"></i>
+        <span id="alert-msg"></span>
+      </div>
+
+      <!-- ONBOARDING FORM PANES -->
+      <div class="onboarding-panes">
+        <form id="onboarding-form" onsubmit="handleOnboardingSubmit(event)">
+          
+          <!-- STEP 1: profile info -->
+          <div class="pane active" id="pane-1">
+            <div class="form-group">
+              <label for="fullName">Your Full Name</label>
+              <div class="input-wrapper">
+                <input type="text" id="fullName" placeholder="e.g. Alexander Pierce" required oninput="syncBotWelcomeFallback()">
+                <i data-lucide="user"></i>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="phone">Contact Phone Number</label>
+              <div class="input-wrapper">
+                <input type="tel" id="phone" placeholder="e.g. +91 98765 43210" required>
+                <i data-lucide="phone"></i>
+              </div>
+            </div>
+          </div>
+
+          <!-- STEP 2: company details -->
+          <div class="pane" id="pane-2">
+            <div class="form-group">
+              <label for="orgName">Organization Name</label>
+              <div class="input-wrapper">
+                <input type="text" id="orgName" placeholder="e.g. Apex Tech Consulting" required oninput="autoPopulateBranding()">
+                <i data-lucide="building-2"></i>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="industry">Business Industry / Category</label>
+              <div class="input-wrapper">
+                <select id="industry">
+                  <option value="" disabled selected>Select Industry Category</option>
+                  <option value="Consulting & Strategy">Consulting & Strategy</option>
+                  <option value="Healthcare & Wellness">Healthcare & Wellness</option>
+                  <option value="Retail & FMCG">Retail & FMCG</option>
+                  <option value="IT & Cloud Services">IT & Cloud Services</option>
+                  <option value="E-commerce">E-commerce</option>
+                  <option value="Education & EdTech">Education & EdTech</option>
+                  <option value="Finance & Insurance">Finance & Insurance</option>
+                  <option value="Other">Other / General Domain</option>
+                </select>
+                <i data-lucide="briefcase"></i>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="websiteUrl">Website URL (Optional)</label>
+              <div class="input-wrapper">
+                <input type="url" id="websiteUrl" placeholder="e.g. https://apextech.com">
+                <i data-lucide="globe"></i>
+              </div>
+            </div>
+          </div>
+
+          <!-- STEP 3: custom assistant layout -->
+          <div class="pane" id="pane-3">
+            <div class="form-group">
+              <label for="botName">Assistant Name (AI Persona)</label>
+              <div class="input-wrapper">
+                <input type="text" id="botName" placeholder="e.g. Apex Helper" required oninput="updateLivePreview()">
+                <i data-lucide="bot"></i>
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label>Brand Primary Color</label>
+              <div class="color-presets-wrapper">
+                <div class="preset-circle active" style="background:#2563eb;" data-color="#2563eb" onclick="selectColorPreset(this)"></div>
+                <div class="preset-circle" style="background:#10b981;" data-color="#10b981" onclick="selectColorPreset(this)"></div>
+                <div class="preset-circle" style="background:#8b5cf6;" data-color="#8b5cf6" onclick="selectColorPreset(this)"></div>
+                <div class="preset-circle" style="background:#ea580c;" data-color="#ea580c" onclick="selectColorPreset(this)"></div>
+                <div class="preset-circle" style="background:#0d9488;" data-color="#0d9488" onclick="selectColorPreset(this)"></div>
+                
+                <div class="custom-hex-group">
+                  <input type="color" id="customColorPicker" class="color-picker-input" value="#2563eb" oninput="handleCustomColorInput(this.value)">
+                  <input type="text" id="customColorHex" value="#2563EB" style="width: 80px; padding: 6px; text-transform: uppercase; font-size:12px; background:rgba(0,0,0,0.25); border:1px solid var(--border-color); border-radius:6px; color:white;" oninput="handleHexTextChange(this.value)">
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Brand Background Color</label>
+              <div class="custom-hex-group">
+                <input type="color" id="onboardingBgColorPicker" class="color-picker-input" value="#090d16" oninput="handleOnboardingBgColorInput(this.value)">
+                <input type="text" id="onboardingBgColorHex" value="#090D16" style="width: 80px; padding: 6px; text-transform: uppercase; font-size:12px; background:rgba(0,0,0,0.25); border:1px solid var(--border-color); border-radius:6px; color:white;" oninput="handleOnboardingBgHexChange(this.value)">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="welcomeMessage">Welcome Message Bubble</label>
+              <div class="input-wrapper">
+                <textarea id="welcomeMessage" required placeholder="Hi there! Welcome to Apex. How can I assist you today?" oninput="updateLivePreview()"></textarea>
+                <i data-lucide="message-square" style="top: 14px;"></i>
+              </div>
+            </div>
+          </div>
+
+        </form>
+      </div>
+
+      <!-- FOOTER STEP CONTROLS -->
+      <div class="portal-footer">
+        <button type="button" class="footer-btn btn-secondary" id="btn-back" onclick="navigateStep(-1)" style="visibility:hidden;">
+          <i data-lucide="chevron-left"></i>
+          <span>Previous Step</span>
+        </button>
+        <button type="button" class="footer-btn btn-primary" id="btn-next" onclick="navigateStep(1)">
+          <span>Next Step</span>
+          <i data-lucide="chevron-right"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- RIGHT PANEL: INTERACTIVE REAL-TIME CHATBOT PREVIEW -->
+    <div class="preview-card-container">
+      <span class="preview-label">Live Assistant Mock Preview</span>
+      
+      <div class="widget-preview-box">
+        <!-- widget header -->
+        <div class="widget-header" id="preview-header">
+          <div class="widget-avatar">
+            <i data-lucide="sparkles"></i>
+          </div>
+          <div class="widget-title-area">
+            <div class="widget-title" id="preview-title">AH Bot</div>
+            <div class="widget-status">Online</div>
+          </div>
+        </div>
+
+        <!-- widget body bubbles -->
+        <div class="widget-body">
+          <div class="widget-bubble bubble-bot" id="preview-welcome-bubble">
+            Hello! Welcome to our conversational assistant. How can I help you today?
+          </div>
+
+          <div class="widget-bubble bubble-bot">
+            Feel free to schedule a complimentary strategy session with our team using our online calendar!
+            <!-- Mock bookings scheduler inside chatbot preview -->
+            <div class="mock-booking-card">
+              <h6>Complimentary Consultation</h6>
+              <div class="mock-slots">
+                <div class="mock-slot">09:30 AM</div>
+                <div class="mock-slot highlight" id="preview-slot-highlight">11:00 AM</div>
+                <div class="mock-slot">03:30 PM</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="widget-bubble bubble-user">
+            I'd love to discuss my database design!
+          </div>
+        </div>
+
+        <!-- widget footer mock input bar -->
+        <div class="widget-footer">
+          <div class="widget-input-mock">Ask us a question...</div>
+          <div class="widget-send-btn" id="preview-send-btn">
+            <i data-lucide="send"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- launcher mockup -->
+      <div class="floating-launcher-mock" id="preview-launcher">
+        <i data-lucide="message-square"></i>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Hook global fetch to inject token automatically
+    const originalFetch = window.fetch;
+    window.fetch = async function(url, options = {}) {
+      const token = localStorage.getItem('ah_chatbot_auth_token');
+      if (token) {
+        options.headers = options.headers || {};
+        options.headers['Authorization'] = `Bearer ${token}`;
+      }
+      const response = await originalFetch(url, options);
+      if (response.status === 401) {
+        localStorage.clear();
+        window.location.href = '/admin/login.html';
+      }
+      return response;
+    };
+
+    // Onboarding global State
+    let currentStep = 1;
+    let selectedColor = '#2563eb';
+    let selectedBgColor = '#090d16';
+
+    function handleOnboardingBgColorInput(color) {
+      selectedBgColor = color;
+      document.getElementById("onboardingBgColorHex").value = color.toUpperCase();
+      applyBgColorPreview(color);
+    }
+
+    function handleOnboardingBgHexChange(hex) {
+      if (hex.startsWith("#") && (hex.length === 4 || hex.length === 7)) {
+        selectedBgColor = hex;
+        document.getElementById("onboardingBgColorPicker").value = hex;
+        applyBgColorPreview(hex);
+      }
+    }
+
+    function applyBgColorPreview(color) {
+      // 1. Update Preview Widget Background Colors dynamically
+      const widgetBody = document.querySelector(".widget-preview-box .widget-body");
+      if (widgetBody) widgetBody.style.backgroundColor = color;
+      
+      const widgetFooter = document.querySelector(".widget-preview-box .widget-footer");
+      if (widgetFooter) widgetFooter.style.backgroundColor = color;
+    }
+
+    // Auto-redirect if token is missing
+    document.addEventListener("DOMContentLoaded", () => {
+      const token = localStorage.getItem('ah_chatbot_auth_token');
+      if (!token) {
+        window.location.href = '/admin/login.html';
+        return;
+      }
+      
+      lucide.createIcons();
+      updateProgressUI();
+      updateLivePreview();
+      applyBgColorPreview(selectedBgColor);
+    });
+
+    // Handle stepping back and forth
+    function navigateStep(direction) {
+      // Validate inputs in current step before moving forward
+      if (direction === 1) {
+        if (!validateCurrentStep()) return;
+      }
+
+      const nextStep = currentStep + direction;
+      
+      if (nextStep >= 1 && nextStep <= 3) {
+        currentStep = nextStep;
+        updateProgressUI();
+      } else if (nextStep === 4) {
+        // Form final submission
+        submitOnboardingData();
+      }
+    }
+
+    function jumpToStep(step) {
+      if (step < currentStep) {
+        currentStep = step;
+        updateProgressUI();
+      } else if (step > currentStep) {
+        // Validate intermediate steps before jumping forward
+        let valid = true;
+        const originalCurrent = currentStep;
+        for (let s = currentStep; s < step; s++) {
+          currentStep = s;
+          if (!validateCurrentStep()) {
+            valid = false;
+            break;
+          }
+        }
+        if (valid) {
+          currentStep = step;
+          updateProgressUI();
+        } else {
+          currentStep = originalCurrent;
+        }
+      }
+    }
+
+    // Validation per step
+    function validateCurrentStep() {
+      hideAlert();
+      if (currentStep === 1) {
+        const fullName = document.getElementById("fullName").value.trim();
+        const phone = document.getElementById("phone").value.trim();
+        if (!fullName || !phone) {
+          showAlert("Please complete your profile details (Name & Phone Number).");
+          return false;
+        }
+      } else if (currentStep === 2) {
+        const orgName = document.getElementById("orgName").value.trim();
+        const industry = document.getElementById("industry").value;
+        if (!orgName || !industry) {
+          showAlert("Please complete your organization name and select an industry.");
+          return false;
+        }
+        
+        const websiteUrl = document.getElementById("websiteUrl").value.trim();
+        if (websiteUrl && !websiteUrl.startsWith("http://") && !websiteUrl.startsWith("https://")) {
+          showAlert("Invalid website URL schema. URL must start with 'http://' or 'https://'.");
+          return false;
+        }
+      } else if (currentStep === 3) {
+        const botName = document.getElementById("botName").value.trim();
+        const welcomeMessage = document.getElementById("welcomeMessage").value.trim();
+        if (!botName || !welcomeMessage) {
+          showAlert("Please choose an assistant name and fill out a welcome message bubble.");
+          return false;
+        }
+      }
+      return true;
+    }
+
+    // Update wizard nodes, lines, and form views
+    function updateProgressUI() {
+      // Manage step panes visibility
+      document.querySelectorAll(".pane").forEach(pane => pane.classList.remove("active"));
+      document.getElementById(`pane-${currentStep}`).classList.add("active");
+
+      // Manage indicator node state classes
+      for (let s = 1; s <= 3; s++) {
+        const node = document.getElementById(`node-${s}`);
+        if (s < currentStep) {
+          node.className = "step-node completed";
+        } else if (s === currentStep) {
+          node.className = "step-node active";
+        } else {
+          node.className = "step-node";
+        }
+      }
+
+      // Update progress bar width
+      const progressPercent = ((currentStep - 1) / 2) * 100;
+      document.getElementById("step-progress").style.width = `${progressPercent}%`;
+
+      // Update footer buttons labels
+      const backBtn = document.getElementById("btn-back");
+      const nextBtn = document.getElementById("btn-next");
+
+      backBtn.style.visibility = currentStep === 1 ? 'hidden' : 'visible';
+
+      if (currentStep === 3) {
+        nextBtn.innerHTML = `<span>Deploy Assistant</span> <i data-lucide="sparkles"></i>`;
+        nextBtn.className = "footer-btn btn-primary animate-pulse";
+      } else {
+        nextBtn.innerHTML = `<span>Next Step</span> <i data-lucide="chevron-right"></i>`;
+        nextBtn.className = "footer-btn btn-primary";
+      }
+      lucide.createIcons();
+    }
+
+    // Form inputs autocomplete behaviors
+    function autoPopulateBranding() {
+      const orgName = document.getElementById("orgName").value.trim();
+      const botNameInput = document.getElementById("botName");
+      const welcomeInput = document.getElementById("welcomeMessage");
+
+      if (orgName) {
+        if (!botNameInput.value || botNameInput.dataset.modified !== "true") {
+          botNameInput.value = `${orgName} Bot`;
+        }
+        if (!welcomeInput.value || welcomeInput.dataset.modified !== "true") {
+          welcomeInput.value = `Hi! Welcome to ${orgName}. How can I assist you today?`;
+        }
+      }
+      updateLivePreview();
+    }
+
+    // Track if users manual override automated presets
+    document.getElementById("botName").addEventListener("change", () => {
+      document.getElementById("botName").dataset.modified = "true";
+    });
+    document.getElementById("welcomeMessage").addEventListener("change", () => {
+      document.getElementById("welcomeMessage").dataset.modified = "true";
+    });
+
+    function syncBotWelcomeFallback() {
+      // Simple hook if they fill profile first
+    }
+
+    // Dynamic brand color adjustments and picker behaviors
+    function selectColorPreset(el) {
+      document.querySelectorAll(".preset-circle").forEach(c => c.classList.remove("active"));
+      el.classList.add("active");
+      
+      const color = el.getAttribute("data-color");
+      selectedColor = color;
+      
+      document.getElementById("customColorPicker").value = color;
+      document.getElementById("customColorHex").value = color.toUpperCase();
+      
+      applyThemeColor(color);
+    }
+
+    function handleCustomColorInput(color) {
+      document.querySelectorAll(".preset-circle").forEach(c => c.classList.remove("active"));
+      selectedColor = color;
+      document.getElementById("customColorHex").value = color.toUpperCase();
+      applyThemeColor(color);
+    }
+
+    function handleHexTextChange(hex) {
+      if (hex.startsWith("#") && (hex.length === 4 || hex.length === 7)) {
+        selectedColor = hex;
+        document.getElementById("customColorPicker").value = hex;
+        applyThemeColor(hex);
+      }
+    }
+
+    function applyThemeColor(color) {
+      // 1. Update Preview Widget Colors
+      document.getElementById("preview-header").style.backgroundColor = color;
+      document.getElementById("preview-launcher").style.backgroundColor = color;
+      document.getElementById("preview-send-btn").style.backgroundColor = color;
+      document.getElementById("preview-slot-highlight").style.backgroundColor = color;
+      
+      // Update user text bubble styling in mock
+      document.querySelectorAll(".bubble-user").forEach(u => {
+        u.style.backgroundColor = color;
+      });
+
+      // 2. Adjust local layout CSS variables for cohesive glowing branding
+      document.documentElement.style.setProperty('--primary', color);
+      document.documentElement.style.setProperty('--primary-glow', hexToRgba(color, 0.25));
+      document.getElementById("bg-glow-1").style.background = `radial-gradient(circle, ${hexToRgba(color, 0.3)} 0%, transparent 70%)`;
+    }
+
+    function hexToRgba(hex, alpha = 1) {
+      let c = hex.substring(1);
+      if(c.length === 3) {
+        c = c[0]+c[0]+c[1]+c[1]+c[2]+c[2];
+      }
+      const r = parseInt(c.substring(0, 2), 16);
+      const g = parseInt(c.substring(2, 4), 16);
+      const b = parseInt(c.substring(4, 6), 16);
+      return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+
+    // Refresh live chatbot preview details
+    function updateLivePreview() {
+      const botName = document.getElementById("botName").value.trim() || "AH Bot";
+      const welcome = document.getElementById("welcomeMessage").value.trim() || "Hello! Welcome to our conversational assistant. How can I help you today?";
+      
+      document.getElementById("preview-title").innerText = botName;
+      document.getElementById("preview-welcome-bubble").innerText = welcome;
+    }
+
+    // Alert Banner helpers
+    function showAlert(msg) {
+      const box = document.getElementById("alert-box");
+      document.getElementById("alert-msg").innerText = msg;
+      box.classList.remove("hidden");
+      box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function hideAlert() {
+      document.getElementById("alert-box").classList.add("hidden");
+    }
+
+    // POST Payload to Onboarding Endpoint
+    async function submitOnboardingData() {
+      hideAlert();
+      
+      const nextBtn = document.getElementById("btn-next");
+      const originalHtml = nextBtn.innerHTML;
+      nextBtn.disabled = true;
+      nextBtn.innerHTML = `<span>Deploying AI Agent...</span> <i data-lucide="loader-2" class="spinner" style="display:block;"></i>`;
+      lucide.createIcons();
+
+      const payload = {
+        fullName: document.getElementById("fullName").value.trim(),
+        phone: document.getElementById("phone").value.trim(),
+        organizationName: document.getElementById("orgName").value.trim(),
+        industry: document.getElementById("industry").value,
+        websiteUrl: document.getElementById("websiteUrl").value.trim(),
+        botName: document.getElementById("botName").value.trim(),
+        primaryColor: selectedColor,
+        backgroundColor: selectedBgColor,
+        welcomeMessage: document.getElementById("welcomeMessage").value.trim()
+      };
+
+      try {
+        const res = await fetch('/api/auth/onboard', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || "Onboarding failed. Please try again.");
+        }
+
+        // Onboarding success! Clear custom variables and go to main workspace dashboard
+        setTimeout(() => {
+          window.location.href = '/admin/admin.html';
+        }, 1200);
+
+      } catch (error) {
+        showAlert(error.message);
+        nextBtn.disabled = false;
+        nextBtn.innerHTML = originalHtml;
+        lucide.createIcons();
+      }
+    }
+  </script>
+</body>
+</html>

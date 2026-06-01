@@ -1,3 +1,37 @@
+// Resolve botId from query string
+const urlParams = new URLSearchParams(window.location.search);
+const botId = urlParams.get('botId') || 'bot-default';
+
+// Hook global fetch to inject botId automatically
+const originalFetch = window.fetch;
+window.fetch = async function(url, options = {}) {
+  let targetUrl = url;
+  if (typeof url === 'string') {
+    const urlObj = new URL(url, window.location.origin);
+    
+    // 1. Append botId to query parameters for GET/DELETE requests
+    if (!options.method || options.method === 'GET' || options.method === 'DELETE') {
+      urlObj.searchParams.set('botId', botId);
+      targetUrl = urlObj.pathname + urlObj.search;
+    }
+  }
+
+  // 2. Inject botId into POST/PUT request bodies
+  if (options.method === 'POST' || options.method === 'PUT') {
+    if (options.body && typeof options.body === 'string') {
+      try {
+        const bodyObj = JSON.parse(options.body);
+        bodyObj.botId = botId;
+        options.body = JSON.stringify(bodyObj);
+      } catch (e) {
+        // Silent catch for non-JSON payloads
+      }
+    }
+  }
+
+  return originalFetch(targetUrl, options);
+};
+
 // Chat Widget State
 let chatHistory = [];
 let botName = "AH Bot";
@@ -40,6 +74,7 @@ async function loadWidgetSettings() {
     
     botName = data.botName || "AH Bot";
     primaryColor = data.primaryColor || "#2563eb";
+    const backgroundColor = data.backgroundColor || "#090d16";
     
     // Update Header Name
     document.getElementById("bot-display-name").innerText = botName;
@@ -52,14 +87,17 @@ async function loadWidgetSettings() {
     
     // Format welcome message time
     document.getElementById("welcome-msg-time").innerText = getCurrentTimeFormatted();
-
-    // Inject custom CSS styling overrides dynamically to match chosen brand color
+ 
+    // Inject custom CSS styling overrides dynamically to match chosen brand color and backgrounds
     const style = document.createElement("style");
     style.innerHTML = `
       :root {
         --primary: ${primaryColor} !important;
         --primary-glow: ${hexToRgba(primaryColor, 0.15)} !important;
         --primary-hover: ${lightenHexColor(primaryColor, 15)} !important;
+        --glass-bg: ${hexToRgba(backgroundColor, 0.96)} !important;
+        --bg-dark: ${darkenHexColor(backgroundColor, 10)} !important;
+        --bg-darker: ${darkenHexColor(backgroundColor, 20)} !important;
       }
     `;
     document.head.appendChild(style);
@@ -549,5 +587,15 @@ function lightenHexColor(hex, percent) {
   R = (num >> 16) + amt,
   G = (num >> 8 & 0x00FF) + amt,
   B = (num & 0x0000FF) + amt;
+  return "#" + (0x1000000 + (R<255?R<0?0:R:255)*0x10000 + (G<255?G<0?0:G:255)*0x100 + (B<255?B<0?0:B:255)).toString(16).slice(1);
+}
+
+// Darken colors for nested panels
+function darkenHexColor(hex, percent) {
+  let num = parseInt(hex.replace("#",""), 16),
+  amt = Math.round(2.55 * percent),
+  R = (num >> 16) - amt,
+  G = (num >> 8 & 0x00FF) - amt,
+  B = (num & 0x0000FF) - amt;
   return "#" + (0x1000000 + (R<255?R<0?0:R:255)*0x10000 + (G<255?G<0?0:G:255)*0x100 + (B<255?B<0?0:B:255)).toString(16).slice(1);
 }

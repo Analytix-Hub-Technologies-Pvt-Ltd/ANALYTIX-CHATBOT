@@ -360,8 +360,8 @@ function getAdminHtml(booking, bookingDate, formattedTime, teamsUrl) {
  * @param {Object} booking 
  * @returns {Promise<boolean>} - True if email sent, false otherwise
  */
-async function sendBookingEmails(booking) {
-  const settings = db.getSettings();
+async function sendBookingEmails(booking, botId = 'bot-default') {
+  const settings = db.getSettings(botId);
   const provider = settings.emailProvider || 'smtp';
 
   // Format dates & times beautifully

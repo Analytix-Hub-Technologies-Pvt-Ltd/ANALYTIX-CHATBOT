@@ -8,13 +8,21 @@
   const scriptSrc = scriptTag ? scriptTag.src : 'http://localhost:3000/embed.js';
   const serverUrl = new URL(scriptSrc).origin;
 
+  // Resolve botId from page URL query param OR data-bot-id attribute OR from URL query param on current script
+  let botId = new URL(window.location.href).searchParams.get('botId') || 'bot-default';
+  if (botId === 'bot-default' && scriptTag) {
+    botId = scriptTag.getAttribute('data-bot-id') || 
+            new URL(scriptSrc).searchParams.get('botId') || 
+            'bot-default';
+  }
+
   // Fetch settings dynamically to override theme colors & details in embed launcher!
   let botName = "AH Bot";
   let primaryColor = "#2563eb";
   let welcomeMessage = "Hi! How can I help you today?";
 
   try {
-    const res = await fetch(`${serverUrl}/api/settings`);
+    const res = await fetch(`${serverUrl}/api/settings?botId=${encodeURIComponent(botId)}`);
     if (res.ok) {
       const settings = await res.json();
       botName = settings.botName || "AH Bot";
@@ -257,7 +265,7 @@
 
     <!-- Iframe box container -->
     <div class="ah-chatbot-iframe-container" id="ah-iframe-box">
-      <iframe src="${serverUrl}/widget/widget.html?v=${Date.now()}" id="ah-chatbot-iframe" allow="autoplay; clipboard-read; clipboard-write;"></iframe>
+      <iframe src="${serverUrl}/widget/widget.html?botId=${encodeURIComponent(botId)}&v=${Date.now()}" id="ah-chatbot-iframe" allow="autoplay; clipboard-read; clipboard-write;"></iframe>
     </div>
     
     <!-- Floating Launcher bubble -->

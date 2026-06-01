@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AnalytixHub Chatbot - Admin Access Portal</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <style>
+    :root {
+      --bg-dark: #0b0f19;
+      --card-bg: rgba(18, 24, 38, 0.85);
+      --border-color: rgba(255, 255, 255, 0.08);
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --primary-glow: rgba(37, 99, 235, 0.3);
+      --accent-purple: #8b5cf6;
+      --accent-purple-glow: rgba(139, 92, 246, 0.3);
+      --text-white: #f8fafc;
+      --text-muted: #94a3b8;
+      --error-red: #ef4444;
+      --success-green: #10b981;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-white);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* Vibrant ambient background blobs */
+    .ambient-glow-1 {
+      position: absolute;
+      width: 400px;
+      height: 400px;
+      border-radius: 50%;
+      background: radial-gradient(circle, var(--primary-glow) 0%, transparent 70%);
+      top: -100px;
+      left: -100px;
+      z-index: 1;
+      pointer-events: none;
+      animation: pulse-slow 8s infinite alternate;
+    }
+
+    .ambient-glow-2 {
+      position: absolute;
+      width: 500px;
+      height: 500px;
+      border-radius: 50%;
+      background: radial-gradient(circle, var(--accent-purple-glow) 0%, transparent 70%);
+      bottom: -150px;
+      right: -100px;
+      z-index: 1;
+      pointer-events: none;
+      animation: pulse-slow 12s infinite alternate-reverse;
+    }
+
+    @keyframes pulse-slow {
+      0% { transform: scale(1) translate(0, 0); opacity: 0.6; }
+      100% { transform: scale(1.15) translate(20px, 30px); opacity: 0.9; }
+    }
+
+    .portal-container {
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      max-width: 440px;
+      padding: 20px;
+    }
+
+    /* Glassmorphic Portal Card */
+    .portal-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      padding: 40px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .portal-header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .brand-logo {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 54px;
+      height: 54px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, var(--primary), var(--accent-purple));
+      margin-bottom: 16px;
+      box-shadow: 0 8px 20px rgba(37, 99, 235, 0.3);
+    }
+
+    .brand-logo i {
+      color: white;
+      width: 26px;
+      height: 26px;
+    }
+
+    .portal-header h2 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      background: linear-gradient(to right, #ffffff, #e2e8f0);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 6px;
+    }
+
+    .portal-header p {
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    /* Authentication Form Toggle Controls */
+    .auth-toggle {
+      display: flex;
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 4px;
+      margin-bottom: 25px;
+    }
+
+    .toggle-btn {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .toggle-btn.active {
+      background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+      color: white;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+    }
+
+    /* Dynamic form blocks */
+    .form-pane {
+      display: none;
+    }
+
+    .form-pane.active {
+      display: block;
+      animation: fadeIn 0.4s ease forwards;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+      position: relative;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .input-wrapper i {
+      position: absolute;
+      left: 14px;
+      color: var(--text-muted);
+      width: 18px;
+      height: 18px;
+      transition: color 0.3s ease;
+    }
+
+    .input-wrapper input {
+      width: 100%;
+      padding: 12px 14px 12px 42px;
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      color: white;
+      font-size: 14px;
+      outline: none;
+      transition: all 0.3s ease;
+    }
+
+    .input-wrapper input:focus {
+      border-color: var(--primary);
+      background: rgba(0, 0, 0, 0.4);
+      box-shadow: 0 0 0 3px var(--primary-glow);
+    }
+
+    .input-wrapper input:focus + i {
+      color: var(--primary);
+    }
+
+    /* Submit Button Styling */
+    .submit-btn {
+      width: 100%;
+      padding: 13px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+      border: none;
+      border-radius: 10px;
+      color: white;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 25px;
+      box-shadow: 0 4px 15px var(--primary-glow);
+    }
+
+    .submit-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+    }
+
+    .submit-btn:active {
+      transform: translateY(1px);
+    }
+
+    .submit-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* Spinner Animation */
+    .spinner {
+      animation: spin 1s linear infinite;
+      display: none;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Alert Boxes */
+    .alert {
+      padding: 12px 16px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      animation: slideDown 0.3s ease forwards;
+    }
+
+    .alert.hidden {
+      display: none;
+    }
+
+    .alert-error {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #fca5a5;
+    }
+
+    .alert-success {
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #a7f3d0;
+    }
+
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .hint-text {
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 20px;
+      line-height: 1.5;
+    }
+
+    .hint-text strong {
+      color: var(--text-white);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="ambient-glow-1"></div>
+  <div class="ambient-glow-2"></div>
+
+  <div class="portal-container">
+    <div class="portal-card">
+      <div class="portal-header">
+        <div class="brand-logo">
+          <i data-lucide="cpu" class="animate-pulse"></i>
+        </div>
+        <h2>AnalytixHub AI Chatbot</h2>
+        <p id="portal-sub">Multi-Tenant SaaS Control Center</p>
+      </div>
+
+      <!-- Error / Success Alert Notification -->
+      <div id="alert-box" class="alert hidden">
+        <i data-lucide="alert-circle" id="alert-icon" style="width: 18px; height: 18px; flex-shrink: 0;"></i>
+        <span id="alert-msg"></span>
+      </div>
+
+      <!-- Auth Switcher Tabs -->
+      <div class="auth-toggle">
+        <button class="toggle-btn active" id="tab-login" onclick="switchAuthTab('login')">
+          <i data-lucide="log-in" style="width: 16px; height: 16px;"></i>
+          <span>Sign In</span>
+        </button>
+        <button class="toggle-btn" id="tab-register" onclick="switchAuthTab('register')">
+          <i data-lucide="user-plus" style="width: 16px; height: 16px;"></i>
+          <span>Create Account</span>
+        </button>
+      </div>
+
+      <!-- PANE: LOGIN -->
+      <div id="pane-login" class="form-pane active">
+        <form onsubmit="handleAuthSubmit(event, 'login')">
+          <div class="form-group">
+            <label for="login-username">Administrator Email</label>
+            <div class="input-wrapper">
+              <input type="text" id="login-username" required placeholder="admin@domain.com">
+              <i data-lucide="mail"></i>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="login-password">Password</label>
+            <div class="input-wrapper">
+              <input type="password" id="login-password" required placeholder="••••••••">
+              <i data-lucide="lock"></i>
+            </div>
+          </div>
+          <button type="submit" class="submit-btn" id="btn-login-submit">
+            <span>Sign In to Dashboard</span>
+            <i data-lucide="arrow-right" class="arrow-icon" style="width: 16px; height: 16px;"></i>
+            <i data-lucide="loader-2" class="spinner" style="width: 16px; height: 16px;"></i>
+          </button>
+        </form>
+      </div>
+
+      <!-- PANE: REGISTER -->
+      <div id="pane-register" class="form-pane">
+        <form onsubmit="handleAuthSubmit(event, 'register')">
+          <div class="form-group">
+            <label for="reg-username">Email Address</label>
+            <div class="input-wrapper">
+              <input type="email" id="reg-username" required placeholder="newadmin@domain.com">
+              <i data-lucide="mail"></i>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="reg-password">Password (min 6 chars)</label>
+            <div class="input-wrapper">
+              <input type="password" id="reg-password" required placeholder="••••••••" minlength="6">
+              <i data-lucide="lock"></i>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="reg-password-confirm">Confirm Password</label>
+            <div class="input-wrapper">
+              <input type="password" id="reg-password-confirm" required placeholder="••••••••" minlength="6">
+              <i data-lucide="lock"></i>
+            </div>
+          </div>
+          <button type="submit" class="submit-btn" id="btn-reg-submit">
+            <span>Provision My AI Chatbot</span>
+            <i data-lucide="sparkles" class="arrow-icon" style="width: 16px; height: 16px;"></i>
+            <i data-lucide="loader-2" class="spinner" style="width: 16px; height: 16px;"></i>
+          </button>
+        </form>
+      </div>
+
+      <!-- Bottom Help Hint -->
+      <div class="hint-text" id="footer-hint">
+        Default credential pre-loaded: <br>Email: <strong>admin</strong> | Password: <strong>admin123</strong>
+      </div>
+    </div>
+  </div>
+
+  <script src="login.js"></script>
+  <script>
+    lucide.createIcons();
+  </script>
+</body>
+</html>
