@@ -292,6 +292,7 @@ async function callOpenRouterSynthesis(settings, promptText) {
       }
     ],
     temperature: 0.3,
+    response_format: { type: "json_object" },
     stream: false
   }, { headers, timeout: 25000 }); // Richer 25-second timeout for complex synthesis
 
@@ -333,7 +334,8 @@ async function callGroqSynthesis(apiKey, configModel, promptText) {
         ],
         model: modelName,
         temperature: 0.3,
-        max_tokens: 2048,
+        max_tokens: 4096,
+        response_format: { type: "json_object" },
         stream: false
       });
 
