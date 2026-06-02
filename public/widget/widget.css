@@ -677,7 +677,7 @@ body {
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
   padding: 8px 10px;
-  color: white;
+  color: var(--text-main);
   font-size: 12px;
   outline: none;
   transition: all 0.2s ease;
@@ -817,9 +817,15 @@ body {
   border-radius: 30px;
   padding: 12px 20px;
   font-size: 13.5px;
-  color: white;
+  color: var(--text-main);
   outline: none;
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.chat-input-form input::placeholder,
+.widget-form-group input::placeholder {
+  color: var(--text-muted);
+  opacity: 0.8;
 }
 
 .chat-input-form input:focus {
