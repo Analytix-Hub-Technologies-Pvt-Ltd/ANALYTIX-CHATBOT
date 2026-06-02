@@ -1,3 +1,7 @@
+// Initialize theme immediately on script load to prevent page flashing!
+const activeTheme = localStorage.getItem('ah_admin_theme') || 'dark';
+document.documentElement.setAttribute('data-theme', activeTheme);
+
 // Hook global fetch to inject token automatically
 const originalFetch = window.fetch;
 window.fetch = async function(url, options = {}) {
@@ -56,6 +60,19 @@ document.addEventListener("DOMContentLoaded", () => {
   const searchInput = document.getElementById("bookings-search");
   if (searchInput) {
     searchInput.addEventListener("input", filterBookings);
+  }
+
+  // Bind Theme Toggle button
+  const themeToggleBtn = document.getElementById("theme-toggle-btn");
+  if (themeToggleBtn) {
+    updateThemeToggleIcon(activeTheme);
+    themeToggleBtn.addEventListener("click", () => {
+      const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', newTheme);
+      localStorage.setItem('ah_admin_theme', newTheme);
+      updateThemeToggleIcon(newTheme);
+    });
   }
 
   // Pre-load data
@@ -289,7 +306,7 @@ function renderAllBookingsTable(filteredData = null) {
   const data = filteredData || bookingsData;
   
   if (data.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="5" class="table-empty">No appointments found matching search criteria.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" class="table-empty">No appointments found matching search criteria.</td></tr>`;
     return;
   }
   
@@ -314,6 +331,11 @@ function renderAllBookingsTable(filteredData = null) {
       </td>
       <td>
         <span class="purpose-tag">${b.purpose}</span>
+      </td>
+      <td>
+        <div class="client-notes" style="max-width: 220px; font-size: 13px; color: var(--text-muted); white-space: normal; word-break: break-word;">
+          ${b.info ? b.info : '<span style="opacity: 0.3;">—</span>'}
+        </div>
       </td>
       <td>
         ${emailStatus}
@@ -982,4 +1004,160 @@ function applyColorCombo(primary, bg) {
     bColor.value = bg;
     bHex.value = bg.toUpperCase();
   }
+}
+
+// -------------------------------------------------------------
+// THEME SWITCHER & EXPORT APPOINTMENTS UTILITIES
+// -------------------------------------------------------------
+function updateThemeToggleIcon(theme) {
+  const icon = document.getElementById("theme-toggle-icon");
+  if (!icon) return;
+  if (theme === 'light') {
+    icon.setAttribute('data-lucide', 'moon');
+  } else {
+    icon.setAttribute('data-lucide', 'sun');
+  }
+  if (window.lucide) {
+    window.lucide.createIcons();
+  }
+}
+
+function exportBookings(format) {
+  if (!bookingsData || bookingsData.length === 0) {
+    alert("No bookings available to export.");
+    return;
+  }
+  
+  if (format === 'csv') {
+    // CSV headers: ID, Name, Email, Phone, Date, Time, Topic, Info, Email Sent Status, Created At
+    const headers = ["ID", "Name", "Email", "Phone", "Date", "Time", "Topic", "Info", "Email Sent Status", "Created At"];
+    const rows = bookingsData.map(b => [
+      b.id,
+      b.name,
+      b.email,
+      b.phone || '',
+      b.date,
+      b.time,
+      b.purpose,
+      b.info || '',
+      b.emailSent ? "Sent" : "Failed",
+      b.createdAt
+    ]);
+    
+    // Escaping commas/quotes for safety
+    const csvContent = [
+      headers.join(","),
+      ...rows.map(row => row.map(val => `"${String(val).replace(/"/g, '""')}"`).join(","))
+    ].join("\n");
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `analytixhub_appointments_${new Date().toISOString().slice(0,10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  } else if (format === 'document') {
+    // Generate standard Word Document-compatible HTML file
+    let docContent = `
+      <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+      <head>
+        <meta charset="utf-8">
+        <title>Scheduled Consultations Log</title>
+        <!--[if gte mso 9]>
+        <xml>
+          <w:WordDocument>
+            <w:View>Print</w:View>
+            <w:Zoom>100</w:Zoom>
+            <w:DoNotOptimizeForBrowser/>
+          </w:WordDocument>
+        </xml>
+        <![endif]-->
+        <style>
+          body { font-family: 'Segoe UI', Arial, sans-serif; color: #333333; line-height: 1.6; padding: 20px; }
+          h2 { color: #2563eb; font-family: 'Segoe UI Semibold', Arial, sans-serif; border-bottom: 2px solid #2563eb; padding-bottom: 8px; margin-bottom: 20px; }
+          .meta-info { font-size: 12px; color: #666666; margin-bottom: 25px; }
+          table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+          th { background-color: #2563eb; color: #ffffff; font-weight: bold; text-align: left; padding: 10px; font-size: 13px; border: 1px solid #cbd5e1; }
+          td { padding: 10px; font-size: 12px; border: 1px solid #cbd5e1; vertical-align: top; }
+          .notes { font-style: italic; color: #555555; }
+          .badge { padding: 3px 8px; border-radius: 12px; font-weight: bold; font-size: 11px; }
+          .badge-sent { background-color: #d1fae5; color: #065f46; }
+          .badge-failed { background-color: #fef3c7; color: #92400e; }
+        </style>
+      </head>
+      <body>
+        <h2>AnalytixHub Chatbot - Scheduled Consultations Log</h2>
+        <div class="meta-info">
+          <strong>Generated On:</strong> ${new Date().toLocaleString()}<br>
+          <strong>Total Leads Captured:</strong> ${bookingsData.length}
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 15%;">Client Name</th>
+              <th style="width: 20%;">Contact Info</th>
+              <th style="width: 15%;">Date & Time</th>
+              <th style="width: 15%;">Topic</th>
+              <th style="width: 25%;">Additional Info / Notes</th>
+              <th style="width: 10%;">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+    `;
+
+    bookingsData.forEach(b => {
+      const fullDate = new Date(b.date).toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
+      docContent += `
+        <tr>
+          <td><strong>${escapeHtml(b.name)}</strong></td>
+          <td>
+            ${escapeHtml(b.email)}<br>
+            ${b.phone ? escapeHtml(b.phone) : ''}
+          </td>
+          <td>
+            ${fullDate}<br>
+            ${escapeHtml(b.time)}
+          </td>
+          <td>${escapeHtml(b.purpose)}</td>
+          <td class="notes">${b.info ? escapeHtml(b.info) : '—'}</td>
+          <td>
+            <span class="badge ${b.emailSent ? 'badge-sent' : 'badge-failed'}">
+              ${b.emailSent ? 'Email Sent' : 'Failed / Skipped'}
+            </span>
+          </td>
+        </tr>
+      `;
+    });
+
+    docContent += `
+          </tbody>
+        </table>
+      </body>
+      </html>
+    `;
+
+    const blob = new Blob([docContent], { type: 'application/msword;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `analytixhub_appointments_${new Date().toISOString().slice(0,10)}.doc`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+}
+
+function escapeHtml(unsafe) {
+  return String(unsafe).replace(/[&<>"']/g, function (m) {
+    switch (m) {
+      case '&': return '&amp;';
+      case '<': return '&lt;';
+      case '>': return '&gt;';
+      case '"': return '&quot;';
+      case "'": return '&#039;';
+      default: return m;
+    }
+  });
 }

@@ -342,6 +342,7 @@ module.exports = {
       date: booking.date, // YYYY-MM-DD
       time: booking.time, // HH:MM
       purpose: booking.purpose || 'General Consultation',
+      info: booking.info || '',
       emailSent: booking.emailSent || false,
       createdAt: new Date().toISOString()
     };

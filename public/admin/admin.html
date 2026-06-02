@@ -70,7 +70,10 @@
           <h1 id="tab-title">Dashboard Overview</h1>
           <p id="tab-subtitle">Real-time chatbot performance and scheduled leads.</p>
         </div>
-        <div class="header-actions">
+        <div class="header-actions" style="display: flex; gap: 10px; align-items: center;">
+          <button class="action-btn outline" id="theme-toggle-btn" title="Toggle Light/Dark Theme" style="width: 38px; height: 38px; padding: 0; display: flex; align-items: center; justify-content: center; cursor: pointer; border-radius: var(--radius-md);">
+            <i data-lucide="sun" id="theme-toggle-icon" style="width: 18px; height: 18px;"></i>
+          </button>
           <button class="action-btn outline" onclick="window.open('/widget/widget.html', '_blank')">
             <i data-lucide="external-link"></i>
             <span>Test Live Widget</span>
@@ -188,9 +191,19 @@
         <div class="dashboard-panel-card">
           <div class="panel-header search-bar-header">
             <h3><i data-lucide="list"></i> All Consultation Bookings</h3>
-            <div class="search-box">
-              <i data-lucide="search"></i>
-              <input type="text" id="bookings-search" placeholder="Search by name, email or date...">
+            <div class="panel-actions" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+              <button type="button" class="action-btn outline" onclick="exportBookings('csv')" style="height: 38px; padding: 0 12px; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; border-radius: var(--radius-md);">
+                <i data-lucide="download" style="width:14px;height:14px;"></i>
+                <span>Export CSV</span>
+              </button>
+              <button type="button" class="action-btn outline" onclick="exportBookings('document')" style="height: 38px; padding: 0 12px; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; border-radius: var(--radius-md);">
+                <i data-lucide="file-text" style="width:14px;height:14px;"></i>
+                <span>Export Document</span>
+              </button>
+              <div class="search-box">
+                <i data-lucide="search"></i>
+                <input type="text" id="bookings-search" placeholder="Search by name, email or date...">
+              </div>
             </div>
           </div>
           
@@ -201,6 +214,7 @@
                   <th>Client Details</th>
                   <th>Date & Time</th>
                   <th>Consultation Topic</th>
+                  <th>Notes / Info</th>
                   <th>Status</th>
                   <th>Actions</th>
                 </tr>

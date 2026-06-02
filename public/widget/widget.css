@@ -672,7 +672,7 @@ body {
   color: var(--text-muted);
 }
 
-.widget-form-group input, .widget-form-group select {
+.widget-form-group input, .widget-form-group select, .widget-form-group textarea {
   background-color: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
@@ -683,7 +683,14 @@ body {
   transition: all 0.2s ease;
 }
 
-.widget-form-group input:focus, .widget-form-group select:focus {
+.widget-form-group textarea {
+  min-height: 80px;
+  resize: vertical;
+  font-family: inherit;
+  line-height: 1.5;
+}
+
+.widget-form-group input:focus, .widget-form-group select:focus, .widget-form-group textarea:focus {
   border-color: var(--primary-hover);
   background-color: rgba(255, 255, 255, 0.06);
 }

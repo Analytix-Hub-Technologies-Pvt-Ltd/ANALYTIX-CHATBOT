@@ -234,12 +234,23 @@ app.post('/api/chat', async (req, res) => {
     return res.status(400).json({ error: "Invalid message payload" });
   }
 
+  // Set Server-Sent Events headers
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders();
+
   try {
-    const aiResponse = await groqService.getChatResponse(messages, botId);
-    res.json({ response: aiResponse });
+    const stream = groqService.getChatResponseStream(messages, botId);
+    for await (const chunk of stream) {
+      res.write(`data: ${JSON.stringify({ chunk })}\n\n`);
+    }
   } catch (error) {
-    console.error("Express Chat Route Error:", error);
-    res.status(500).json({ error: "Failed to generate chat response" });
+    console.error("Express Chat Route Streaming Error:", error);
+    res.write(`data: ${JSON.stringify({ error: error.message || "Failed to generate chat response stream" })}\n\n`);
+  } finally {
+    res.write('data: [DONE]\n\n');
+    res.end();
   }
 });
 
@@ -258,7 +269,7 @@ app.get('/api/bookings', requireAuth, (req, res) => {
 
 // Create a new booking (PUBLIC WIDGET ROUTE)
 app.post('/api/bookings', async (req, res) => {
-  const { name, email, phone, date, time, purpose } = req.body;
+  const { name, email, phone, date, time, purpose, info } = req.body;
   const botId = req.body.botId || req.query.botId || 'bot-default';
 
   if (!name || !email || !date || !time) {
@@ -267,7 +278,7 @@ app.post('/api/bookings', async (req, res) => {
 
   try {
     // 1. Add booking to database for this specific botId
-    const booking = db.addBooking(botId, { name, email, phone, date, time, purpose });
+    const booking = db.addBooking(botId, { name, email, phone, date, time, purpose, info });
     
     // 2. Dispatch email notifications asynchronously
     let emailSent = false;

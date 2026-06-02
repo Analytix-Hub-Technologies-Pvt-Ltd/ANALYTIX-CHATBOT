@@ -181,31 +181,125 @@ async function handleChatSubmit(e) {
       body: JSON.stringify({ messages: chatHistory })
     });
     
-    const result = await res.json();
-    
-    // Hide Typing Indicator
-    typingIndicator.classList.add("hidden");
-    
-    if (!res.ok) throw new Error(result.error || "Chatbot service unavailable.");
-    
-    let cleanedResponse = result.response;
-    let triggerBooking = false;
-    
-    // Check if the LLM explicitly requested to slide open the interactive booking window
-    if (cleanedResponse.includes("[TRIGGER_BOOKING]")) {
-      cleanedResponse = cleanedResponse.replace(/\[TRIGGER_BOOKING\]/g, "").trim();
-      triggerBooking = true;
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.error || "Chatbot service unavailable.");
     }
     
-    // Append Assistant response bubble
-    const botRow = appendMessage("bot", cleanedResponse);
-    chatHistory.push({ role: "assistant", content: cleanedResponse });
+    // Hide Typing Indicator once we start receiving the stream
+    typingIndicator.classList.add("hidden");
+    
+    // Create assistant message row to stream the content into
+    const container = document.getElementById("chat-messages");
+    const botRow = document.createElement("div");
+    botRow.className = "msg-row bot";
+    botRow.innerHTML = `
+      <div class="msg-bubble"></div>
+      <span class="msg-time">${getCurrentTimeFormatted()}</span>
+    `;
+    container.appendChild(botRow);
+    const bubble = botRow.querySelector(".msg-bubble");
     scrollToElement(botRow);
-
-    if (triggerBooking) {
-      setTimeout(() => {
-        triggerInlineBooking();
-      }, 800);
+    
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder("utf-8");
+    let buffer = "";
+    let accumulatedText = "";
+    let hasTriggeredBooking = false;
+    
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      
+      // Save last partial line to buffer
+      buffer = lines.pop();
+      
+      for (const line of lines) {
+        const cleanLine = line.trim();
+        if (!cleanLine || !cleanLine.startsWith("data: ")) continue;
+        
+        const dataStr = cleanLine.substring(6);
+        if (dataStr === "[DONE]") break;
+        
+        try {
+          const parsed = JSON.parse(dataStr);
+          if (parsed.error) {
+            throw new Error(parsed.error);
+          }
+          if (parsed.chunk) {
+            accumulatedText += parsed.chunk;
+            
+            // Render text with markdown in real-time
+            let displayText = accumulatedText;
+            
+            if (displayText.includes("[TRIGGER_BOOKING]")) {
+              displayText = displayText.replace(/\[TRIGGER_BOOKING\]/g, "").trim();
+              if (!hasTriggeredBooking) {
+                hasTriggeredBooking = true;
+                setTimeout(() => {
+                  triggerInlineBooking();
+                }, 800);
+              }
+            }
+            
+            bubble.innerHTML = formatTextMarkdown(displayText);
+            scrollToElement(botRow);
+          }
+        } catch (e) {
+          console.error("Error parsing stream chunk:", e);
+        }
+      }
+    }
+    
+    // Final cleanup of the booking tag in our stored history
+    const finalCleanText = accumulatedText.replace(/\[TRIGGER_BOOKING\]/g, "").trim();
+    chatHistory.push({ role: "assistant", content: finalCleanText });
+    
+    // Trigger visual location card if the office details were mentioned
+    const lowerText = finalCleanText.toLowerCase();
+    const isLocationTrigger = lowerText.includes("primus building") || 
+                              lowerText.includes("guindy") || 
+                              lowerText.includes("chennai") || 
+                              lowerText.includes("office location") ||
+                              lowerText.includes("office address") ||
+                              lowerText.includes("headquarters") ||
+                              lowerText.includes("where are you located") ||
+                              lowerText.includes("where is your office");
+                              
+    if (isLocationTrigger) {
+      const card = document.createElement("div");
+      card.className = "contact-location-card-premium";
+      card.innerHTML = `
+        <div class="card-glow-bg"></div>
+        <div class="card-header-premium">
+          <i data-lucide="map-pin" class="card-pin-icon"></i>
+          <span>Official Headquarters</span>
+        </div>
+        <div class="card-body-premium">
+          <h4 class="company-name-premium">AnalytixHub Office Premises</h4>
+          <p class="address-text-premium">1st floor, Primus Building, Door No. SP – 7A, Guindy Industrial Estate, SIDCO Industrial Estate, Guindy, Chennai, Tamil Nadu - 600032, India.</p>
+          
+          <div class="card-actions-premium">
+            <a href="https://www.google.com/maps/search/?api=1&query=1st+floor,+Primus+Building,+SP-7A,+Guindy+Industrial+Estate,+Chennai,+Tamil+Nadu+600032" target="_blank" class="card-btn direction-btn">
+              <i data-lucide="navigation"></i> Directions
+            </a>
+            <a href="tel:+917397577392" class="card-btn call-btn">
+              <i data-lucide="phone"></i> Call Office
+            </a>
+            <a href="mailto:contactus@analytixhub.org" class="card-btn email-btn">
+              <i data-lucide="mail"></i> Email Us
+            </a>
+          </div>
+        </div>
+      `;
+      botRow.appendChild(card);
+      if (window.lucide) {
+        window.lucide.createIcons();
+      }
+      scrollToElement(botRow);
     }
     
   } catch (error) {
@@ -503,7 +597,8 @@ async function submitBooking(e) {
     phone: document.getElementById("sched-phone").value.trim(),
     date: selectedDateStr,
     time: selectedSlot,
-    purpose: document.getElementById("sched-purpose").value
+    purpose: document.getElementById("sched-purpose").value,
+    info: document.getElementById("sched-info").value.trim()
   };
 
   try {

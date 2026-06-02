@@ -60,9 +60,61 @@ async function getChatResponse(messages, botId = 'bot-default') {
     }
   }
 
-  console.error("Groq Chat Service Error: All configured fallback models have failed.", lastError);
   return "I apologize, but I am currently experiencing technical difficulties and am unable to process your message. Please feel free to contact our team directly at **contactus@analytixhub.org** or use the calendar scheduler above to book a direct consultation with one of our analytics experts.";
 }
+
+async function* getChatResponseStream(messages, botId = 'bot-default') {
+  const settings = db.getSettings(botId);
+  const apiKey = settings.groqKey || process.env.GROQ_API_KEY;
+
+  if (!apiKey) {
+    yield "Thank you for contacting AnalytixHub. Our conversational assistant is currently undergoing routine maintenance. Please feel free to reach out to our team directly at **contactus@analytixhub.org** or use the interactive scheduler above to book a consultation slot with our experts.";
+    return;
+  }
+
+  const preferredModel = settings.groqModel || 'llama-3.1-8b-instant';
+  const modelQueue = [preferredModel, ...GROQ_FALLBACK_MODELS.filter(m => m !== preferredModel)];
+
+  const fullMessages = [
+    {
+      role: 'system',
+      content: settings.systemPrompt
+    },
+    ...messages
+  ];
+
+  const groqClient = new Groq({ apiKey });
+  let lastError = null;
+
+  for (const modelName of modelQueue) {
+    try {
+      console.log(`Groq Chat Stream Service: Attempting completion using model: ${modelName}`);
+      const stream = await groqClient.chat.completions.create({
+        messages: fullMessages,
+        model: modelName,
+        temperature: 0.5,
+        max_tokens: 1024,
+        top_p: 1,
+        stream: true
+      });
+
+      for await (const chunk of stream) {
+        const content = chunk.choices[0]?.delta?.content || '';
+        if (content) {
+          yield content;
+        }
+      }
+      return;
+    } catch (error) {
+      console.warn(`Groq Chat Stream Fallback warning: Model ${modelName} failed. Details: ${error.message}`);
+      lastError = error;
+    }
+  }
+
+  console.error("Groq Chat Stream Service Error: All configured fallback models have failed.", lastError);
+  yield "I apologize, but I am currently experiencing technical difficulties and am unable to process your message. Please feel free to contact our team directly at **contactus@analytixhub.org** or use the calendar scheduler above to book a direct consultation with one of our analytics experts.";
+}
+
 
 /**
  * Synthesizes a clean text corpus from a scraped website into a custom chatbot configuration
@@ -350,6 +402,7 @@ function sanitizeJsonString(str) {
 
 module.exports = {
   getChatResponse,
+  getChatResponseStream,
   generateWebsiteBrain
 };
 

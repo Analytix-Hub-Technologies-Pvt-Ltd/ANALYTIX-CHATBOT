@@ -31,6 +31,92 @@
 }
 
 /* -------------------------------------------------------------
+   LIGHT (WHITE) THEME DEFINITION
+   Highly elegant, clean, and harmonized with blue/green brandings
+------------------------------------------------------------- */
+[data-theme="light"] {
+  --bg-dark: #f8fafc;        /* slate-50 */
+  --bg-sidebar: #ffffff;     /* pure white */
+  --bg-card: #ffffff;        /* pure white */
+  --bg-card-hover: #f1f5f9;  /* slate-100 */
+  --border-color: #e2e8f0;   /* slate-200 */
+  
+  --text-main: #0f172a;      /* slate-900 */
+  --text-muted: #475569;     /* slate-600 */
+  --text-dimmed: #94a3b8;    /* slate-400 */
+  
+  --primary: #2563eb;        /* blue-600 */
+  --primary-hover: #1d4ed8;  /* blue-700 */
+  --primary-glow: rgba(37, 99, 235, 0.12);
+  
+  --accent-purple: #7c3aed;  /* violet-600 */
+  --accent-green: #059669;   /* emerald-600 */
+  --accent-orange: #d97706;  /* amber-600 */
+  --accent-red: #dc2626;     /* red-600 */
+}
+
+/* Light Theme Element Customizations */
+[data-theme="light"] .client-info h5,
+[data-theme="light"] .card-header-accent h4,
+[data-theme="light"] .sidebar-nav button.nav-btn.active,
+[data-theme="light"] .sidebar-brand .brand-text h2,
+[data-theme="light"] .scraped-info-item div,
+[data-theme="light"] .header-title h1,
+[data-theme="light"] .panel-header h3,
+[data-theme="light"] .standby-card h3,
+[data-theme="light"] .dashboard-panel-card h3 {
+  color: var(--text-main) !important;
+}
+
+[data-theme="light"] .form-group input[type="text"],
+[data-theme="light"] .form-group input[type="password"],
+[data-theme="light"] .form-group input[type="number"],
+[data-theme="light"] .form-group input[type="email"],
+[data-theme="light"] .form-group select,
+[data-theme="light"] .form-group textarea {
+  background-color: #f1f5f9 !important; /* slate-100 */
+  color: var(--text-main) !important;
+  border-color: #cbd5e1 !important;
+}
+
+[data-theme="light"] .form-group input:focus,
+[data-theme="light"] .form-group select:focus,
+[data-theme="light"] .form-group textarea:focus {
+  background-color: #ffffff !important;
+  border-color: var(--primary) !important;
+}
+
+[data-theme="light"] .form-group select option {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .preset-combo-btn {
+  color: var(--text-muted) !important;
+  border-color: var(--border-color) !important;
+}
+
+[data-theme="light"] .preset-combo-btn:hover {
+  background-color: var(--bg-card-hover) !important;
+  color: var(--text-main) !important;
+}
+
+[data-theme="light"] .search-box input {
+  background-color: var(--bg-card) !important;
+  color: var(--text-main) !important;
+}
+
+[data-theme="light"] .code-box-wrapper pre code {
+  color: #0369a1 !important; /* sky-700 */
+}
+
+[data-theme="light"] .action-btn.outline:hover {
+  background-color: rgba(0, 0, 0, 0.05) !important;
+  color: var(--text-main) !important;
+}
+
+
+/* -------------------------------------------------------------
    RESET & BASICS
 ------------------------------------------------------------- */
 * {
