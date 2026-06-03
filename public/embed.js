@@ -52,7 +52,7 @@
       width: 60px;
       height: 60px;
       border-radius: 50%;
-      background: linear-gradient(135deg, ${primaryColor}, #8b5cf6);
+      background: ${primaryColor};
       box-shadow: 0 6px 20px rgba(${hexToRgbChannels(primaryColor)}, 0.4), 0 0 0 1px rgba(255,255,255,0.1);
       display: flex;
       align-items: center;
@@ -65,6 +65,7 @@
     .ah-chatbot-launcher:hover {
       transform: scale(1.05) translateY(-2px);
       box-shadow: 0 8px 26px rgba(${hexToRgbChannels(primaryColor)}, 0.5), 0 0 0 1px rgba(255,255,255,0.15);
+      filter: brightness(1.08);
     }
     
     .ah-chatbot-launcher:active {

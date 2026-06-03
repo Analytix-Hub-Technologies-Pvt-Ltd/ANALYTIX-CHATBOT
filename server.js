@@ -393,6 +393,7 @@ app.get('/api/settings', (req, res) => {
       safeSettings.msGraphClientSecret = "●●●●●●●●●●●●";
     }
 
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
     res.json(safeSettings);
   } catch (error) {
     res.status(500).json({ error: "Failed to load settings" });

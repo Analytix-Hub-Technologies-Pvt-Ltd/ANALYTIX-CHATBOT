@@ -64,9 +64,27 @@
 [data-theme="light"] .header-title h1,
 [data-theme="light"] .panel-header h3,
 [data-theme="light"] .standby-card h3,
-[data-theme="light"] .dashboard-panel-card h3 {
+[data-theme="light"] .dashboard-panel-card h3,
+[data-theme="light"] .kpi-data h3,
+[data-theme="light"] .summary-item .val,
+[data-theme="light"] .preview-header h3,
+[data-theme="light"] .btn.secondary {
   color: var(--text-main) !important;
 }
+
+[data-theme="light"] .summary-item .val.highlight {
+  color: var(--primary) !important;
+  background-color: var(--primary-glow) !important;
+}
+
+[data-theme="light"] .copy-btn:hover {
+  color: var(--text-main) !important;
+}
+
+[data-theme="light"] .kpi-icon-wrapper.blue { color: var(--primary) !important; }
+[data-theme="light"] .kpi-icon-wrapper.purple { color: var(--accent-purple) !important; }
+[data-theme="light"] .kpi-icon-wrapper.green { color: var(--accent-green) !important; }
+[data-theme="light"] .kpi-icon-wrapper.yellow { color: var(--accent-orange) !important; }
 
 [data-theme="light"] .form-group input[type="text"],
 [data-theme="light"] .form-group input[type="password"],

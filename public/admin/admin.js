@@ -116,6 +116,15 @@ export function ChatbotWidget() {
   universalDisplays.forEach(el => {
     el.innerText = `<script src="${origin}/embed.js" data-bot-id="${botId}"></script>`;
   });
+
+  // Bind header 'Test Live Widget' button click handler dynamically with active botId
+  const testWidgetBtn = document.getElementById("test-live-widget-btn");
+  if (testWidgetBtn) {
+    testWidgetBtn.addEventListener("click", () => {
+      const activeBotId = localStorage.getItem('ah_chatbot_bot_id') || 'bot-default';
+      window.open(`/widget/widget.html?botId=${activeBotId}`, '_blank');
+    });
+  }
 });
 
 // -------------------------------------------------------------
@@ -166,7 +175,7 @@ function switchTab(tabName) {
     const iframe = document.getElementById("sandbox-iframe");
     if (iframe) {
       const botId = localStorage.getItem('ah_chatbot_bot_id') || 'bot-default';
-      iframe.src = `/widget/widget.html?botId=${botId}`;
+      iframe.src = `/widget/widget.html?botId=${botId}&v=${Date.now()}`;
     }
   }
 }
@@ -423,6 +432,13 @@ async function saveSettings(e) {
     
     // Refresh settings data locally
     loadSettings();
+
+    // Force reload Sandbox Preview Iframe dynamically to show the updated settings immediately
+    const iframe = document.getElementById("sandbox-iframe");
+    if (iframe) {
+      const botId = localStorage.getItem('ah_chatbot_bot_id') || 'bot-default';
+      iframe.src = `/widget/widget.html?botId=${botId}&v=${Date.now()}`;
+    }
     
     // Hide notification after 4 seconds
     setTimeout(() => {

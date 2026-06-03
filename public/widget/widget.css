@@ -83,7 +83,7 @@ body {
 /* Chat Header */
 .chat-header {
   height: 74px;
-  background: linear-gradient(135deg, rgba(79, 70, 229, 0.9), rgba(139, 92, 246, 0.9));
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
   backdrop-filter: blur(20px);
   padding: 0 24px;
   display: flex;
@@ -268,17 +268,17 @@ body {
 }
 
 .msg-row.user .msg-bubble {
-  background: linear-gradient(135deg, var(--primary), var(--accent-purple));
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
   color: white;
   border-bottom-right-radius: 4px;
-  box-shadow: 0 8px 24px rgba(79, 70, 229, 0.25);
+  box-shadow: 0 8px 24px var(--primary-glow);
   font-weight: 500;
 }
 
 .welcome-bubble {
-  border: 1px solid rgba(99, 102, 241, 0.2) !important;
-  background-color: rgba(99, 102, 241, 0.03) !important;
-  box-shadow: 0 8px 32px rgba(99, 102, 241, 0.05) !important;
+  border: 1px solid var(--primary-glow) !important;
+  background-color: var(--primary-glow) !important;
+  box-shadow: 0 8px 32px var(--primary-glow) !important;
 }
 
 .msg-time {
@@ -341,7 +341,7 @@ body {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
   color: white;
   border: none;
   padding: 10px 16px;
@@ -351,13 +351,13 @@ body {
   font-weight: 600;
   cursor: pointer;
   transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.25);
+  box-shadow: 0 4px 15px var(--primary-glow);
   position: relative;
 }
 
 .book-cta-btn:hover {
   transform: translateY(-1.5px);
-  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+  box-shadow: 0 6px 20px var(--primary-glow);
   filter: brightness(1.08);
 }
 
@@ -403,7 +403,7 @@ body {
 
 .suggest-chip:hover {
   background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(99, 102, 241, 0.6);
+  border-color: var(--primary-hover);
   color: white;
   transform: translateY(-1px);
 }
@@ -618,7 +618,7 @@ body {
 }
 
 .scheduler-next-btn, .scheduler-done-btn {
-  background: linear-gradient(135deg, var(--primary), var(--accent-purple));
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
   border: none;
   padding: 12px;
   border-radius: var(--radius-md);
@@ -722,7 +722,7 @@ body {
 
 .btn-confirm-booking {
   flex-grow: 1;
-  background: linear-gradient(135deg, var(--primary), var(--accent-purple));
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
   border: none;
   padding: 10px;
   border-radius: var(--radius-md);
@@ -836,16 +836,16 @@ body {
 }
 
 .chat-input-form input:focus {
-  border-color: #6366f1;
+  border-color: var(--primary-hover);
   background-color: rgba(255, 255, 255, 0.04);
-  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.12);
+  box-shadow: 0 0 0 4px var(--primary-glow);
 }
 
 .chat-send-btn {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
   color: white;
   border: none;
   cursor: pointer;
@@ -854,12 +854,12 @@ body {
   justify-content: center;
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   flex-shrink: 0;
-  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+  box-shadow: 0 4px 12px var(--primary-glow);
 }
 
 .chat-send-btn:hover {
   transform: scale(1.05) translateY(-1px);
-  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.45);
+  box-shadow: 0 6px 16px var(--primary-glow);
 }
 
 .chat-send-btn i {
@@ -953,9 +953,9 @@ body {
 
 .custom-list-item:hover {
   background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(99, 102, 241, 0.25);
+  border-color: var(--primary-hover);
   transform: translateX(2px);
-  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.08);
+  box-shadow: 0 4px 12px var(--primary-glow);
 }
 
 /* Premium Glassmorphic Location & Contact Card */
@@ -981,7 +981,7 @@ body {
   left: -50%;
   width: 200%;
   height: 200%;
-  background: radial-gradient(circle, rgba(99, 102, 241, 0.08) 0%, transparent 60%);
+  background: radial-gradient(circle, var(--primary-glow) 0%, transparent 60%);
   pointer-events: none;
   z-index: -1;
 }
@@ -1042,16 +1042,16 @@ body {
 }
 
 .card-actions-premium .direction-btn {
-  background: linear-gradient(135deg, var(--primary), var(--accent-purple));
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
   color: white !important;
   border: none;
-  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
+  box-shadow: 0 4px 12px var(--primary-glow);
 }
 
 .card-actions-premium .direction-btn:hover {
   filter: brightness(1.1);
   transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.3);
+  box-shadow: 0 6px 16px var(--primary-glow);
 }
 
 .card-actions-premium .call-btn, .card-actions-premium .email-btn {
