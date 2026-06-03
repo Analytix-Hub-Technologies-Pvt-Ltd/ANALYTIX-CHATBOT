@@ -154,7 +154,8 @@ app.get('/api/auth/me', requireAuth, (req, res) => {
       botId: req.user.botId,
       onboarded: user ? !!user.onboarded : false,
       fullName: user ? user.fullName : '',
-      organizationName: user ? user.organizationName : ''
+      organizationName: user ? user.organizationName : '',
+      websiteUrl: user ? user.websiteUrl : ''
     });
   } catch (error) {
     res.status(500).json({ error: "Failed to load session details." });
@@ -180,27 +181,41 @@ app.post('/api/auth/onboard', requireAuth, (req, res) => {
       onboarded: true
     });
 
-    // 2. Retrieve default/existing system prompt
+    // 2. Retrieve default/existing system prompt and clean/extract domain
     const currentSettings = db.getSettings(req.user.botId);
-    let systemPrompt = currentSettings.systemPrompt || db.DEFAULT_SYSTEM_PROMPT;
+    let systemPrompt = db.DEFAULT_SYSTEM_PROMPT;
+ 
+    let cleanDomain = '';
+    if (websiteUrl) {
+      cleanDomain = websiteUrl.replace(/^(https?:\/\/)?(www\.)?/i, '').split('/')[0];
+    }
+    const derivedDomain = cleanDomain || (req.user.username.includes('@') ? req.user.username.split('@')[1] : `${organizationName.toLowerCase().replace(/[^a-z0-9]/g, '')}.com`);
+    const derivedWebsite = websiteUrl || `https://${derivedDomain}`;
 
     // 3. Dynamically replace "AnalytixHub" baseline copy with tenant details
-    systemPrompt = systemPrompt.replace(/AnalytixHub/g, organizationName);
-    if (websiteUrl) {
-      systemPrompt = systemPrompt.replace(/analytixhub\.org/g, websiteUrl);
-    }
+    systemPrompt = systemPrompt.replace(/contactus@analytixhub\.org/gi, req.user.username);
+    systemPrompt = systemPrompt.replace(/analytixhub\.org/gi, derivedDomain);
+    systemPrompt = systemPrompt.replace(/AnalytixHub/gi, organizationName);
     systemPrompt = systemPrompt.replace(/AH Bot/g, botName);
-    systemPrompt = systemPrompt.replace(/contactus@analytixhub\.org/g, req.user.username);
     systemPrompt = systemPrompt.replace(/Chennai, India/g, 'our virtual headquarters');
+    systemPrompt = systemPrompt.replace("1st floor, Primus Building, Door No. SP – 7A, Guindy Industrial Estate, SIDCO Industrial Estate, Guindy, Chennai, Tamil Nadu - 600032, India.", "our virtual headquarters");
+    systemPrompt = systemPrompt.replace("- **Google Maps Location**: [View Chennai Office on Google Maps](https://www.google.com/maps/search/?api=1&query=1st+floor,+Primus+Building,+SP-7A,+Guindy+Industrial+Estate,+Chennai,+Tamil+Nadu+600032)", "");
+    systemPrompt = systemPrompt.replace("- **CRITICAL MAP LINK RULE**: Only provide the Google Maps location link ([View Chennai Office on Google Maps](https://www.google.com/maps/search/?api=1&query=1st+floor,+Primus+Building,+SP-7A,+Guindy+Industrial+Estate,+Chennai,+Tamil+Nadu+600032)) when the user explicitly asks for our address, physical location, office premises, directions, or office location. Do NOT include the map link or URL in general consulting chats, greeting messages, or other unrelated questions.", "");
     systemPrompt = systemPrompt.replace(/\+91 7397577392/g, phone || 'our contact line');
 
-    // 4. Save customizable branding and newly tailrowed system prompt
+    // 4. Save customizable branding and newly tailored system prompt
     const botSettingsUpdate = {
       botName,
       primaryColor,
       backgroundColor: backgroundColor || '#090d16',
       welcomeMessage: welcomeMessage || `Hi there! I am your AI assistant representing ${organizationName}. How can I help you today?`,
       adminEmail: req.user.username,
+      smtpFrom: `${botName} <no-reply@${derivedDomain}>`,
+      botSubTitle: `${organizationName} Consultant`,
+      companyAddress: "our virtual headquarters",
+      companyPhone: phone || "",
+      companyMapLink: "",
+      companyWebsite: derivedWebsite,
       systemPrompt
     };
 
@@ -539,7 +554,12 @@ app.post('/api/scraper/crawl', requireAuth, async (req, res) => {
       botName: brainConfig.botName,
       welcomeMessage: brainConfig.welcomeMessage,
       primaryColor: brainConfig.primaryColor,
-      systemPrompt: brainConfig.systemPrompt
+      systemPrompt: brainConfig.systemPrompt,
+      companyAddress: (brainConfig.extractedInfo?.location && brainConfig.extractedInfo.location !== "Not specified") ? brainConfig.extractedInfo.location : "",
+      companyMapLink: (brainConfig.extractedInfo?.mapLink && brainConfig.extractedInfo.mapLink !== "Not specified") ? brainConfig.extractedInfo.mapLink : "",
+      companyPhone: (brainConfig.extractedInfo?.phone && brainConfig.extractedInfo.phone !== "Not specified") ? brainConfig.extractedInfo.phone : "",
+      adminEmail: (brainConfig.extractedInfo?.email && brainConfig.extractedInfo.email !== "Not specified") ? brainConfig.extractedInfo.email : (db.getSettings(botId).adminEmail || ""),
+      botSubTitle: `${brainConfig.botName} Assistant`
     });
 
     console.log("Successfully saved and deployed custom website chatbot brain to database.");

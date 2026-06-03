@@ -76,8 +76,24 @@ async function loadWidgetSettings() {
     primaryColor = data.primaryColor || "#2563eb";
     const backgroundColor = data.backgroundColor || "#090d16";
     
+    // Save settings globally for location card lookup
+    window.activeWidgetSettings = data;
+    
     // Update Header Name
     document.getElementById("bot-display-name").innerText = botName;
+    
+    // Update Header Subtitle
+    const subtitleEl = document.getElementById("bot-subtitle");
+    if (subtitleEl) {
+      subtitleEl.innerText = data.botSubTitle || "AI Assistant";
+    }
+
+    // Update Footer Branding
+    const brandingEl = document.getElementById("powered-by-branding");
+    if (brandingEl) {
+      const cleanBotName = botName.replace(/\sAssistant|\sBot/gi, "");
+      brandingEl.innerText = `Powered by ${cleanBotName} AI`;
+    }
     
     // Update Welcome message content
     const welcomeBubble = document.getElementById("welcome-msg-bubble");
@@ -269,32 +285,8 @@ async function handleChatSubmit(e) {
                               lowerText.includes("where are you located") ||
                               lowerText.includes("where is your office");
                               
-    if (isLocationTrigger) {
-      const card = document.createElement("div");
-      card.className = "contact-location-card-premium";
-      card.innerHTML = `
-        <div class="card-glow-bg"></div>
-        <div class="card-header-premium">
-          <i data-lucide="map-pin" class="card-pin-icon"></i>
-          <span>Official Headquarters</span>
-        </div>
-        <div class="card-body-premium">
-          <h4 class="company-name-premium">AnalytixHub Office Premises</h4>
-          <p class="address-text-premium">1st floor, Primus Building, Door No. SP – 7A, Guindy Industrial Estate, SIDCO Industrial Estate, Guindy, Chennai, Tamil Nadu - 600032, India.</p>
-          
-          <div class="card-actions-premium">
-            <a href="https://www.google.com/maps/search/?api=1&query=1st+floor,+Primus+Building,+SP-7A,+Guindy+Industrial+Estate,+Chennai,+Tamil+Nadu+600032" target="_blank" class="card-btn direction-btn">
-              <i data-lucide="navigation"></i> Directions
-            </a>
-            <a href="tel:+917397577392" class="card-btn call-btn">
-              <i data-lucide="phone"></i> Call Office
-            </a>
-            <a href="mailto:contactus@analytixhub.org" class="card-btn email-btn">
-              <i data-lucide="mail"></i> Email Us
-            </a>
-          </div>
-        </div>
-      `;
+    if (shouldShowLocationCard(finalCleanText, window.activeWidgetSettings)) {
+      const card = createLocationCard(window.activeWidgetSettings);
       botRow.appendChild(card);
       if (window.lucide) {
         window.lucide.createIcons();
@@ -339,32 +331,8 @@ function appendMessage(sender, text) {
                             lowerText.includes("where are you located") ||
                             lowerText.includes("where is your office");
 
-  if (sender === 'bot' && isLocationTrigger) {
-    const card = document.createElement("div");
-    card.className = "contact-location-card-premium";
-    card.innerHTML = `
-      <div class="card-glow-bg"></div>
-      <div class="card-header-premium">
-        <i data-lucide="map-pin" class="card-pin-icon"></i>
-        <span>Official Headquarters</span>
-      </div>
-      <div class="card-body-premium">
-        <h4 class="company-name-premium">AnalytixHub Office Premises</h4>
-        <p class="address-text-premium">1st floor, Primus Building, Door No. SP – 7A, Guindy Industrial Estate, SIDCO Industrial Estate, Guindy, Chennai, Tamil Nadu - 600032, India.</p>
-        
-        <div class="card-actions-premium">
-          <a href="https://www.google.com/maps/search/?api=1&query=1st+floor,+Primus+Building,+SP-7A,+Guindy+Industrial+Estate,+Chennai,+Tamil+Nadu+600032" target="_blank" class="card-btn direction-btn">
-            <i data-lucide="navigation"></i> Directions
-          </a>
-          <a href="tel:+917397577392" class="card-btn call-btn">
-            <i data-lucide="phone"></i> Call Office
-          </a>
-          <a href="mailto:contactus@analytixhub.org" class="card-btn email-btn">
-            <i data-lucide="mail"></i> Email Us
-          </a>
-        </div>
-      </div>
-    `;
+  if (sender === 'bot' && shouldShowLocationCard(text, window.activeWidgetSettings)) {
+    const card = createLocationCard(window.activeWidgetSettings);
     row.appendChild(card);
   }
   
@@ -747,4 +715,71 @@ function isLightColor(hex) {
   const b = parseInt(cleanHex.substring(4, 6), 16);
   const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
   return yiq >= 180;
+}
+
+function shouldShowLocationCard(text, settings = {}) {
+  const lowerText = (text || "").toLowerCase();
+  const address = settings.companyAddress || "";
+  const addressKeyword = (address && address !== "Not specified" && address !== "our virtual headquarters") ? address.toLowerCase().substring(0, 15) : null;
+
+  return (addressKeyword && lowerText.includes(addressKeyword)) ||
+         lowerText.includes("primus building") || 
+         lowerText.includes("guindy") || 
+         lowerText.includes("chennai") || 
+         lowerText.includes("office location") ||
+         lowerText.includes("office address") ||
+         lowerText.includes("headquarters") ||
+         lowerText.includes("where are you located") ||
+         lowerText.includes("where is your office");
+}
+
+function createLocationCard(settings = {}) {
+  const card = document.createElement("div");
+  card.className = "contact-location-card-premium";
+  
+  const compName = settings.botName ? settings.botName.replace(/\sAssistant|\sBot/gi, "") : "Company";
+  const address = settings.companyAddress || "";
+  const phoneVal = settings.companyPhone || "";
+  const mapLink = settings.companyMapLink || "";
+  const emailVal = settings.adminEmail || "";
+  
+  // Determine if it is a physical location or online contact card
+  const hasPhysicalAddress = address && address !== "Not specified" && address !== "our virtual headquarters" && address.trim() !== "";
+  
+  let actionsHtml = "";
+  if (hasPhysicalAddress && mapLink && mapLink !== "Not specified" && mapLink.trim() !== "") {
+    actionsHtml += `
+      <a href="${mapLink}" target="_blank" class="card-btn direction-btn">
+        <i data-lucide="navigation"></i> Directions
+      </a>`;
+  }
+  if (phoneVal && phoneVal !== "Not specified" && phoneVal.trim() !== "") {
+    actionsHtml += `
+      <a href="tel:${phoneVal}" class="card-btn call-btn">
+        <i data-lucide="phone"></i> Call Office
+      </a>`;
+  }
+  if (emailVal && emailVal !== "Not specified" && emailVal.trim() !== "") {
+    actionsHtml += `
+      <a href="mailto:${emailVal}" class="card-btn email-btn">
+        <i data-lucide="mail"></i> Email Us
+      </a>`;
+  }
+
+  card.innerHTML = `
+    <div class="card-glow-bg"></div>
+    <div class="card-header-premium">
+      <i data-lucide="${hasPhysicalAddress ? 'map-pin' : 'mail'}" class="card-pin-icon"></i>
+      <span>${hasPhysicalAddress ? 'Official Headquarters' : 'Contact Information'}</span>
+    </div>
+    <div class="card-body-premium">
+      <h4 class="company-name-premium">${compName} ${hasPhysicalAddress ? 'Office Premises' : 'Support Team'}</h4>
+      <p class="address-text-premium">${hasPhysicalAddress ? address : `Get in touch with us directly at ${emailVal || 'our email'} or via phone ${phoneVal ? `at ${phoneVal}` : ''}.`}</p>
+      
+      <div class="card-actions-premium">
+        ${actionsHtml}
+      </div>
+    </div>
+  `;
+  return card;
 }

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AnalytixHub AI Assistant</title>
+  <title>AI Assistant Widget</title>
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -24,8 +24,8 @@
           <span class="bot-status-dot"></span>
         </div>
         <div class="bot-meta">
-          <h3 id="bot-display-name">AH Bot</h3>
-          <span>AnalytixHub Consultant</span>
+          <h3 id="bot-display-name">AI Assistant</h3>
+          <span id="bot-subtitle">Virtual Assistant</span>
         </div>
       </div>
       <button class="header-action-btn" id="close-btn" title="Minimize Chat">
@@ -42,7 +42,7 @@
           <!-- Welcome Message -->
           <div class="msg-row bot">
             <div class="msg-bubble welcome-bubble" id="welcome-msg-bubble">
-              Hello! I am AH Bot, your AnalytixHub AI assistant. How can I help you today?
+              Hello! Welcome to our conversational assistant. How can I help you today?
             </div>
             <span class="msg-time" id="welcome-msg-time">12:00 PM</span>
           </div>
@@ -66,7 +66,7 @@
             <button class="suggest-chip" onclick="sendQuickReply('What services do you offer?')">
               <i data-lucide="layers"></i> Our Services
             </button>
-            <button class="suggest-chip" onclick="sendQuickReply('Where is AnalytixHub located?')">
+            <button class="suggest-chip" onclick="sendQuickReply('Where is your office located?')">
               <i data-lucide="map-pin"></i> Office Location
             </button>
           </div>
@@ -205,7 +205,7 @@
         </button>
       </form>
       <div class="footer-branding">
-        <span>Powered by AnalytixHub AI</span>
+        <span id="powered-by-branding">Powered by AI Assistant</span>
       </div>
     </footer>
   </div>

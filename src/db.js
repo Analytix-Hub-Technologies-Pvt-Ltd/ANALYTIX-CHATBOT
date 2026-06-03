@@ -92,7 +92,12 @@ const DEFAULT_SETTINGS = {
   botName: "AH Bot",
   primaryColor: "#2563eb",
   backgroundColor: "#090d16",
-  systemPrompt: DEFAULT_SYSTEM_PROMPT
+  systemPrompt: DEFAULT_SYSTEM_PROMPT,
+  botSubTitle: "AnalytixHub Consultant",
+  companyAddress: "1st floor, Primus Building, Door No. SP – 7A, Guindy Industrial Estate, SIDCO Industrial Estate, Guindy, Chennai, Tamil Nadu - 600032, India.",
+  companyPhone: "+91 7397577392",
+  companyMapLink: "https://www.google.com/maps/search/?api=1&query=1st+floor,+Primus+Building,+SP-7A,+Guindy+Industrial+Estate,+Chennai,+Tamil+Nadu+600032",
+  companyWebsite: "https://analytixhub.org"
 };
 
 const DEFAULT_DB = {
@@ -277,11 +282,37 @@ module.exports = {
       createdAt: new Date().toISOString()
     };
 
+    // Derive generic organization details and domain from username/email
+    const userDomain = username.includes('@') ? username.split('@')[1] : 'yourdomain.com';
+    const rawOrgName = username.includes('@') ? username.split('@')[0].replace(/[^a-zA-Z0-9]/g, ' ') : username;
+    const formattedOrgName = rawOrgName.charAt(0).toUpperCase() + rawOrgName.slice(1);
+    const newBotName = `${formattedOrgName} Assistant`;
+
+    // Initialize custom system prompt derived from defaults
+    let systemPrompt = DEFAULT_SYSTEM_PROMPT;
+    systemPrompt = systemPrompt.replace(/contactus@analytixhub\.org/gi, username);
+    systemPrompt = systemPrompt.replace(/analytixhub\.org/gi, userDomain);
+    systemPrompt = systemPrompt.replace(/AnalytixHub/gi, formattedOrgName);
+    systemPrompt = systemPrompt.replace(/AH Bot/g, newBotName);
+    systemPrompt = systemPrompt.replace(/Chennai, India/g, 'our virtual headquarters');
+    systemPrompt = systemPrompt.replace("1st floor, Primus Building, Door No. SP – 7A, Guindy Industrial Estate, SIDCO Industrial Estate, Guindy, Chennai, Tamil Nadu - 600032, India.", "our virtual headquarters");
+    systemPrompt = systemPrompt.replace("- **Google Maps Location**: [View Chennai Office on Google Maps](https://www.google.com/maps/search/?api=1&query=1st+floor,+Primus+Building,+SP-7A,+Guindy+Industrial+Estate,+Chennai,+Tamil+Nadu+600032)", "");
+    systemPrompt = systemPrompt.replace("- **CRITICAL MAP LINK RULE**: Only provide the Google Maps location link ([View Chennai Office on Google Maps](https://www.google.com/maps/search/?api=1&query=1st+floor,+Primus+Building,+SP-7A,+Guindy+Industrial+Estate,+Chennai,+Tamil+Nadu+600032)) when the user explicitly asks for our address, physical location, office premises, directions, or office location. Do NOT include the map link or URL in general consulting chats, greeting messages, or other unrelated questions.", "");
+    systemPrompt = systemPrompt.replace(/\+91\s*7397577392/g, 'our contact line');
+
     // Instantiate their default isolated chatbot settings and bookings structure
     const defaultBotSettings = {
       ...DEFAULT_SETTINGS,
-      botName: `${username.split('@')[0]} Assistant`,
-      welcomeMessage: `Hi there! I am your AI assistant. How can I help you today?`
+      botName: newBotName,
+      botSubTitle: `${formattedOrgName} Consultant`,
+      welcomeMessage: `Hi there! I am your AI assistant representing ${formattedOrgName}. How can I help you today?`,
+      adminEmail: username,
+      smtpFrom: `${newBotName} <no-reply@${userDomain}>`,
+      companyAddress: "our virtual headquarters",
+      companyPhone: "",
+      companyMapLink: "",
+      companyWebsite: `https://${userDomain}`,
+      systemPrompt: systemPrompt
     };
 
     db.users.push(newUser);

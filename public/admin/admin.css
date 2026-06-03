@@ -58,7 +58,6 @@
 /* Light Theme Element Customizations */
 [data-theme="light"] .client-info h5,
 [data-theme="light"] .card-header-accent h4,
-[data-theme="light"] .sidebar-nav button.nav-btn.active,
 [data-theme="light"] .sidebar-brand .brand-text h2,
 [data-theme="light"] .scraped-info-item div,
 [data-theme="light"] .header-title h1,
@@ -70,6 +69,21 @@
 [data-theme="light"] .preview-header h3,
 [data-theme="light"] .btn.secondary {
   color: var(--text-main) !important;
+}
+
+[data-theme="light"] .nav-btn {
+  color: var(--text-muted) !important;
+}
+
+[data-theme="light"] .nav-btn:hover {
+  background-color: var(--bg-card-hover) !important;
+  color: var(--text-main) !important;
+}
+
+[data-theme="light"] .nav-btn.active {
+  background-color: var(--primary-glow) !important;
+  color: var(--primary) !important;
+  box-shadow: inset 3px 0 0 var(--primary) !important;
 }
 
 [data-theme="light"] .summary-item .val.highlight {

@@ -1,6 +1,6 @@
-# 🤖 AnalytixHub AI Consulting Assistant Suite (Production-Grade)
+# 🤖 Enterprise AI Consulting Assistant Suite (Production-Grade)
 
-Welcome to the official, production-grade repository of the **AnalytixHub AI Consulting Assistant Suite**. This system is an automated, lead-converting, glassmorphic conversational widget built specifically for data consultancy firms. It engages visitors with non-intrusive AI speech bubbles, showcases interactive service cards, and schedules consultation calls instantly, sending lead notifications to the sales team.
+Welcome to the official, production-grade repository of the **Enterprise AI Consulting Assistant Suite**. This system is an automated, lead-converting, glassmorphic conversational widget built specifically for data consultancy firms. It engages visitors with non-intrusive AI speech bubbles, showcases interactive service cards, and schedules consultation calls instantly, sending lead notifications to the sales team.
 
 ---
 
@@ -33,7 +33,7 @@ Welcome to the official, production-grade repository of the **AnalytixHub AI Con
 ## 📂 System Architecture & File Directory
 
 ```bash
-ah_chatbot/
+enterprise_chatbot/
 ├── .env                  # Environment configurations (API keys & Ports)
 ├── server.js             # Express core router, static file delivery & SMTP accounts generator
 ├── package.json          # Node script commands & dependencies
@@ -84,7 +84,7 @@ npm start
 ```
 The server will boot and display your active endpoints:
 ```text
-🚀 ANALYTIXHUB CHATBOT SERVICE IS NOW ACTIVE
+🚀 ENTERPRISE CHATBOT SERVICE IS NOW ACTIVE
 🖥️  Admin Portal: http://localhost:3000/admin
 💬 Widget Tester: http://localhost:3000/widget/widget.html
 ```
@@ -93,10 +93,10 @@ The server will boot and display your active endpoints:
 
 ## 🔌 Integrating the Chatbot on Live Websites
 
-To embed the AnalytixHub Assistant on your official website (WordPress, Webflow, custom HTML, etc.), copy and paste this script tag right before the closing `</body>` tag on your website footer:
+To embed the AI Assistant on your official website (WordPress, Webflow, custom HTML, etc.), copy and paste this script tag right before the closing `</body>` tag on your website footer:
 
 ```html
-<!-- AnalytixHub AI Chatbot Embed -->
+<!-- AI Chatbot Embed -->
 <script src="http://localhost:3000/embed.js"></script>
 ```
 
@@ -113,9 +113,9 @@ Go to **`http://localhost:3000/admin`** to open your dashboard.
 For enterprise production mail delivery (e.g., Google Workspace, Outlook, SendGrid), update these fields in your Settings tab:
 * **SMTP Host**: `smtp.gmail.com` (or your provider's SMTP host)
 * **SMTP Port**: `465` (SSL) or `587` (TLS)
-* **User**: `your_corporate_email@analytixhub.org`
+* **User**: `your_corporate_email@yourdomain.com`
 * **Password**: Your password or custom Google App Password.
-* **From Name**: `AnalytixHub Consulting`
+* **From Name**: `Your Organization Consulting`
 
 ### 3. Fine-Tuning the AI Knowledge Base
 To update the services, pricing, coordinates, or team specialties the AI assistant shares with clients:
@@ -127,6 +127,6 @@ To update the services, pricing, coordinates, or team specialties the AI assista
 ---
 
 ## 🛡️ Security, Privacy & Reliability
-* **NDA Compliant**: The chatbot is configured to notify clients that AnalytixHub signs standard Mutual NDAs prior to database sharing.
+* **NDA Compliant**: The chatbot is configured to notify clients that your company signs standard Mutual NDAs prior to database sharing.
 * **No Database Leakage**: Dynamic calendar timezone validation prevents overlapping bookings.
 * **Encrypted API Layer**: All requests are routed through the secure local Express server backend, protecting your private Groq API keys from client exposure.

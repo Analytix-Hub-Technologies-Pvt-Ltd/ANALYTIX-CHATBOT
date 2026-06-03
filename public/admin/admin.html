@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AnalytixHub Chatbot - Admin Control Center</title>
+  <title>Enterprise Chatbot - Admin Control Center</title>
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -22,7 +22,7 @@
           <i data-lucide="cpu" class="logo-icon animate-pulse"></i>
         </div>
         <div class="brand-text">
-          <h2 id="sidebar-org-name">AnalytixHub</h2>
+          <h2 id="sidebar-org-name">Enterprise</h2>
           <span>AI Chatbot Control</span>
         </div>
       </div>
@@ -179,7 +179,7 @@
               </div>
               <div class="summary-item">
                 <span class="lbl">Notifications:</span>
-                <span class="val text-ellipsis" id="summary-notify-email">contactus@analytixhub.org</span>
+                <span class="val text-ellipsis" id="summary-notify-email">admin@domain.com</span>
               </div>
             </div>
           </div>
@@ -321,7 +321,7 @@
 
                 <div class="form-group" style="margin-bottom: 0;">
                   <label for="adminEmail">Administrator Alert Email</label>
-                  <input type="email" id="adminEmail" placeholder="contactus@analytixhub.org">
+                  <input type="email" id="adminEmail" placeholder="admin@domain.com">
                   <span class="input-hint">Receives booking alerts with customer details</span>
                 </div>
 
@@ -376,7 +376,7 @@
                 <div class="form-row">
                   <div class="form-group col-8">
                     <label for="smtpFrom">"From" Header Email</label>
-                    <input type="text" id="smtpFrom" placeholder="AnalytixHub Chatbot &lt;no-reply@analytixhub.org&gt;">
+                    <input type="text" id="smtpFrom" placeholder="Chatbot Assistant &lt;no-reply@yourdomain.com&gt;">
                   </div>
                   <div class="form-group col-4 flex-center flex-bottom">
                     <label class="checkbox-container">
@@ -529,8 +529,8 @@
 
                 <div class="form-group">
                   <label for="systemPrompt">System Guidelines & Web context</label>
-                  <textarea id="systemPrompt" rows="18" placeholder="Loaded with AnalytixHub details by default..."></textarea>
-                  <span class="input-hint">Modify this instructions text to update what the chatbot knows about AnalytixHub (addresses, prices, services, etc.)</span>
+                  <textarea id="systemPrompt" rows="18" placeholder="Loaded with your configurations by default..."></textarea>
+                  <span class="input-hint">Modify this instructions text to update what the chatbot knows about your organization (addresses, prices, services, etc.)</span>
                 </div>
               </div>
             </div>
@@ -562,7 +562,7 @@
               <div class="form-group" style="margin-top: 15px;">
                 <label for="crawl-url">Website URL</label>
                 <div class="input-glow-wrapper">
-                  <input type="text" id="crawl-url" placeholder="https://example.com" value="https://analytixhub.org">
+                  <input type="text" id="crawl-url" placeholder="https://example.com" value="">
                 </div>
                 <span class="input-hint">Make sure the website is public and starts with http:// or https://</span>
               </div>
@@ -701,7 +701,7 @@
           <div class="embed-details-panel">
             <div class="dashboard-panel-card">
               <h3><i data-lucide="help-circle"></i> WordPress Integration Guide</h3>
-              <p class="embed-desc">To embed this elegant AI chatbot on your AnalytixHub WordPress site, follow these simple steps:</p>
+              <p class="embed-desc">To embed this elegant AI chatbot on your WordPress site, follow these simple steps:</p>
               
               <ol class="embed-steps">
                 <li>Log in to your <strong>WordPress Dashboard</strong>.</li>

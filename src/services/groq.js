@@ -17,7 +17,9 @@ async function getChatResponse(messages, botId = 'bot-default') {
   const apiKey = settings.groqKey || process.env.GROQ_API_KEY;
 
   if (!apiKey) {
-    return "Thank you for contacting AnalytixHub. Our conversational assistant is currently undergoing routine maintenance. Please feel free to reach out to our team directly at **contactus@analytixhub.org** or use the interactive scheduler above to book a consultation slot with our experts.";
+    const orgName = settings.botName ? settings.botName.replace(/\sAssistant|\sBot/gi, "") : "our team";
+    const contactEmail = settings.adminEmail || "our email";
+    return `Thank you for contacting ${orgName}. Our conversational assistant is currently undergoing routine maintenance. Please feel free to reach out to our team directly at **${contactEmail}** or use the interactive scheduler above to book a consultation slot with our experts.`;
   }
 
   // Compile a unique sequence of models to try, placing user's preference first
@@ -60,7 +62,8 @@ async function getChatResponse(messages, botId = 'bot-default') {
     }
   }
 
-  return "I apologize, but I am currently experiencing technical difficulties and am unable to process your message. Please feel free to contact our team directly at **contactus@analytixhub.org** or use the calendar scheduler above to book a direct consultation with one of our analytics experts.";
+  const contactEmail = settings.adminEmail || "our email";
+  return `I apologize, but I am currently experiencing technical difficulties and am unable to process your message. Please feel free to contact our team directly at **${contactEmail}** or use the calendar scheduler above to book a direct consultation with one of our experts.`;
 }
 
 async function* getChatResponseStream(messages, botId = 'bot-default') {
@@ -68,7 +71,9 @@ async function* getChatResponseStream(messages, botId = 'bot-default') {
   const apiKey = settings.groqKey || process.env.GROQ_API_KEY;
 
   if (!apiKey) {
-    yield "Thank you for contacting AnalytixHub. Our conversational assistant is currently undergoing routine maintenance. Please feel free to reach out to our team directly at **contactus@analytixhub.org** or use the interactive scheduler above to book a consultation slot with our experts.";
+    const orgName = settings.botName ? settings.botName.replace(/\sAssistant|\sBot/gi, "") : "our team";
+    const contactEmail = settings.adminEmail || "our email";
+    yield `Thank you for contacting ${orgName}. Our conversational assistant is currently undergoing routine maintenance. Please feel free to reach out to our team directly at **${contactEmail}** or use the interactive scheduler above to book a consultation slot with our experts.`;
     return;
   }
 
@@ -112,7 +117,8 @@ async function* getChatResponseStream(messages, botId = 'bot-default') {
   }
 
   console.error("Groq Chat Stream Service Error: All configured fallback models have failed.", lastError);
-  yield "I apologize, but I am currently experiencing technical difficulties and am unable to process your message. Please feel free to contact our team directly at **contactus@analytixhub.org** or use the calendar scheduler above to book a direct consultation with one of our analytics experts.";
+  const contactEmail = settings.adminEmail || "our email";
+  yield `I apologize, but I am currently experiencing technical difficulties and am unable to process your message. Please feel free to contact our team directly at **${contactEmail}** or use the calendar scheduler above to book a direct consultation with one of our experts.`;
 }
 
 

@@ -67,7 +67,7 @@ function getISOEndTime(dateStr, timeStr) {
 /**
  * Generates raw standard RFC 5545 ICS invite string
  */
-function generateICSInvite(booking, adminEmail, teamsUrl) {
+function generateICSInvite(booking, adminEmail, teamsUrl, orgName = 'our firm', domain = 'domain.com') {
   const dateStr = booking.date.replace(/-/g, '');
   const timeStr = booking.time.replace(/:/g, '') + '00';
   const endDateTime = getICSEndTime(booking.date, booking.time);
@@ -76,18 +76,18 @@ function generateICSInvite(booking, adminEmail, teamsUrl) {
   return [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//AnalytixHub//Chatbot Scheduler//EN',
+    `PRODID:-//${orgName}//Chatbot Scheduler//EN`,
     'CALSCALE:GREGORIAN',
     'METHOD:REQUEST',
     'BEGIN:VEVENT',
-    `UID:${booking.id}@analytixhub.org`,
+    `UID:${booking.id}@${domain}`,
     `DTSTAMP:${dtStamp}`,
     `DTSTART;TZID=Asia/Kolkata:${dateStr}T${timeStr}`,
     `DTEND;TZID=Asia/Kolkata:${endDateTime}`,
-    `SUMMARY:Consultation with AnalytixHub: ${booking.purpose}`,
-    `DESCRIPTION:You have a virtual consultation scheduled with AnalytixHub.\\n\\nJoin Microsoft Teams Meeting:\\n${teamsUrl}\\n\\nClient Name: ${booking.name}\\nClient Email: ${booking.email}\\nPhone: ${booking.phone || 'N/A'}\\nTopic: ${booking.purpose}`,
+    `SUMMARY:Consultation with ${orgName}: ${booking.purpose}`,
+    `DESCRIPTION:You have a virtual consultation scheduled with ${orgName}.\\n\\nJoin Microsoft Teams Meeting:\\n${teamsUrl}\\n\\nClient Name: ${booking.name}\\nClient Email: ${booking.email}\\nPhone: ${booking.phone || 'N/A'}\\nTopic: ${booking.purpose}`,
     'LOCATION:Microsoft Teams Meeting',
-    `ORGANIZER;CN="AnalytixHub":mailto:${adminEmail}`,
+    `ORGANIZER;CN="${orgName}":mailto:${adminEmail}`,
     `ATTENDEE;ROLE=REQ-PARTICIPANT;PARTSTAT=NEEDS-ACTION;RSVP=TRUE;CN="${booking.name}":mailto:${booking.email}`,
     'END:VEVENT',
     'END:VCALENDAR'
@@ -117,16 +117,16 @@ async function getMSGraphAccessToken(tenantId, clientId, clientSecret) {
 /**
  * Natively create a calendar event with an online Teams meeting link on Microsoft Graph
  */
-async function createMSGraphTeamsEvent(accessToken, senderEmail, booking) {
+async function createMSGraphTeamsEvent(accessToken, senderEmail, booking, orgName = 'our firm') {
   const startISO = `${booking.date}T${booking.time}:00`;
   const endISO = getISOEndTime(booking.date, booking.time);
 
   const eventPayload = {
-    subject: `Consultation with AnalytixHub: ${booking.purpose}`,
+    subject: `Consultation with ${orgName}: ${booking.purpose}`,
     body: {
       contentType: 'HTML',
       content: `
-        You have a virtual consultation scheduled with AnalytixHub.<br><br>
+        You have a virtual consultation scheduled with ${orgName}.<br><br>
         <b>Client Name:</b> ${booking.name}<br>
         <b>Client Email:</b> ${booking.email}<br>
         <b>Phone:</b> ${booking.phone || 'N/A'}<br>
@@ -208,7 +208,7 @@ async function sendMSGraphEmail(accessToken, senderEmail, recipientEmail, subjec
 /**
  * HTML body for Client Booking Confirmation
  */
-function getClientHtml(booking, bookingDate, formattedTime, teamsUrl, adminEmail) {
+function getClientHtml(booking, bookingDate, formattedTime, teamsUrl, adminEmail, orgName = 'our firm', address = 'our virtual headquarters', phone = 'our contact line') {
   return `
     <!DOCTYPE html>
     <html>
@@ -237,7 +237,7 @@ function getClientHtml(booking, bookingDate, formattedTime, teamsUrl, adminEmail
         </div>
         <div class="content">
           <p class="welcome">Dear <strong>${booking.name}</strong>,</p>
-          <p class="welcome">Thank you for scheduling a consultation with **AnalytixHub**. Your virtual online appointment has been successfully booked and its details are outlined below:</p>
+          <p class="welcome">Thank you for scheduling a consultation with **${orgName}**. Your virtual online appointment has been successfully booked and its details are outlined below:</p>
           
           <div class="details-box">
             <div class="detail-row">
@@ -268,8 +268,8 @@ function getClientHtml(booking, bookingDate, formattedTime, teamsUrl, adminEmail
           </center>
         </div>
         <div class="footer">
-          <p><strong>AnalytixHub</strong><br>1st floor, Primus Building, SIDCO Industrial Estate, Guindy, Chennai - 600032</p>
-          <p>Need support? Contact us at <a href="mailto:${adminEmail}">${adminEmail}</a> or call +91 7397577392</p>
+          <p><strong>${orgName}</strong><br>${address}</p>
+          <p>Need support? Contact us at <a href="mailto:${adminEmail}">${adminEmail}</a>${phone ? ` or call ${phone}` : ''}</p>
         </div>
       </div>
     </body>
@@ -280,7 +280,7 @@ function getClientHtml(booking, bookingDate, formattedTime, teamsUrl, adminEmail
 /**
  * HTML body for Admin Lead Notification
  */
-function getAdminHtml(booking, bookingDate, formattedTime, teamsUrl) {
+function getAdminHtml(booking, bookingDate, formattedTime, teamsUrl, orgName = 'our firm') {
   return `
     <!DOCTYPE html>
     <html>
@@ -346,7 +346,7 @@ function getAdminHtml(booking, bookingDate, formattedTime, teamsUrl) {
           </div>
         </div>
         <div class="footer">
-          <p>AnalytixHub Chatbot Automation System</p>
+          <p>${orgName} Chatbot Automation System</p>
         </div>
       </div>
     </body>
@@ -376,7 +376,29 @@ async function sendBookingEmails(booking, botId = 'bot-default') {
   const ampm = parseInt(hours) >= 12 ? 'PM' : 'AM';
   const displayHours = parseInt(hours) % 12 || 12;
   const formattedTime = `${displayHours}:${minutes} ${ampm} (IST)`;
-  const adminEmail = settings.adminEmail || 'contactus@analytixhub.org';
+
+  // Find organization details by botId
+  let orgName = 'our firm';
+  let orgPhone = '';
+  let orgAddress = 'our virtual headquarters';
+  let orgDomain = 'domain.com';
+
+  const user = db.getUsers().find(u => u.botId === botId);
+  if (user) {
+    orgName = user.organizationName || 'our firm';
+    orgPhone = user.phone || '';
+    if (user.websiteUrl) {
+      orgDomain = user.websiteUrl.replace(/^(https?:\/\/)?(www\.)?/i, '').split('/')[0];
+    } else if (user.username.includes('@')) {
+      orgDomain = user.username.split('@')[1];
+    }
+  } else if (settings.botSubTitle && settings.botSubTitle.includes(' Consultant')) {
+    orgName = settings.botSubTitle.split(' Consultant')[0];
+  }
+  if (settings.companyAddress) orgAddress = settings.companyAddress;
+  if (settings.companyPhone) orgPhone = settings.companyPhone;
+
+  const adminEmail = settings.adminEmail || (user ? user.username : 'contactus@' + orgDomain);
 
   // -------------------------------------------------------------
   // METHOD A: MICROSOFT GRAPH API
@@ -395,7 +417,7 @@ async function sendBookingEmails(booking, botId = 'bot-default') {
         let teamsUrl = "";
         try {
           // 1. Natively create a Teams Meeting Calendar Event in Office 365
-          const graphEvent = await createMSGraphTeamsEvent(accessToken, senderEmail, booking);
+          const graphEvent = await createMSGraphTeamsEvent(accessToken, senderEmail, booking, orgName);
           teamsUrl = graphEvent.onlineMeeting?.joinUrl || "";
           console.log("Email Service: Successfully created Graph Calendar Event & Teams URL.");
         } catch (calendarError) {
@@ -412,10 +434,10 @@ async function sendBookingEmails(booking, botId = 'bot-default') {
         }
         
         // 2. Send emails via Graph API sendMail endpoint (which works 100%)
-        const clientHtml = getClientHtml(booking, bookingDate, formattedTime, teamsUrl, adminEmail);
-        await sendMSGraphEmail(accessToken, senderEmail, booking.email, `Confirmed: Consultation with AnalytixHub - ${bookingDate}`, clientHtml);
+        const clientHtml = getClientHtml(booking, bookingDate, formattedTime, teamsUrl, adminEmail, orgName, orgAddress, orgPhone);
+        await sendMSGraphEmail(accessToken, senderEmail, booking.email, `Confirmed: Consultation with ${orgName} - ${bookingDate}`, clientHtml);
 
-        const adminHtml = getAdminHtml(booking, bookingDate, formattedTime, teamsUrl);
+        const adminHtml = getAdminHtml(booking, bookingDate, formattedTime, teamsUrl, orgName);
         await sendMSGraphEmail(accessToken, senderEmail, adminEmail, `New Lead: Appointment Booked by ${booking.name} (${booking.time})`, adminHtml);
 
         console.log(`Email Service: Successfully sent booking invitations via Microsoft Graph API!`);
@@ -440,19 +462,19 @@ async function sendBookingEmails(booking, botId = 'bot-default') {
     return false;
   }
 
-  const fromEmail = settings.smtpFrom || 'AnalytixHub Chatbot <no-reply@analytixhub.org>';
+  const fromEmail = settings.smtpFrom || `${orgName} Chatbot <no-reply@${orgDomain}>`;
   const base64Id = Buffer.from(booking.id).toString('base64').replace(/=/g, '').replace(/\+/g, '').replace(/\//g, '');
   const teamsUrl = `https://teams.microsoft.com/l/meetup-join/19%3ameeting_${base64Id}@thread.v2/0?context=%7b%22Tid%22%3a%229188040d-6c67-4c5b-b112-36a304b66dad%22%2c%22Oid%22%3a%224589873d-9d41-4752-9b2f-37651a2d12e8%22%7d`;
   
-  const icsContent = generateICSInvite(booking, adminEmail, teamsUrl);
-  const clientHtml = getClientHtml(booking, bookingDate, formattedTime, teamsUrl, adminEmail);
-  const adminHtml = getAdminHtml(booking, bookingDate, formattedTime, teamsUrl);
+  const icsContent = generateICSInvite(booking, adminEmail, teamsUrl, orgName, orgDomain);
+  const clientHtml = getClientHtml(booking, bookingDate, formattedTime, teamsUrl, adminEmail, orgName, orgAddress, orgPhone);
+  const adminHtml = getAdminHtml(booking, bookingDate, formattedTime, teamsUrl, orgName);
 
   try {
     const mailPayloadClient = {
       from: fromEmail,
       to: booking.email,
-      subject: `Confirmed: Consultation with AnalytixHub - ${bookingDate}`,
+      subject: `Confirmed: Consultation with ${orgName} - ${bookingDate}`,
       html: clientHtml,
       icalEvent: {
         filename: 'invite.ics',
@@ -525,7 +547,7 @@ async function sendTestEmail(tempSettings, testEmailAddress) {
           <img src="https://img.icons8.com/color/28/microsoft.png" style="width:24px;height:24px;" />
           Microsoft Graph Test Successful!
         </h2>
-        <p>This is a test email confirming that your AnalytixHub Chatbot <strong>Microsoft Graph API</strong> configurations are 100% correct.</p>
+        <p>This is a test email confirming that your Chatbot <strong>Microsoft Graph API</strong> configurations are 100% correct.</p>
         <p style="font-size: 12px; color: #64748b; margin-top: 25px;">Sent on: ${new Date().toString()}</p>
       </div>
     `;
@@ -537,11 +559,11 @@ async function sendTestEmail(tempSettings, testEmailAddress) {
   const transporter = getTransporter(tempSettings);
   if (!transporter) throw new Error("Incomplete SMTP parameters.");
 
-  const fromEmail = tempSettings.smtpFrom || 'AnalytixHub Chatbot <no-reply@analytixhub.org>';
+  const fromEmail = tempSettings.smtpFrom || 'Chatbot <no-reply@domain.com>';
   const html = `
     <div style="font-family: sans-serif; padding: 30px; background-color: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; max-width: 500px; margin: 0 auto;">
       <h2 style="color: #2563eb; margin-top: 0;">SMTP Test Successful!</h2>
-      <p>This is a test email confirming that your AnalytixHub Chatbot SMTP mailer configurations are 100% correct.</p>
+      <p>This is a test email confirming that your Chatbot SMTP mailer configurations are 100% correct.</p>
       <p style="font-size: 12px; color: #64748b; margin-top: 25px;">Sent on: ${new Date().toString()}</p>
     </div>
   `;
@@ -549,7 +571,7 @@ async function sendTestEmail(tempSettings, testEmailAddress) {
   await transporter.sendMail({
     from: fromEmail,
     to: testEmailAddress,
-    subject: "Test Connection: AnalytixHub Chatbot SMTP",
+    subject: "Test Connection: Chatbot SMTP",
     html: html
   });
 

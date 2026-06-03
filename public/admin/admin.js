@@ -582,10 +582,10 @@ function togglePassVisibility(inputId) {
 
 function updateDashboardSummaryCard() {
   document.getElementById("summary-model").innerText = settingsData.groqModel || "llama-3.3-70b-versatile";
-  document.getElementById("summary-agent-name").innerText = settingsData.botName || "AH Bot";
+  document.getElementById("summary-agent-name").innerText = settingsData.botName || "AI Assistant";
   document.getElementById("summary-color-hex").innerText = settingsData.primaryColor || "#2563EB";
   document.getElementById("summary-color-dot").style.backgroundColor = settingsData.primaryColor || "#2563EB";
-  document.getElementById("summary-notify-email").innerText = settingsData.adminEmail || "contactus@analytixhub.org";
+  document.getElementById("summary-notify-email").innerText = settingsData.adminEmail || "admin@domain.com";
 }
 
 function formatTime12(time24) {
@@ -1000,6 +1000,12 @@ async function checkOnboarding() {
       if (data.organizationName) {
         document.title = `${data.organizationName} - Admin Control Center`;
       }
+
+      // Dynamically populate the scraper URL input field
+      const crawlUrlInput = document.getElementById("crawl-url");
+      if (crawlUrlInput) {
+        crawlUrlInput.value = data.websiteUrl || "";
+      }
     }
   } catch (error) {
     console.error("Onboarding check error:", error);
@@ -1070,7 +1076,7 @@ function exportBookings(format) {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.setAttribute("href", url);
-    link.setAttribute("download", `analytixhub_appointments_${new Date().toISOString().slice(0,10)}.csv`);
+    link.setAttribute("download", `chatbot_appointments_${new Date().toISOString().slice(0,10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -1104,7 +1110,7 @@ function exportBookings(format) {
         </style>
       </head>
       <body>
-        <h2>AnalytixHub Chatbot - Scheduled Consultations Log</h2>
+        <h2>Enterprise Chatbot - Scheduled Consultations Log</h2>
         <div class="meta-info">
           <strong>Generated On:</strong> ${new Date().toLocaleString()}<br>
           <strong>Total Leads Captured:</strong> ${bookingsData.length}
@@ -1158,7 +1164,7 @@ function exportBookings(format) {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.setAttribute("href", url);
-    link.setAttribute("download", `analytixhub_appointments_${new Date().toISOString().slice(0,10)}.doc`);
+    link.setAttribute("download", `chatbot_appointments_${new Date().toISOString().slice(0,10)}.doc`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

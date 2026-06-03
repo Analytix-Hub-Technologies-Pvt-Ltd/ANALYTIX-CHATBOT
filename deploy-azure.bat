@@ -1,8 +1,8 @@
 @echo off
-title AnalytixHub Chatbot - Azure 1-Click Deployer
+title Enterprise Chatbot Platform - Azure 1-Click Deployer
 cls
 echo =================================================================
-echo        ANALYTIXHUB CHATBOT - AZURE APP SERVICE DEPLOYER
+echo        ENTERPRISE CHATBOT PLATFORM - AZURE APP SERVICE DEPLOYER
 echo =================================================================
 echo.
 echo This script will automate:
@@ -13,15 +13,15 @@ echo  4. Packaging and pushing your latest local code live!
 echo.
 echo =================================================================
 echo.
-
+ 
 :: 1. Ask for Web App name
-set /p WEBAPP_NAME="Enter a unique name for your Azure Web App (e.g., analytixhub-bot): "
+set /p WEBAPP_NAME="Enter a unique name for your Azure Web App (e.g., enterprise-bot): "
 if "%WEBAPP_NAME%"=="" (
     echo [ERROR] Web App name cannot be blank. Exiting...
     pause
     exit /b
 )
-
+ 
 echo.
 echo [1/5] Initiating Azure Authentication...
 call az login
@@ -30,10 +30,10 @@ if %ERRORLEVEL% NEQ 0 (
     pause
     exit /b
 )
-
+ 
 echo.
-echo [2/5] Creating Azure Resource Group (ah-chatbot-rg in eastus)...
-call az group create --name ah-chatbot-rg --location eastus
+echo [2/5] Creating Azure Resource Group (enterprise-chatbot-rg in eastus)...
+call az group create --name enterprise-chatbot-rg --location eastus
 if %ERRORLEVEL% NEQ 0 (
     echo [ERROR] Resource Group creation failed.
     pause
@@ -43,7 +43,7 @@ if %ERRORLEVEL% NEQ 0 (
 echo.
 echo [3/5] Deploying Infrastructure-as-Code via Bicep...
 echo This will take 1-2 minutes. Please stand by...
-call az deployment group create --resource-group ah-chatbot-rg --template-file deploy-appservice.bicep --parameters webAppName=%WEBAPP_NAME%
+call az deployment group create --resource-group enterprise-chatbot-rg --template-file deploy-appservice.bicep --parameters webAppName=%WEBAPP_NAME%
 if %ERRORLEVEL% NEQ 0 (
     echo [ERROR] Infrastructure deployment failed.
     pause
@@ -62,7 +62,7 @@ if %ERRORLEVEL% NEQ 0 (
 
 echo.
 echo [5/5] Deploying package zip directly to Azure App Service container...
-call az webapp deployment source config-zip --resource-group ah-chatbot-rg --name %WEBAPP_NAME% --src project.zip
+call az webapp deployment source config-zip --resource-group enterprise-chatbot-rg --name %WEBAPP_NAME% --src project.zip
 if %ERRORLEVEL% NEQ 0 (
     echo [ERROR] Code deployment failed.
     pause
