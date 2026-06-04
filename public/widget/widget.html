@@ -86,7 +86,7 @@
         <div class="scheduler-steps-container">
           <!-- Step 1: Select Date & Time slot -->
           <div class="scheduler-step active" id="sched-step-dateTime">
-            <div class="step-label">Select Date & Time (IST)</div>
+            <div class="step-label" id="sched-step-label">Select Date & Time</div>
             
             <!-- Calendar Grid -->
             <div class="calendar-card">
@@ -101,6 +101,25 @@
               <div class="calendar-grid" id="calendar-grid-cells">
                 <!-- Dynamically populated dates -->
               </div>
+            </div>
+
+            <!-- Timezone Selector -->
+            <div class="widget-timezone-container" style="margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; gap: 10px; background-color: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); padding: 8px 12px; border-radius: var(--radius-sm);">
+              <label for="widget-timezone" style="font-size: 11px; font-weight: 600; color: var(--text-muted); display: flex; align-items: center; gap: 6px; margin: 0; white-space: nowrap;">
+                <i data-lucide="globe" style="width:13px;height:13px;"></i> Your Timezone:
+              </label>
+              <select id="widget-timezone" style="flex-grow: 1; border: none; background: transparent; color: var(--text-main); font-size: 11px; outline: none; cursor: pointer; padding: 2px 0;">
+                <option value="Asia/Kolkata">Asia/Kolkata (IST)</option>
+                <option value="America/New_York">America/New_York (EST/EDT)</option>
+                <option value="America/Chicago">America/Chicago (CST/CDT)</option>
+                <option value="America/Denver">America/Denver (MST/MDT)</option>
+                <option value="America/Los_Angeles">America/Los_Angeles (PST/PDT)</option>
+                <option value="Europe/London">Europe/London (GMT/BST)</option>
+                <option value="Europe/Paris">Europe/Paris (CET/CEST)</option>
+                <option value="Asia/Singapore">Asia/Singapore (SGT)</option>
+                <option value="Australia/Sydney">Australia/Sydney (AEST/AEDT)</option>
+                <option value="UTC">UTC</option>
+              </select>
             </div>
 
             <!-- Time Slots -->

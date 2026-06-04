@@ -39,9 +39,18 @@ let primaryColor = "#2563eb";
 let currentYear = new Date().getFullYear();
 let currentMonth = new Date().getMonth(); // 0-indexed
 
+// Resolve or generate a conversationId stored in sessionStorage for this browser tab session
+let conversationId = sessionStorage.getItem('ah_chatbot_conversation_id');
+if (!conversationId) {
+  conversationId = 'conv-' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+  sessionStorage.setItem('ah_chatbot_conversation_id', conversationId);
+}
+
 // Booking selections
 let selectedDateStr = ""; // YYYY-MM-DD
 let selectedSlot = ""; // HH:MM
+let activeAvailableSlots = [];
+let activeFetchedDateStr = "";
 
 document.addEventListener("DOMContentLoaded", () => {
   // Init Lucide
@@ -158,6 +167,30 @@ async function loadWidgetSettings() {
     `;
     document.head.appendChild(style);
 
+    // Detect browser timezone and init timezone select dropdown
+    const clientTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const tzDropdown = document.getElementById("widget-timezone");
+    if (tzDropdown) {
+      let tzExists = Array.from(tzDropdown.options).some(opt => opt.value === clientTz);
+      if (!tzExists) {
+        const opt = document.createElement("option");
+        opt.value = clientTz;
+        opt.innerText = `${clientTz} (Local)`;
+        tzDropdown.appendChild(opt);
+      }
+      tzDropdown.value = clientTz;
+      
+      // Avoid duplicate listener
+      if (!tzDropdown.dataset.listenerAdded) {
+        tzDropdown.dataset.listenerAdded = "true";
+        tzDropdown.addEventListener("change", () => {
+          if (activeFetchedDateStr && activeAvailableSlots.length > 0) {
+            renderLocalizedSlots();
+          }
+        });
+      }
+    }
+
   } catch (error) {
     console.error("Load Widget Settings Error:", error);
   }
@@ -194,7 +227,7 @@ async function handleChatSubmit(e) {
     const res = await fetch("/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ messages: chatHistory })
+      body: JSON.stringify({ messages: chatHistory, conversationId: conversationId })
     });
     
     if (!res.ok) {
@@ -381,10 +414,14 @@ function closeScheduler(didBook = false) {
   
   if (didBook) {
     // Append assistant context validation
-    appendMessage("bot", `Excellent! Your consultation has been successfully scheduled for **${formatDateDisplay(selectedDateStr)}** at **${formatTime12(selectedSlot)} (IST)**. A calendar invitation and confirmation details email have been dispatched to your inbox.`);
+    const bizTz = window.activeWidgetSettings?.bookingTimezone || "Asia/Kolkata";
+    const clientTzName = window.selectedClientTimezone ? window.selectedClientTimezone.split('/').pop().replace('_', ' ') : '';
+    const clientTimeText = window.selectedClientFormattedSlot ? ` / **${window.selectedClientFormattedSlot} (${clientTzName})**` : '';
+    
+    appendMessage("bot", `Excellent! Your consultation has been successfully scheduled for **${formatDateDisplay(selectedDateStr)}** at **${formatTime12(selectedSlot)} (${bizTz})**${clientTimeText}. A calendar invitation and confirmation details email have been dispatched to your inbox.`);
     chatHistory.push({
       role: "assistant",
-      content: `Your consultation has been successfully scheduled for ${formatDateDisplay(selectedDateStr)} at ${formatTime12(selectedSlot)}. A confirmation email has been dispatched.`
+      content: `Your consultation has been successfully scheduled for ${formatDateDisplay(selectedDateStr)} at ${formatTime12(selectedSlot)} (${bizTz})${clientTimeText ? ' / ' + clientTimeText : ''}. A confirmation email has been dispatched.`
     });
   }
   
@@ -406,7 +443,13 @@ function gotoDetailsStep() {
   
   // Set summary label
   const summaryLbl = document.getElementById("booking-summary-text");
-  summaryLbl.innerText = `${formatDateDisplay(selectedDateStr)} at ${formatTime12(selectedSlot)}`;
+  const bizTz = window.activeWidgetSettings?.bookingTimezone || "Asia/Kolkata";
+  const clientTzName = window.selectedClientTimezone ? window.selectedClientTimezone.split('/').pop().replace('_', ' ') : '';
+  
+  summaryLbl.innerHTML = `
+    <div style="font-weight: 600;">Business Time: ${formatDateDisplay(selectedDateStr)} at ${formatTime12(selectedSlot)} (${bizTz})</div>
+    ${window.selectedClientFormattedSlot ? `<div style="font-size: 12px; color: var(--primary); margin-top: 4px; font-weight: 500;">Local Time: ${window.selectedClientFormattedSlot} (${clientTzName})</div>` : ''}
+  `;
 }
 
 // -------------------------------------------------------------
@@ -500,6 +543,113 @@ function navigateMonth(direction) {
 // -------------------------------------------------------------
 // SLOTS FETCHING
 // -------------------------------------------------------------
+function convertTimezone(dateStr, timeStr, fromZone, toZone) {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const [hour, minute] = timeStr.split(':').map(Number);
+  const tempUtc = new Date(Date.UTC(year, month - 1, day, hour, minute));
+  
+  function getTzParts(date, tz) {
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: tz,
+      year: 'numeric', month: 'numeric', day: 'numeric',
+      hour: 'numeric', minute: 'numeric', second: 'numeric',
+      hour12: false
+    });
+    const parts = formatter.formatToParts(date);
+    const partObj = {};
+    parts.forEach(p => partObj[p.type] = p.value);
+    return partObj;
+  }
+  
+  const fromParts = getTzParts(tempUtc, fromZone);
+  const fromLocal = new Date(Date.UTC(
+    Number(fromParts.year),
+    Number(fromParts.month) - 1,
+    Number(fromParts.day),
+    Number(fromParts.hour),
+    Number(fromParts.minute)
+  ));
+  
+  const offsetMs = fromLocal.getTime() - tempUtc.getTime();
+  const utcDate = new Date(tempUtc.getTime() - offsetMs);
+  
+  const toPartsFormatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: toZone,
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit',
+    hour12: false
+  });
+  
+  const toParts = toPartsFormatter.formatToParts(utcDate);
+  const toPartObj = {};
+  toParts.forEach(p => toPartObj[p.type] = p.value);
+  
+  const targetDateStr = `${toPartObj.year}-${toPartObj.month}-${toPartObj.day}`;
+  const targetTimeStr = `${toPartObj.hour}:${toPartObj.minute}`;
+  
+  let hourNum = parseInt(toPartObj.hour);
+  const ampm = hourNum >= 12 ? 'PM' : 'AM';
+  const displayHour = hourNum % 12 || 12;
+  const time12 = `${displayHour}:${toPartObj.minute} ${ampm}`;
+  
+  const isDateShifted = targetDateStr !== dateStr;
+  
+  let displayText = time12;
+  if (isDateShifted) {
+    const monthNamesShort = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const targetMonthIndex = parseInt(toPartObj.month) - 1;
+    const targetMonthName = monthNamesShort[targetMonthIndex];
+    const targetDay = parseInt(toPartObj.day);
+    displayText = `${time12} (${targetMonthName} ${targetDay})`;
+  }
+  
+  return {
+    utcDate,
+    displayText,
+    targetDateStr,
+    targetTimeStr
+  };
+}
+
+function renderLocalizedSlots() {
+  const slotsGrid = document.getElementById("time-slots-grid");
+  slotsGrid.innerHTML = "";
+  
+  if (activeAvailableSlots.length === 0) {
+    slotsGrid.innerHTML = `<div class="slots-info-msg">No slots available on this date. Please select another day.</div>`;
+    return;
+  }
+  
+  const fromZone = window.activeWidgetSettings?.bookingTimezone || "Asia/Kolkata";
+  const toZone = document.getElementById("widget-timezone").value;
+  
+  activeAvailableSlots.forEach(slot => {
+    const converted = convertTimezone(activeFetchedDateStr, slot, fromZone, toZone);
+    
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "slot-btn";
+    btn.innerText = converted.displayText;
+    
+    if (selectedSlot === slot) btn.classList.add("selected");
+    
+    btn.addEventListener("click", () => {
+      const selected = slotsGrid.querySelector(".slot-btn.selected");
+      if (selected) selected.classList.remove("selected");
+      
+      btn.classList.add("selected");
+      selectedSlot = slot;
+      
+      window.selectedClientFormattedSlot = converted.displayText;
+      window.selectedClientTimezone = toZone;
+      
+      document.getElementById("btn-goto-details").disabled = false;
+    });
+    
+    slotsGrid.appendChild(btn);
+  });
+}
+
 async function fetchSlots(dateStr) {
   const slotsGrid = document.getElementById("time-slots-grid");
   slotsGrid.innerHTML = `<div class="slots-info-msg">Retrieving open slots...</div>`;
@@ -507,41 +657,17 @@ async function fetchSlots(dateStr) {
   // Disable next btn during fetch
   document.getElementById("btn-goto-details").disabled = true;
   selectedSlot = "";
+  activeAvailableSlots = [];
+  activeFetchedDateStr = dateStr;
 
   try {
     const res = await fetch(`/api/bookings/available-slots?date=${dateStr}`);
     if (!res.ok) throw new Error();
     
     const { availableSlots } = await res.json();
-    slotsGrid.innerHTML = "";
+    activeAvailableSlots = availableSlots;
     
-    if (availableSlots.length === 0) {
-      slotsGrid.innerHTML = `<div class="slots-info-msg">No slots available on this date. Please select another day.</div>`;
-      return;
-    }
-    
-    availableSlots.forEach(slot => {
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "slot-btn";
-      btn.innerText = formatTime12(slot);
-      
-      if (selectedSlot === slot) btn.classList.add("selected");
-      
-      btn.addEventListener("click", () => {
-        const selected = slotsGrid.querySelector(".slot-btn.selected");
-        if (selected) selected.classList.remove("selected");
-        
-        btn.classList.add("selected");
-        selectedSlot = slot;
-        
-        // Enable next step button
-        document.getElementById("btn-goto-details").disabled = false;
-      });
-      
-      slotsGrid.appendChild(btn);
-    });
-
+    renderLocalizedSlots();
   } catch (error) {
     slotsGrid.innerHTML = `<div class="slots-info-msg" style="color:var(--accent-red)">Failed to retrieve slots. Try again.</div>`;
   }
@@ -566,7 +692,9 @@ async function submitBooking(e) {
     date: selectedDateStr,
     time: selectedSlot,
     purpose: document.getElementById("sched-purpose").value,
-    info: document.getElementById("sched-info").value.trim()
+    info: document.getElementById("sched-info").value.trim(),
+    clientTimezone: window.selectedClientTimezone || "",
+    clientFormattedTime: window.selectedClientFormattedSlot || ""
   };
 
   try {
@@ -585,7 +713,12 @@ async function submitBooking(e) {
     document.getElementById("sched-step-success").classList.add("active");
     
     // Populate success ticket
-    document.getElementById("success-datetime").innerText = `${formatDateDisplay(selectedDateStr)} at ${formatTime12(selectedSlot)}`;
+    const bizTz = window.activeWidgetSettings?.bookingTimezone || "Asia/Kolkata";
+    const clientTzName = window.selectedClientTimezone ? window.selectedClientTimezone.split('/').pop().replace('_', ' ') : '';
+    document.getElementById("success-datetime").innerHTML = `
+      <div>${formatDateDisplay(selectedDateStr)} at ${formatTime12(selectedSlot)} (${bizTz})</div>
+      ${window.selectedClientFormattedSlot ? `<div style="font-size: 11px; opacity: 0.8; margin-top: 3px;">Local: ${window.selectedClientFormattedSlot} (${clientTzName})</div>` : ''}
+    `;
     document.getElementById("success-purpose").innerText = payload.purpose;
 
     // Reset Form fields

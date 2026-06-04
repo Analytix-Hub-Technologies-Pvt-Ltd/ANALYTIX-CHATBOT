@@ -242,8 +242,9 @@ app.post('/api/auth/onboard', requireAuth, (req, res) => {
 // CHAT API (PUBLIC WIDGET ROUTE)
 // -------------------------------------------------------------
 app.post('/api/chat', async (req, res) => {
-  const { messages } = req.body;
+  const { messages, conversationId: reqConversationId } = req.body;
   const botId = req.body.botId || req.query.botId || 'bot-default';
+  const conversationId = reqConversationId || ('conv-' + Math.random().toString(36).substring(2, 10));
 
   if (!messages || !Array.isArray(messages)) {
     return res.status(400).json({ error: "Invalid message payload" });
@@ -255,10 +256,29 @@ app.post('/api/chat', async (req, res) => {
   res.setHeader('Connection', 'keep-alive');
   res.flushHeaders();
 
+  const startTime = Date.now();
+  let ttft = 0;
+
   try {
     const stream = groqService.getChatResponseStream(messages, botId);
     for await (const chunk of stream) {
+      if (!ttft) {
+        ttft = Date.now() - startTime;
+        try {
+          db.recordChatMetrics(botId, conversationId, ttft);
+        } catch (dbErr) {
+          console.error("Failed to record chat metrics:", dbErr);
+        }
+      }
       res.write(`data: ${JSON.stringify({ chunk })}\n\n`);
+    }
+    if (!ttft) {
+      ttft = Date.now() - startTime;
+      try {
+        db.recordChatMetrics(botId, conversationId, ttft);
+      } catch (dbErr) {
+        console.error("Failed to record chat metrics:", dbErr);
+      }
     }
   } catch (error) {
     console.error("Express Chat Route Streaming Error:", error);
@@ -266,6 +286,114 @@ app.post('/api/chat', async (req, res) => {
   } finally {
     res.write('data: [DONE]\n\n');
     res.end();
+  }
+});
+
+// -------------------------------------------------------------
+// DASHBOARD STATISTICS API
+// -------------------------------------------------------------
+// Get dashboard statistics (ADMIN PROTECTED)
+app.get('/api/stats', requireAuth, (req, res) => {
+  try {
+    const botId = req.botId;
+    const settings = db.getSettings(botId);
+    const bookings = db.getBookings(botId);
+    const conversations = db.getConversations(botId);
+
+    // 1. Bookings Count
+    const bookingsCount = bookings.length;
+
+    // 2. Conversations Count & Trend
+    const totalConversations = conversations.length;
+    
+    // Calculate Trend (this week vs last week)
+    const now = Date.now();
+    const oneWeekMs = 7 * 24 * 60 * 60 * 1000;
+    const twoWeeksMs = 14 * 24 * 60 * 60 * 1000;
+
+    const conversationsThisWeek = conversations.filter(c => {
+      const createdTime = new Date(c.createdAt).getTime();
+      return (now - createdTime) <= oneWeekMs;
+    });
+
+    const conversationsLastWeek = conversations.filter(c => {
+      const createdTime = new Date(c.createdAt).getTime();
+      const diff = now - createdTime;
+      return diff > oneWeekMs && diff <= twoWeeksMs;
+    });
+
+    const countThisWeek = conversationsThisWeek.length;
+    const countLastWeek = conversationsLastWeek.length;
+
+    let trendPercent = 0;
+    if (countLastWeek > 0) {
+      trendPercent = Math.round(((countThisWeek - countLastWeek) / countLastWeek) * 100);
+    } else if (countThisWeek > 0) {
+      trendPercent = 100;
+    }
+
+    const trendText = `${trendPercent >= 0 ? '+' : ''}${trendPercent}% this week`;
+    const trendClass = trendPercent > 0 ? 'positive' : (trendPercent < 0 ? 'negative' : 'neutral');
+    const trendIcon = trendPercent > 0 ? 'trending-up' : (trendPercent < 0 ? 'trending-down' : 'minus');
+
+    // 3. Latency calculations
+    const validLatencies = conversations
+      .map(c => c.lastLatency)
+      .filter(l => typeof l === 'number' && l > 0);
+
+    const lastLatency = validLatencies.length > 0 ? validLatencies[validLatencies.length - 1] : 0;
+    const averageLatency = validLatencies.length > 0 
+      ? Math.round(validLatencies.reduce((a, b) => a + b, 0) / validLatencies.length) 
+      : 0;
+
+    // 4. Mailer dispatcher status
+    const emailProvider = settings.emailProvider || process.env.EMAIL_PROVIDER || 'msgraph';
+    let mailerStatus = "Inactive";
+    let mailerDesc = "Pending MS Graph setup";
+    let mailerClass = "yellow";
+
+    if (emailProvider === 'msgraph') {
+      const active = (process.env.MS_GRAPH_TENANT_ID || settings.msGraphTenantId) &&
+                     (process.env.MS_GRAPH_CLIENT_ID || settings.msGraphClientId) &&
+                     (process.env.MS_GRAPH_CLIENT_SECRET || settings.msGraphClientSecret);
+      if (active) {
+        mailerStatus = "Active";
+        mailerDesc = "Microsoft Graph active";
+        mailerClass = "green";
+      } else {
+        mailerStatus = "Inactive";
+        mailerDesc = "Pending MS Graph setup";
+        mailerClass = "yellow";
+      }
+    } else {
+      // SMTP
+      const active = settings.smtpHost && settings.smtpUser;
+      if (active) {
+        mailerStatus = "Active";
+        mailerDesc = "SMTP mailer connected";
+        mailerClass = "green";
+      } else {
+        mailerStatus = "Inactive";
+        mailerDesc = "Pending SMTP setup";
+        mailerClass = "yellow";
+      }
+    }
+
+    res.json({
+      totalConversations,
+      trendText,
+      trendClass,
+      trendIcon,
+      bookingsCount,
+      lastLatency,
+      averageLatency,
+      mailerStatus,
+      mailerDesc,
+      mailerClass
+    });
+  } catch (error) {
+    console.error("Failed to retrieve dashboard stats:", error);
+    res.status(500).json({ error: "Failed to retrieve dashboard statistics" });
   }
 });
 
@@ -284,7 +412,7 @@ app.get('/api/bookings', requireAuth, (req, res) => {
 
 // Create a new booking (PUBLIC WIDGET ROUTE)
 app.post('/api/bookings', async (req, res) => {
-  const { name, email, phone, date, time, purpose, info } = req.body;
+  const { name, email, phone, date, time, purpose, info, clientTimezone, clientFormattedTime } = req.body;
   const botId = req.body.botId || req.query.botId || 'bot-default';
 
   if (!name || !email || !date || !time) {
@@ -293,7 +421,7 @@ app.post('/api/bookings', async (req, res) => {
 
   try {
     // 1. Add booking to database for this specific botId
-    const booking = db.addBooking(botId, { name, email, phone, date, time, purpose, info });
+    const booking = db.addBooking(botId, { name, email, phone, date, time, purpose, info, clientTimezone, clientFormattedTime });
     
     // 2. Dispatch email notifications asynchronously
     let emailSent = false;
@@ -350,11 +478,22 @@ app.get('/api/bookings/available-slots', (req, res) => {
   try {
     const bookings = db.getBookings(botId);
     
-    // Default standard operating slots
-    const standardSlots = [
+    // Default standard operating slots (overridden by database settings or environment variables)
+    let standardSlots = [
       "09:30", "10:15", "11:00", "11:45",
       "14:00", "14:45", "15:30", "16:15", "17:00"
     ];
+
+    const settings = db.getSettings(botId);
+    if (settings && settings.bookingSlots) {
+      standardSlots = settings.bookingSlots.split(',')
+        .map(slot => slot.trim())
+        .filter(slot => slot.length > 0);
+    } else if (process.env.BOOKING_SLOTS) {
+      standardSlots = process.env.BOOKING_SLOTS.split(',')
+        .map(slot => slot.trim())
+        .filter(slot => slot.length > 0);
+    }
 
     // Find slots on this date that are already taken
     const takenSlots = bookings
@@ -395,18 +534,16 @@ app.get('/api/settings', (req, res) => {
     const safeSettings = { ...settings };
     
     // Mask API Keys and Passwords for safe rendering in client browser
-    if (safeSettings.groqKey) {
-      safeSettings.groqKey = safeSettings.groqKey.substring(0, 7) + "..." + safeSettings.groqKey.substring(safeSettings.groqKey.length - 4);
-    }
-    if (safeSettings.openRouterKey) {
-      safeSettings.openRouterKey = safeSettings.openRouterKey.substring(0, 7) + "..." + safeSettings.openRouterKey.substring(safeSettings.openRouterKey.length - 4);
-    }
     if (safeSettings.smtpPass) {
       safeSettings.smtpPass = "●●●●●●●●●●●●";
     }
-    if (safeSettings.msGraphClientSecret) {
-      safeSettings.msGraphClientSecret = "●●●●●●●●●●●●";
-    }
+
+    // Completely remove sensitive keys from the settings sent to frontend
+    delete safeSettings.groqKey;
+    delete safeSettings.openRouterKey;
+    delete safeSettings.msGraphTenantId;
+    delete safeSettings.msGraphClientId;
+    delete safeSettings.msGraphClientSecret;
 
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
     res.json(safeSettings);
@@ -423,19 +560,16 @@ app.post('/api/settings', requireAuth, (req, res) => {
   try {
     const currentSettings = db.getSettings(botId);
     
-    // If the API key or SMTP password comes back masked, do not overwrite the existing saved values!
-    if (newSettings.groqKey && (newSettings.groqKey.includes("...") || newSettings.groqKey === "")) {
-      delete newSettings.groqKey;
-    }
-    if (newSettings.openRouterKey && (newSettings.openRouterKey.includes("...") || newSettings.openRouterKey === "")) {
-      delete newSettings.openRouterKey;
-    }
+    // If SMTP password comes back masked, do not overwrite the existing saved values!
     if (newSettings.smtpPass && (newSettings.smtpPass === "●●●●●●●●●●●●" || newSettings.smtpPass === "")) {
       delete newSettings.smtpPass;
     }
-    if (newSettings.msGraphClientSecret && (newSettings.msGraphClientSecret === "●●●●●●●●●●●●" || newSettings.msGraphClientSecret === "")) {
-      delete newSettings.msGraphClientSecret;
-    }
+    // Remove any sensitive API credentials sent by the frontend from database settings
+    delete newSettings.groqKey;
+    delete newSettings.openRouterKey;
+    delete newSettings.msGraphTenantId;
+    delete newSettings.msGraphClientId;
+    delete newSettings.msGraphClientSecret;
 
     // Convert SMTP port to integer
     if (newSettings.smtpPort) {
@@ -598,3 +732,4 @@ app.listen(PORT, () => {
   console.log(`💬 Widget Tester: http://localhost:${PORT}/widget/widget.html`);
   console.log(`===================================================`);
 });
+// Reload trigger comment to refresh node watch process with updated db settings schema

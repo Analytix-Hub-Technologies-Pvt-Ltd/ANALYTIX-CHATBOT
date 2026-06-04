@@ -21,6 +21,7 @@
   --accent-orange: #f59e0b;
   --accent-red: #ef4444;
   
+  --bg-footer: rgba(11, 15, 25, 0.85);
   --sidebar-width: 260px;
   --header-height: 80px;
   --radius-lg: 12px;
@@ -48,6 +49,7 @@
   --primary: #2563eb;        /* blue-600 */
   --primary-hover: #1d4ed8;  /* blue-700 */
   --primary-glow: rgba(37, 99, 235, 0.12);
+  --bg-footer: rgba(255, 255, 255, 0.85);
   
   --accent-purple: #7c3aed;  /* violet-600 */
   --accent-green: #059669;   /* emerald-600 */
@@ -123,13 +125,32 @@
   color: #0f172a !important;
 }
 
+.preset-combo-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  color: var(--text-main);
+  cursor: pointer;
+  font-size: 11px;
+  transition: all 0.2s ease;
+}
+.preset-combo-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: var(--text-main);
+}
+
 [data-theme="light"] .preset-combo-btn {
-  color: var(--text-muted) !important;
+  background-color: rgba(0, 0, 0, 0.03) !important;
   border-color: var(--border-color) !important;
+  color: var(--text-muted) !important;
 }
 
 [data-theme="light"] .preset-combo-btn:hover {
-  background-color: var(--bg-card-hover) !important;
+  background-color: rgba(0, 0, 0, 0.06) !important;
   color: var(--text-main) !important;
 }
 
@@ -138,9 +159,45 @@
   color: var(--text-main) !important;
 }
 
+[data-theme="light"] .code-box-wrapper {
+  background-color: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+}
+
 [data-theme="light"] .code-box-wrapper pre code {
   color: #0369a1 !important; /* sky-700 */
 }
+
+/* Inline code box styling */
+.code-box-inline-wrapper {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  background-color: #05070c;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+}
+
+.code-inline-text {
+  font-family: monospace;
+  font-size: 11px;
+  color: #34d399;
+  flex-grow: 1;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+/* Light theme overrides for inline code boxes */
+[data-theme="light"] .code-box-inline-wrapper {
+  background-color: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+}
+
+[data-theme="light"] .code-inline-text {
+  color: #0369a1 !important;
+}
+
 
 [data-theme="light"] .action-btn.outline:hover {
   background-color: rgba(0, 0, 0, 0.05) !important;
@@ -1020,7 +1077,7 @@ tr:hover td {
   bottom: 0;
   right: 0;
   left: var(--sidebar-width);
-  background-color: rgba(11, 15, 25, 0.85);
+  background-color: var(--bg-footer);
   backdrop-filter: blur(10px);
   border-top: 1px solid var(--border-color);
   padding: 16px 40px;
@@ -1034,6 +1091,7 @@ tr:hover td {
   font-size: 13px;
   font-weight: 500;
   transition: all 0.3s ease;
+  color: var(--text-main);
 }
 .footer-msg.success { color: var(--accent-green); }
 .footer-msg.error { color: var(--accent-red); }

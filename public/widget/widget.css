@@ -1071,3 +1071,13 @@ body {
   height: 12px !important;
   stroke-width: 2.5px;
 }
+
+/* Custom styles for client timezone dropdown */
+#widget-timezone option {
+  background-color: #0b111e;
+  color: #f1f5f9;
+}
+#widget-timezone:focus {
+  outline: none;
+}
+

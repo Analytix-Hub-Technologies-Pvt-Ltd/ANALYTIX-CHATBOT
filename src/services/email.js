@@ -2,6 +2,32 @@ const nodemailer = require('nodemailer');
 const db = require('../db');
 const axios = require('axios');
 
+function getTzDate(dateStr, timeStr, timeZone) {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const [hour, minute] = timeStr.split(':').map(Number);
+  const tempUtc = new Date(Date.UTC(year, month - 1, day, hour, minute));
+  
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: timeZone,
+    year: 'numeric', month: 'numeric', day: 'numeric',
+    hour: 'numeric', minute: 'numeric', second: 'numeric',
+    hour12: false
+  });
+  const parts = formatter.formatToParts(tempUtc);
+  const partObj = {};
+  parts.forEach(p => partObj[p.type] = p.value);
+  
+  const localLocal = new Date(Date.UTC(
+    Number(partObj.year),
+    Number(partObj.month) - 1,
+    Number(partObj.day),
+    Number(partObj.hour),
+    Number(partObj.minute)
+  ));
+  const offsetMs = localLocal.getTime() - tempUtc.getTime();
+  return new Date(tempUtc.getTime() - offsetMs);
+}
+
 /**
  * Creates a nodemailer transport based on database settings
  * @param {Object} settings 
@@ -67,7 +93,7 @@ function getISOEndTime(dateStr, timeStr) {
 /**
  * Generates raw standard RFC 5545 ICS invite string
  */
-function generateICSInvite(booking, adminEmail, teamsUrl, orgName = 'our firm', domain = 'domain.com') {
+function generateICSInvite(booking, adminEmail, teamsUrl, orgName = 'our firm', domain = 'domain.com', adminTz = 'Asia/Kolkata') {
   const dateStr = booking.date.replace(/-/g, '');
   const timeStr = booking.time.replace(/:/g, '') + '00';
   const endDateTime = getICSEndTime(booking.date, booking.time);
@@ -82,8 +108,8 @@ function generateICSInvite(booking, adminEmail, teamsUrl, orgName = 'our firm', 
     'BEGIN:VEVENT',
     `UID:${booking.id}@${domain}`,
     `DTSTAMP:${dtStamp}`,
-    `DTSTART;TZID=Asia/Kolkata:${dateStr}T${timeStr}`,
-    `DTEND;TZID=Asia/Kolkata:${endDateTime}`,
+    `DTSTART;TZID=${adminTz}:${dateStr}T${timeStr}`,
+    `DTEND;TZID=${adminTz}:${endDateTime}`,
     `SUMMARY:Consultation with ${orgName}: ${booking.purpose}`,
     `DESCRIPTION:You have a virtual consultation scheduled with ${orgName}.\\n\\nJoin Microsoft Teams Meeting:\\n${teamsUrl}\\n\\nClient Name: ${booking.name}\\nClient Email: ${booking.email}\\nPhone: ${booking.phone || 'N/A'}\\nTopic: ${booking.purpose}`,
     'LOCATION:Microsoft Teams Meeting',
@@ -117,7 +143,7 @@ async function getMSGraphAccessToken(tenantId, clientId, clientSecret) {
 /**
  * Natively create a calendar event with an online Teams meeting link on Microsoft Graph
  */
-async function createMSGraphTeamsEvent(accessToken, senderEmail, booking, orgName = 'our firm') {
+async function createMSGraphTeamsEvent(accessToken, senderEmail, booking, orgName = 'our firm', adminTz = 'Asia/Kolkata') {
   const startISO = `${booking.date}T${booking.time}:00`;
   const endISO = getISOEndTime(booking.date, booking.time);
 
@@ -135,11 +161,11 @@ async function createMSGraphTeamsEvent(accessToken, senderEmail, booking, orgNam
     },
     start: {
       dateTime: startISO,
-      timeZone: 'India Standard Time'
+      timeZone: adminTz
     },
     end: {
       dateTime: endISO,
-      timeZone: 'India Standard Time'
+      timeZone: adminTz
     },
     location: {
       displayName: 'Microsoft Teams Meeting'
@@ -362,20 +388,34 @@ function getAdminHtml(booking, bookingDate, formattedTime, teamsUrl, orgName = '
  */
 async function sendBookingEmails(booking, botId = 'bot-default') {
   const settings = db.getSettings(botId);
-  const provider = settings.emailProvider || 'smtp';
+  const provider = settings.emailProvider || process.env.EMAIL_PROVIDER || 'msgraph';
+  const adminTz = settings.bookingTimezone || 'Asia/Kolkata';
 
   // Format dates & times beautifully
-  const bookingDate = new Date(booking.date).toLocaleDateString('en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
+  const bookingDateObj = getTzDate(booking.date, booking.time, adminTz);
+
+  // Business Time Details:
+  const businessDateFormatted = bookingDateObj.toLocaleDateString('en-US', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: adminTz
+  });
+  const businessTimeFormatted = bookingDateObj.toLocaleTimeString('en-US', {
+    hour: 'numeric', minute: '2-digit', hour12: true, timeZone: adminTz, timeZoneName: 'short'
   });
 
-  const [hours, minutes] = booking.time.split(':');
-  const ampm = parseInt(hours) >= 12 ? 'PM' : 'AM';
-  const displayHours = parseInt(hours) % 12 || 12;
-  const formattedTime = `${displayHours}:${minutes} ${ampm} (IST)`;
+  let bookingDate = businessDateFormatted;
+  let formattedTime = `${businessTimeFormatted} (Business Time)`;
+
+  if (booking.clientTimezone) {
+    const clientDateFormatted = bookingDateObj.toLocaleDateString('en-US', {
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: booking.clientTimezone
+    });
+    const clientTimeFormatted = bookingDateObj.toLocaleTimeString('en-US', {
+      hour: 'numeric', minute: '2-digit', hour12: true, timeZone: booking.clientTimezone, timeZoneName: 'short'
+    });
+
+    bookingDate = `${businessDateFormatted}<br><span style="font-size: 14px; color: #8b5cf6; font-weight: 500;">Local Date: ${clientDateFormatted}</span>`;
+    formattedTime = `${businessTimeFormatted} (Business)<br><span style="font-size: 14px; color: #8b5cf6; font-weight: 600;">Local Time: ${clientTimeFormatted}</span>`;
+  }
 
   // Find organization details by botId
   let orgName = 'our firm';
@@ -404,10 +444,10 @@ async function sendBookingEmails(booking, botId = 'bot-default') {
   // METHOD A: MICROSOFT GRAPH API
   // -------------------------------------------------------------
   if (provider === 'msgraph') {
-    const tenantId = settings.msGraphTenantId;
-    const clientId = settings.msGraphClientId;
-    const clientSecret = settings.msGraphClientSecret;
-    const senderEmail = settings.msGraphSenderEmail;
+    const tenantId = process.env.MS_GRAPH_TENANT_ID || settings.msGraphTenantId;
+    const clientId = process.env.MS_GRAPH_CLIENT_ID || settings.msGraphClientId;
+    const clientSecret = process.env.MS_GRAPH_CLIENT_SECRET || settings.msGraphClientSecret;
+    const senderEmail = process.env.MS_GRAPH_SENDER_EMAIL || settings.msGraphSenderEmail || settings.adminEmail || 'contactus@analytixhub.org';
 
     if (tenantId && clientId && clientSecret && senderEmail) {
       try {
@@ -417,7 +457,7 @@ async function sendBookingEmails(booking, botId = 'bot-default') {
         let teamsUrl = "";
         try {
           // 1. Natively create a Teams Meeting Calendar Event in Office 365
-          const graphEvent = await createMSGraphTeamsEvent(accessToken, senderEmail, booking, orgName);
+          const graphEvent = await createMSGraphTeamsEvent(accessToken, senderEmail, booking, orgName, adminTz);
           teamsUrl = graphEvent.onlineMeeting?.joinUrl || "";
           console.log("Email Service: Successfully created Graph Calendar Event & Teams URL.");
         } catch (calendarError) {
@@ -435,7 +475,7 @@ async function sendBookingEmails(booking, botId = 'bot-default') {
         
         // 2. Send emails via Graph API sendMail endpoint (which works 100%)
         const clientHtml = getClientHtml(booking, bookingDate, formattedTime, teamsUrl, adminEmail, orgName, orgAddress, orgPhone);
-        await sendMSGraphEmail(accessToken, senderEmail, booking.email, `Confirmed: Consultation with ${orgName} - ${bookingDate}`, clientHtml);
+        await sendMSGraphEmail(accessToken, senderEmail, booking.email, `Confirmed: Consultation with ${orgName} - ${booking.date}`, clientHtml);
 
         const adminHtml = getAdminHtml(booking, bookingDate, formattedTime, teamsUrl, orgName);
         await sendMSGraphEmail(accessToken, senderEmail, adminEmail, `New Lead: Appointment Booked by ${booking.name} (${booking.time})`, adminHtml);
@@ -466,7 +506,7 @@ async function sendBookingEmails(booking, botId = 'bot-default') {
   const base64Id = Buffer.from(booking.id).toString('base64').replace(/=/g, '').replace(/\+/g, '').replace(/\//g, '');
   const teamsUrl = `https://teams.microsoft.com/l/meetup-join/19%3ameeting_${base64Id}@thread.v2/0?context=%7b%22Tid%22%3a%229188040d-6c67-4c5b-b112-36a304b66dad%22%2c%22Oid%22%3a%224589873d-9d41-4752-9b2f-37651a2d12e8%22%7d`;
   
-  const icsContent = generateICSInvite(booking, adminEmail, teamsUrl, orgName, orgDomain);
+  const icsContent = generateICSInvite(booking, adminEmail, teamsUrl, orgName, orgDomain, adminTz);
   const clientHtml = getClientHtml(booking, bookingDate, formattedTime, teamsUrl, adminEmail, orgName, orgAddress, orgPhone);
   const adminHtml = getAdminHtml(booking, bookingDate, formattedTime, teamsUrl, orgName);
 
@@ -528,13 +568,13 @@ async function sendBookingEmails(booking, botId = 'bot-default') {
  * @returns {Promise<boolean>}
  */
 async function sendTestEmail(tempSettings, testEmailAddress) {
-  const provider = tempSettings.emailProvider || 'smtp';
+  const provider = tempSettings.emailProvider || process.env.EMAIL_PROVIDER || 'msgraph';
 
   if (provider === 'msgraph') {
-    const tenantId = tempSettings.msGraphTenantId;
-    const clientId = tempSettings.msGraphClientId;
-    const clientSecret = tempSettings.msGraphClientSecret;
-    const senderEmail = tempSettings.msGraphSenderEmail;
+    const tenantId = process.env.MS_GRAPH_TENANT_ID || tempSettings.msGraphTenantId;
+    const clientId = process.env.MS_GRAPH_CLIENT_ID || tempSettings.msGraphClientId;
+    const clientSecret = process.env.MS_GRAPH_CLIENT_SECRET || tempSettings.msGraphClientSecret;
+    const senderEmail = process.env.MS_GRAPH_SENDER_EMAIL || tempSettings.msGraphSenderEmail || tempSettings.adminEmail || 'contactus@analytixhub.org';
 
     if (!tenantId || !clientId || !clientSecret || !senderEmail) {
       throw new Error("Incomplete Microsoft Graph parameters.");

@@ -97,8 +97,11 @@ const DEFAULT_SETTINGS = {
   companyAddress: "1st floor, Primus Building, Door No. SP – 7A, Guindy Industrial Estate, SIDCO Industrial Estate, Guindy, Chennai, Tamil Nadu - 600032, India.",
   companyPhone: "+91 7397577392",
   companyMapLink: "https://www.google.com/maps/search/?api=1&query=1st+floor,+Primus+Building,+SP-7A,+Guindy+Industrial+Estate,+Chennai,+Tamil+Nadu+600032",
-  companyWebsite: "https://analytixhub.org"
+  companyWebsite: "https://analytixhub.org",
+  bookingSlots: "09:30,10:15,11:00,11:45,14:00,14:45,15:30,16:15,17:00",
+  bookingTimezone: "Asia/Kolkata"
 };
+
 
 const DEFAULT_DB = {
   users: [
@@ -114,7 +117,8 @@ const DEFAULT_DB = {
   bots: {
     "bot-default": {
       settings: DEFAULT_SETTINGS,
-      bookings: []
+      bookings: [],
+      conversations: []
     }
   }
 };
@@ -223,6 +227,10 @@ function initDb() {
           bot.bookings = [];
           modified = true;
         }
+        if (!bot.conversations) {
+          bot.conversations = [];
+          modified = true;
+        }
       }
 
       if (modified) {
@@ -318,7 +326,8 @@ module.exports = {
     db.users.push(newUser);
     db.bots[botId] = {
       settings: defaultBotSettings,
-      bookings: []
+      bookings: [],
+      conversations: []
     };
 
     writeDb(db);
@@ -374,6 +383,8 @@ module.exports = {
       time: booking.time, // HH:MM
       purpose: booking.purpose || 'General Consultation',
       info: booking.info || '',
+      clientTimezone: booking.clientTimezone || '',
+      clientFormattedTime: booking.clientFormattedTime || '',
       emailSent: booking.emailSent || false,
       createdAt: new Date().toISOString()
     };
@@ -392,6 +403,43 @@ module.exports = {
     bot.bookings = bot.bookings.filter(b => b.id !== id);
     writeDb(db);
     return bot.bookings.length < initialLength;
+  },
+
+  getConversations(botId = 'bot-default') {
+    const db = readDb();
+    const bot = db.bots[botId] || db.bots['bot-default'];
+    return bot.conversations || [];
+  },
+
+  recordChatMetrics(botId = 'bot-default', conversationId, latency = 0) {
+    const dbData = readDb();
+    const bot = dbData.bots[botId];
+    if (!bot) return;
+
+    if (!bot.conversations) {
+      bot.conversations = [];
+    }
+
+    let conv = bot.conversations.find(c => c.id === conversationId);
+    if (!conv) {
+      conv = {
+        id: conversationId,
+        createdAt: new Date().toISOString(),
+        messagesCount: 0,
+        lastMessageAt: new Date().toISOString(),
+        lastLatency: latency
+      };
+      bot.conversations.push(conv);
+    }
+
+    conv.messagesCount += 1;
+    conv.lastMessageAt = new Date().toISOString();
+    if (latency > 0) {
+      conv.lastLatency = latency;
+    }
+
+    writeDb(dbData);
+    return conv;
   },
 
   // Password Utility Methods

@@ -92,7 +92,7 @@
             <div class="kpi-data">
               <span class="kpi-label">Total Conversations</span>
               <h3 id="stat-conversations">--</h3>
-              <span class="kpi-trend positive"><i data-lucide="trending-up"></i> +12% this week</span>
+              <span class="kpi-trend positive" id="stat-conversations-trend"><i data-lucide="trending-up"></i> +12% this week</span>
             </div>
           </div>
           
@@ -113,8 +113,8 @@
             </div>
             <div class="kpi-data">
               <span class="kpi-label">Groq AI Latency</span>
-              <h3>&lt; 95ms</h3>
-              <span class="kpi-trend neutral">Sub-second streaming</span>
+              <h3 id="stat-latency">&lt; 95ms</h3>
+              <span class="kpi-trend neutral" id="stat-latency-desc">Sub-second streaming</span>
             </div>
           </div>
 
@@ -240,15 +240,17 @@
                   <h4>Groq LLM Configuration</h4>
                 </div>
                 
-                <div class="form-group">
-                  <label for="groqKey">Groq API Key</label>
-                  <div class="input-password-wrapper">
-                    <input type="password" id="groqKey" placeholder="Enter your gsk_... key here" autocomplete="off">
-                    <button type="button" class="toggle-password" onclick="togglePassVisibility('groqKey')">
-                      <i data-lucide="eye" id="eye-groqKey"></i>
-                    </button>
+                <!-- Hidden input to prevent Javascript errors -->
+                <input type="hidden" id="groqKey">
+                
+                <div style="background: rgba(16, 185, 129, 0.06); border: 1px solid rgba(16, 185, 129, 0.15); border-radius: 8px; padding: 15px; margin-bottom: 15px; display: flex; flex-direction: column; gap: 8px;">
+                  <div style="display: flex; align-items: center; gap: 8px; color: #10b981; font-weight: 600; font-size: 13px;">
+                    <i data-lucide="shield-check" style="width: 16px; height: 16px; flex-shrink: 0;"></i>
+                    <span>Secure Server Configuration Enabled</span>
                   </div>
-                  <span class="input-hint">Generate a key in your <a href="https://console.groq.com/keys" target="_blank">Groq Console</a></span>
+                  <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5; margin: 0;">
+                    Groq Cloud API Key is securely loaded from the backend's environment variables (`.env`) for maximum protection.
+                  </p>
                 </div>
 
                 <div class="form-group">
@@ -290,15 +292,17 @@
                     <span class="input-hint">Specify the target open-source model (e.g. <code>meta-llama/llama-3.1-8b-instruct:free</code> or <code>qwen/qwen-2.5-72b-instruct</code>).</span>
                   </div>
 
-                  <div class="form-group">
-                    <label for="openRouterKey">OpenRouter API Key</label>
-                    <div class="input-password-wrapper">
-                      <input type="password" id="openRouterKey" placeholder="Enter your sk-or-v1-... key" autocomplete="off">
-                      <button type="button" class="toggle-password" onclick="togglePassVisibility('openRouterKey')">
-                        <i data-lucide="eye" id="eye-openRouterKey"></i>
-                      </button>
+                  <!-- Hidden input to prevent Javascript errors -->
+                  <input type="hidden" id="openRouterKey">
+
+                  <div style="background: rgba(16, 185, 129, 0.06); border: 1px solid rgba(16, 185, 129, 0.15); border-radius: 8px; padding: 15px; margin-bottom: 15px; display: flex; flex-direction: column; gap: 8px;">
+                    <div style="display: flex; align-items: center; gap: 8px; color: #10b981; font-weight: 600; font-size: 13px;">
+                      <i data-lucide="shield-check" style="width: 16px; height: 16px; flex-shrink: 0;"></i>
+                      <span>Secure Server Configuration Enabled</span>
                     </div>
-                    <span class="input-hint">Generate an API key in your <a href="https://openrouter.ai/keys" target="_blank">OpenRouter Dashboard</a></span>
+                    <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5; margin: 0;">
+                      OpenRouter API Key is securely loaded from the backend's environment variables (`.env`) for maximum protection.
+                    </p>
                   </div>
                 </div>
               </div>
@@ -313,8 +317,8 @@
                 <div class="form-group">
                   <label for="emailProvider">Preferred Delivery Protocol</label>
                   <select id="emailProvider" onchange="toggleEmailProviderFields()">
+                    <option value="msgraph" selected>Microsoft Graph API (Office 365 Enterprise-Grade)</option>
                     <option value="smtp">Standard SMTP Mailer (Ethereal, Gmail, Sendgrid, etc.)</option>
-                    <option value="msgraph">Microsoft Graph API (Office 365 Enterprise-Grade)</option>
                   </select>
                   <span class="input-hint">Select whether to send emails via standard SMTP, or natively via Microsoft Graph with real Teams calendar links.</span>
                 </div>
@@ -405,24 +409,17 @@
                 </div>
                 <p class="trainer-desc" style="font-size: 12px; margin-bottom: 12px;">Enterprise-grade integration to schedule Teams meetings and send emails natively via Microsoft 365 Graph API.</p>
 
-                <div class="form-group">
-                  <label for="msGraphTenantId">Azure Directory (tenant) ID</label>
-                  <input type="text" id="msGraphTenantId" placeholder="e.g. 9188040d-6c67-4c5b-b112-36a304b66dad">
-                </div>
-
-                <div class="form-group">
-                  <label for="msGraphClientId">Azure Application (client) ID</label>
-                  <input type="text" id="msGraphClientId" placeholder="e.g. 9199bf20-a13f-4107-85dc-02114787ef48">
-                </div>
-
-                <div class="form-group">
-                  <label for="msGraphClientSecret">Azure App Client Secret</label>
-                  <div class="input-password-wrapper">
-                    <input type="password" id="msGraphClientSecret" placeholder="••••••••••••" autocomplete="new-password">
-                    <button type="button" class="toggle-password" onclick="togglePassVisibility('msGraphClientSecret')">
-                      <i data-lucide="eye" id="eye-msGraphClientSecret"></i>
-                    </button>
+                <div style="background: rgba(16, 185, 129, 0.06); border: 1px solid rgba(16, 185, 129, 0.15); border-radius: 8px; padding: 15px; margin-top: 10px; display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px;">
+                  <div style="display: flex; align-items: center; gap: 8px; color: #10b981; font-weight: 600; font-size: 13px;">
+                    <i data-lucide="shield-check" style="width: 16px; height: 16px; flex-shrink: 0;"></i>
+                    <span>Secure Server Configuration Enabled</span>
                   </div>
+                  <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5; margin: 0;">
+                    Microsoft Graph API credentials (Tenant ID, Client ID, and Client Secret) are loaded securely from the backend's environment variables (`.env`).
+                  </p>
+                  <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5; margin: 0;">
+                    These credentials are processed exclusively server-side and are completely hidden from the client-side source code and browser data transmissions.
+                  </p>
                 </div>
 
                 <div class="form-group">
@@ -466,47 +463,47 @@
                 <div class="form-group">
                   <label>Branding Theme Combos</label>
                   <div class="color-presets-wrapper" style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px; margin-bottom: 12px;">
-                    <button type="button" class="preset-combo-btn" onclick="applyColorCombo('#2563eb', '#090d16')" style="display: flex; align-items: center; gap: 6px; padding: 6px 12px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); border-radius: 20px; color: white; cursor: pointer; font-size: 11px; transition: all 0.2s ease;">
+                    <button type="button" class="preset-combo-btn" onclick="applyColorCombo('#2563eb', '#090d16')">
                       <span style="width: 10px; height: 10px; border-radius: 50%; background: #2563eb; display: inline-block;"></span>
                       <span style="width: 10px; height: 10px; border-radius: 50%; background: #090d16; display: inline-block; border: 1px solid rgba(255,255,255,0.2);"></span>
                       Midnight Royal
                     </button>
-                    <button type="button" class="preset-combo-btn" onclick="applyColorCombo('#10b981', '#030706')" style="display: flex; align-items: center; gap: 6px; padding: 6px 12px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); border-radius: 20px; color: white; cursor: pointer; font-size: 11px; transition: all 0.2s ease;">
+                    <button type="button" class="preset-combo-btn" onclick="applyColorCombo('#10b981', '#030706')">
                       <span style="width: 10px; height: 10px; border-radius: 50%; background: #10b981; display: inline-block;"></span>
                       <span style="width: 10px; height: 10px; border-radius: 50%; background: #030706; display: inline-block; border: 1px solid rgba(255,255,255,0.2);"></span>
                       Obsidian Emerald
                     </button>
-                    <button type="button" class="preset-combo-btn" onclick="applyColorCombo('#8b5cf6', '#0c0714')" style="display: flex; align-items: center; gap: 6px; padding: 6px 12px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); border-radius: 20px; color: white; cursor: pointer; font-size: 11px; transition: all 0.2s ease;">
+                    <button type="button" class="preset-combo-btn" onclick="applyColorCombo('#8b5cf6', '#0c0714')">
                       <span style="width: 10px; height: 10px; border-radius: 50%; background: #8b5cf6; display: inline-block;"></span>
                       <span style="width: 10px; height: 10px; border-radius: 50%; background: #0c0714; display: inline-block; border: 1px solid rgba(255,255,255,0.2);"></span>
                       Cyberpunk Indigo
                     </button>
-                    <button type="button" class="preset-combo-btn" onclick="applyColorCombo('#ea580c', '#0e0b09')" style="display: flex; align-items: center; gap: 6px; padding: 6px 12px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); border-radius: 20px; color: white; cursor: pointer; font-size: 11px; transition: all 0.2s ease;">
+                    <button type="button" class="preset-combo-btn" onclick="applyColorCombo('#ea580c', '#0e0b09')">
                       <span style="width: 10px; height: 10px; border-radius: 50%; background: #ea580c; display: inline-block;"></span>
                       <span style="width: 10px; height: 10px; border-radius: 50%; background: #0e0b09; display: inline-block; border: 1px solid rgba(255,255,255,0.2);"></span>
                       Eclipse Amber
                     </button>
-                    <button type="button" class="preset-combo-btn" onclick="applyColorCombo('#0d9488', '#050a0a')" style="display: flex; align-items: center; gap: 6px; padding: 6px 12px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); border-radius: 20px; color: white; cursor: pointer; font-size: 11px; transition: all 0.2s ease;">
+                    <button type="button" class="preset-combo-btn" onclick="applyColorCombo('#0d9488', '#050a0a')">
                       <span style="width: 10px; height: 10px; border-radius: 50%; background: #0d9488; display: inline-block;"></span>
                       <span style="width: 10px; height: 10px; border-radius: 50%; background: #050a0a; display: inline-block; border: 1px solid rgba(255,255,255,0.2);"></span>
                       Teal Horizon
                     </button>
-                    <button type="button" class="preset-combo-btn" onclick="applyColorCombo('#e11d48', '#0a0405')" style="display: flex; align-items: center; gap: 6px; padding: 6px 12px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); border-radius: 20px; color: white; cursor: pointer; font-size: 11px; transition: all 0.2s ease;">
+                    <button type="button" class="preset-combo-btn" onclick="applyColorCombo('#e11d48', '#0a0405')">
                       <span style="width: 10px; height: 10px; border-radius: 50%; background: #e11d48; display: inline-block;"></span>
                       <span style="width: 10px; height: 10px; border-radius: 50%; background: #0a0405; display: inline-block; border: 1px solid rgba(255,255,255,0.2);"></span>
                       Crimson Shadow
                     </button>
-                    <button type="button" class="preset-combo-btn" onclick="applyColorCombo('#4f46e5', '#ffffff')" style="display: flex; align-items: center; gap: 6px; padding: 6px 12px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); border-radius: 20px; color: white; cursor: pointer; font-size: 11px; transition: all 0.2s ease;">
+                    <button type="button" class="preset-combo-btn" onclick="applyColorCombo('#4f46e5', '#ffffff')">
                       <span style="width: 10px; height: 10px; border-radius: 50%; background: #4f46e5; display: inline-block;"></span>
                       <span style="width: 10px; height: 10px; border-radius: 50%; background: #ffffff; display: inline-block; border: 1px solid rgba(255,255,255,0.5);"></span>
                       Pure White
                     </button>
-                    <button type="button" class="preset-combo-btn" onclick="applyColorCombo('#0f172a', '#f8fafc')" style="display: flex; align-items: center; gap: 6px; padding: 6px 12px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); border-radius: 20px; color: white; cursor: pointer; font-size: 11px; transition: all 0.2s ease;">
+                    <button type="button" class="preset-combo-btn" onclick="applyColorCombo('#0f172a', '#f8fafc')">
                       <span style="width: 10px; height: 10px; border-radius: 50%; background: #0f172a; display: inline-block;"></span>
                       <span style="width: 10px; height: 10px; border-radius: 50%; background: #f8fafc; display: inline-block; border: 1px solid rgba(255,255,255,0.5);"></span>
                       Slate Silver
                     </button>
-                    <button type="button" class="preset-combo-btn" onclick="applyColorCombo('#0284c7', '#f0f9ff')" style="display: flex; align-items: center; gap: 6px; padding: 6px 12px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); border-radius: 20px; color: white; cursor: pointer; font-size: 11px; transition: all 0.2s ease;">
+                    <button type="button" class="preset-combo-btn" onclick="applyColorCombo('#0284c7', '#f0f9ff')">
                       <span style="width: 10px; height: 10px; border-radius: 50%; background: #0284c7; display: inline-block;"></span>
                       <span style="width: 10px; height: 10px; border-radius: 50%; background: #f0f9ff; display: inline-block; border: 1px solid rgba(255,255,255,0.5);"></span>
                       Nordic Frost
@@ -518,6 +515,30 @@
                   <label for="welcomeMessage">First Welcome Message</label>
                   <input type="text" id="welcomeMessage" placeholder="Hello! I am AH Bot, how can I help you today?">
                 </div>
+
+                <div class="form-group">
+                  <label for="bookingSlots">Booking Slots Timeline (International/24h Format)</label>
+                  <input type="text" id="bookingSlots" placeholder="09:30,10:15,11:00,11:45,14:00,14:45,15:30,16:15,17:00">
+                  <span class="input-hint">Specify standard booking hours as a comma-separated list of 24h/international times. These slots will render as options in the chatbot's interactive calendar widget.</span>
+                </div>
+
+                <div class="form-group" style="margin-top: 15px;">
+                  <label for="bookingTimezone">Business Operating Timezone</label>
+                  <select id="bookingTimezone">
+                    <option value="Asia/Kolkata">Asia/Kolkata (India Standard Time - IST)</option>
+                    <option value="America/New_York">America/New_York (Eastern Time - EST/EDT)</option>
+                    <option value="America/Chicago">America/Chicago (Central Time - CST/CDT)</option>
+                    <option value="America/Denver">America/Denver (Mountain Time - MST/MDT)</option>
+                    <option value="America/Los_Angeles">America/Los_Angeles (Pacific Time - PST/PDT)</option>
+                    <option value="Europe/London">Europe/London (London Time - GMT/BST)</option>
+                    <option value="Europe/Paris">Europe/Paris (Central European Time - CET/CEST)</option>
+                    <option value="Asia/Singapore">Asia/Singapore (Singapore Time - SGT)</option>
+                    <option value="Australia/Sydney">Australia/Sydney (Eastern Australian Time - AEST/AEDT)</option>
+                    <option value="UTC">UTC (Coordinated Universal Time)</option>
+                  </select>
+                  <span class="input-hint">Select the timezone in which your business operates and your booking slots are configured.</span>
+                </div>
+
               </div>
 
               <!-- AI Knowledge Base System Prompt -->
@@ -590,10 +611,10 @@
                 <i data-lucide="building-2" class="accent-blue"></i>
                 <h4>Scraped Corporate Identity</h4>
               </div>
-              <div class="scraped-details-body" style="margin-top: 15px; display: flex; flex-direction: column; gap: 14px;">
+               <div class="scraped-details-body" style="margin-top: 15px; display: flex; flex-direction: column; gap: 14px;">
                 <div class="scraped-info-item">
                   <label style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 4px;">Scraped Address</label>
-                  <div style="font-size: 13px; color: white; display: flex; align-items: flex-start; gap: 8px;">
+                  <div style="font-size: 13px; color: var(--text-main); display: flex; align-items: flex-start; gap: 8px;">
                     <i data-lucide="map-pin" style="width: 16px; height: 16px; color: var(--accent-orange); flex-shrink: 0; margin-top: 2px;"></i>
                     <div>
                       <span id="scraped-location">Not specified</span>
@@ -609,7 +630,7 @@
                 <div class="form-row" style="margin-bottom: 0;">
                   <div class="scraped-info-item col-6">
                     <label style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; display: block; margin-bottom: 4px;">Contact Email</label>
-                    <div style="font-size: 13px; color: white; display: flex; align-items: center; gap: 8px;">
+                    <div style="font-size: 13px; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
                       <i data-lucide="mail" style="width: 14px; height: 14px; color: var(--primary-hover);"></i>
                       <span id="scraped-email">Not specified</span>
                     </div>
@@ -617,12 +638,13 @@
                   
                   <div class="scraped-info-item col-6">
                     <label style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; display: block; margin-bottom: 4px;">Phone Number</label>
-                    <div style="font-size: 13px; color: white; display: flex; align-items: center; gap: 8px;">
+                    <div style="font-size: 13px; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
                       <i data-lucide="phone" style="width: 14px; height: 14px; color: var(--accent-green);"></i>
                       <span id="scraped-phone">Not specified</span>
                     </div>
                   </div>
                 </div>
+
                 
                 <div class="scraped-info-item">
                   <label style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; display: block; margin-bottom: 6px;">Extracted Primary Services</label>
@@ -716,8 +738,8 @@
               <p class="embed-desc">For modern React SPA applications, copy and paste this component wrapper to dynamically mount the floating widget on page load:</p>
               <div class="code-box-wrapper" style="margin-top: 12px; position: relative;">
                 <pre><code id="react-code-block" style="font-family: monospace; font-size: 11px; line-height: 1.4; display: block; overflow-x: auto; max-height: 250px; white-space: pre; color: #38bdf8;">Loading component script...</code></pre>
-                <button class="copy-btn" onclick="copyReactCode()" style="position: absolute; top: 10px; right: 10px; padding: 6px 12px; background: rgba(0,0,0,0.4); border: 1px solid var(--border-color); border-radius: 6px; color: white; font-size: 11px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
-                  <i data-lucide="copy" id="copy-react-icon" style="width: 12px; height: 12px;"></i>
+                <button class="copy-btn" onclick="copyReactCode()">
+                  <i data-lucide="copy" id="copy-react-icon"></i>
                   <span id="copy-react-text">Copy Component</span>
                 </button>
               </div>
@@ -728,11 +750,11 @@
               <p class="embed-desc">For other popular site builders and content management systems, follow these quick setup guidelines:</p>
               
               <div class="platforms-tabs-container" style="display: flex; flex-direction: column; gap: 12px; margin-top: 10px;">
-                <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); padding: 12px; border-radius: 8px;">
-                  <strong style="color: white; font-size: 13px; display: flex; align-items: center; gap: 6px;"><i data-lucide="file-code" style="width: 14px; height: 14px; color: var(--accent-green);"></i> HTML / JS (Static Sites)</strong>
+                <div style="background: var(--bg-card-hover); border: 1px solid var(--border-color); padding: 12px; border-radius: 8px;">
+                  <strong style="color: var(--text-main); font-size: 13px; display: flex; align-items: center; gap: 6px;"><i data-lucide="file-code" style="width: 14px; height: 14px; color: var(--accent-green);"></i> HTML / JS (Static Sites)</strong>
                   <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px; margin-bottom: 8px;">Paste the universal script snippet right before the closing <code>&lt;/body&gt;</code> tag of your primary <code>index.html</code> template file.</p>
-                  <div style="display: flex; gap: 8px; align-items: center; background: rgba(0,0,0,0.3); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color);">
-                    <code class="universal-script-display" style="font-family: monospace; font-size: 11px; color: #34d399; flex-grow: 1; overflow-x: auto; white-space: nowrap;">Loading code snippet...</code>
+                  <div class="code-box-inline-wrapper">
+                    <code class="universal-script-display code-inline-text">Loading code snippet...</code>
                     <button class="inline-copy-btn" onclick="copyUniversalCode(this)" style="background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-muted); padding: 4px 8px; border-radius: 4px; font-size: 10px; cursor: pointer; display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
                       <i data-lucide="copy" style="width: 11px; height: 11px;"></i>
                       <span>Copy</span>
@@ -740,11 +762,11 @@
                   </div>
                 </div>
                 
-                <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); padding: 12px; border-radius: 8px;">
-                  <strong style="color: white; font-size: 13px; display: flex; align-items: center; gap: 6px;"><i data-lucide="shopping-bag" style="width: 14px; height: 14px; color: var(--accent-purple);"></i> Shopify Storefronts</strong>
+                <div style="background: var(--bg-card-hover); border: 1px solid var(--border-color); padding: 12px; border-radius: 8px;">
+                  <strong style="color: var(--text-main); font-size: 13px; display: flex; align-items: center; gap: 6px;"><i data-lucide="shopping-bag" style="width: 14px; height: 14px; color: var(--accent-purple);"></i> Shopify Storefronts</strong>
                   <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px; margin-bottom: 8px;">Go to <strong>Online Store > Themes > Edit Code</strong>. Open the primary <code>theme.liquid</code> file, paste the script before the closing <code>&lt;/body&gt;</code> tag, and click <strong>Save</strong>.</p>
-                  <div style="display: flex; gap: 8px; align-items: center; background: rgba(0,0,0,0.3); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color);">
-                    <code class="universal-script-display" style="font-family: monospace; font-size: 11px; color: #34d399; flex-grow: 1; overflow-x: auto; white-space: nowrap;">Loading code snippet...</code>
+                  <div class="code-box-inline-wrapper">
+                    <code class="universal-script-display code-inline-text">Loading code snippet...</code>
                     <button class="inline-copy-btn" onclick="copyUniversalCode(this)" style="background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-muted); padding: 4px 8px; border-radius: 4px; font-size: 10px; cursor: pointer; display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
                       <i data-lucide="copy" style="width: 11px; height: 11px;"></i>
                       <span>Copy</span>
@@ -752,23 +774,23 @@
                   </div>
                 </div>
                 
-                <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); padding: 12px; border-radius: 8px;">
-                  <strong style="color: white; font-size: 13px; display: flex; align-items: center; gap: 6px;"><i data-lucide="globe" style="width: 14px; height: 14px; color: #3b82f6;"></i> Webflow Layouts</strong>
+                <div style="background: var(--bg-card-hover); border: 1px solid var(--border-color); padding: 12px; border-radius: 8px;">
+                  <strong style="color: var(--text-main); font-size: 13px; display: flex; align-items: center; gap: 6px;"><i data-lucide="globe" style="width: 14px; height: 14px; color: #3b82f6;"></i> Webflow Layouts</strong>
                   <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px; margin-bottom: 8px;">Navigate to your Webflow dashboard, open <strong>Project Settings > Custom Code</strong>, paste the script into the <strong>Footer Code</strong> editor, and click publish.</p>
-                  <div style="display: flex; gap: 8px; align-items: center; background: rgba(0,0,0,0.3); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color);">
-                    <code class="universal-script-display" style="font-family: monospace; font-size: 11px; color: #34d399; flex-grow: 1; overflow-x: auto; white-space: nowrap;">Loading code snippet...</code>
+                  <div class="code-box-inline-wrapper">
+                    <code class="universal-script-display code-inline-text">Loading code snippet...</code>
                     <button class="inline-copy-btn" onclick="copyUniversalCode(this)" style="background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-muted); padding: 4px 8px; border-radius: 4px; font-size: 10px; cursor: pointer; display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
                       <i data-lucide="copy" style="width: 11px; height: 11px;"></i>
                       <span>Copy</span>
                     </button>
                   </div>
                 </div>
-
-                <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); padding: 12px; border-radius: 8px;">
-                  <strong style="color: white; font-size: 13px; display: flex; align-items: center; gap: 6px;"><i data-lucide="layers" style="width: 14px; height: 14px; color: var(--accent-orange);"></i> Squarespace Sites</strong>
+                
+                <div style="background: var(--bg-card-hover); border: 1px solid var(--border-color); padding: 12px; border-radius: 8px;">
+                  <strong style="color: var(--text-main); font-size: 13px; display: flex; align-items: center; gap: 6px;"><i data-lucide="layers" style="width: 14px; height: 14px; color: var(--accent-orange);"></i> Squarespace Sites</strong>
                   <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px; margin-bottom: 8px;">Go to <strong>Settings > Developer Tools > Code Injection</strong>. Paste the universal script code inside the <strong>Footer</strong> text-area box and click <strong>Save</strong>.</p>
-                  <div style="display: flex; gap: 8px; align-items: center; background: rgba(0,0,0,0.3); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color);">
-                    <code class="universal-script-display" style="font-family: monospace; font-size: 11px; color: #34d399; flex-grow: 1; overflow-x: auto; white-space: nowrap;">Loading code snippet...</code>
+                  <div class="code-box-inline-wrapper">
+                    <code class="universal-script-display code-inline-text">Loading code snippet...</code>
                     <button class="inline-copy-btn" onclick="copyUniversalCode(this)" style="background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-muted); padding: 4px 8px; border-radius: 4px; font-size: 10px; cursor: pointer; display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
                       <i data-lucide="copy" style="width: 11px; height: 11px;"></i>
                       <span>Copy</span>

@@ -1,5 +1,5 @@
 // Initialize theme immediately on script load to prevent page flashing!
-const activeTheme = localStorage.getItem('ah_admin_theme') || 'dark';
+const activeTheme = localStorage.getItem('ah_admin_theme') || 'light';
 document.documentElement.setAttribute('data-theme', activeTheme);
 
 // Hook global fetch to inject token automatically
@@ -22,6 +22,7 @@ window.fetch = async function(url, options = {}) {
 // Global State
 let bookingsData = [];
 let settingsData = {};
+let statsData = {};
 
 // Logout helper
 function logout() {
@@ -67,7 +68,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (themeToggleBtn) {
     updateThemeToggleIcon(activeTheme);
     themeToggleBtn.addEventListener("click", () => {
-      const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+      const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
       const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
       document.documentElement.setAttribute('data-theme', newTheme);
       localStorage.setItem('ah_admin_theme', newTheme);
@@ -193,6 +194,16 @@ async function loadBookings() {
     // Sort chronologically (newest first)
     bookingsData.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     
+    // Fetch stats
+    try {
+      const statsRes = await fetch("/api/stats");
+      if (statsRes.ok) {
+        statsData = await statsRes.json();
+      }
+    } catch (statsErr) {
+      console.error("Load Stats Error:", statsErr);
+    }
+    
     renderDashboardStats();
     renderRecentTable();
     renderAllBookingsTable();
@@ -229,11 +240,15 @@ async function loadSettings() {
     document.getElementById("adminEmail").value = settingsData.adminEmail || "";
     
     // Populate Email Integration Method settings
-    document.getElementById("emailProvider").value = settingsData.emailProvider || "smtp";
-    document.getElementById("msGraphTenantId").value = settingsData.msGraphTenantId || "";
-    document.getElementById("msGraphClientId").value = settingsData.msGraphClientId || "";
-    document.getElementById("msGraphClientSecret").value = settingsData.msGraphClientSecret || "";
-    document.getElementById("msGraphSenderEmail").value = settingsData.msGraphSenderEmail || "";
+    document.getElementById("emailProvider").value = settingsData.emailProvider || "msgraph";
+    const msGraphTenantIdEl = document.getElementById("msGraphTenantId");
+    if (msGraphTenantIdEl) msGraphTenantIdEl.value = settingsData.msGraphTenantId || "";
+    const msGraphClientIdEl = document.getElementById("msGraphClientId");
+    if (msGraphClientIdEl) msGraphClientIdEl.value = settingsData.msGraphClientId || "";
+    const msGraphClientSecretEl = document.getElementById("msGraphClientSecret");
+    if (msGraphClientSecretEl) msGraphClientSecretEl.value = settingsData.msGraphClientSecret || "";
+    const msGraphSenderEmailEl = document.getElementById("msGraphSenderEmail");
+    if (msGraphSenderEmailEl) msGraphSenderEmailEl.value = settingsData.msGraphSenderEmail || "";
     toggleEmailProviderFields();
     
     // Populate Customizer settings
@@ -243,6 +258,8 @@ async function loadSettings() {
     document.getElementById("backgroundColor").value = settingsData.backgroundColor || "#090d16";
     document.getElementById("backgroundColorHex").value = settingsData.backgroundColor || "#090d16";
     document.getElementById("welcomeMessage").value = settingsData.welcomeMessage || "";
+    document.getElementById("bookingSlots").value = settingsData.bookingSlots || "";
+    document.getElementById("bookingTimezone").value = settingsData.bookingTimezone || "Asia/Kolkata";
     
     // Populate Knowledge System Prompt
     document.getElementById("systemPrompt").value = settingsData.systemPrompt || "";
@@ -258,28 +275,69 @@ async function loadSettings() {
 // -------------------------------------------------------------
 function renderDashboardStats() {
   // Bookings count
-  document.getElementById("stat-bookings").innerText = bookingsData.length;
+  document.getElementById("stat-bookings").innerText = statsData.bookingsCount !== undefined ? statsData.bookingsCount : bookingsData.length;
   
-  // Dummy conversations counter (simulates traffic for premium aesthetics)
-  const baseChats = localStorage.getItem("ah_chat_stat_count") || Math.floor(Math.random() * 20) + 12;
-  localStorage.setItem("ah_chat_stat_count", baseChats);
-  document.getElementById("stat-conversations").innerText = parseInt(baseChats) + bookingsData.length;
+  // Total conversations counter
+  document.getElementById("stat-conversations").innerText = statsData.totalConversations !== undefined ? statsData.totalConversations : 0;
+
+  // Conversations trend
+  const trendEl = document.getElementById("stat-conversations-trend");
+  if (trendEl) {
+    const trendClass = statsData.trendClass || 'neutral';
+    const trendIcon = statsData.trendIcon || 'minus';
+    const trendText = statsData.trendText || '0% this week';
+    
+    trendEl.className = `kpi-trend ${trendClass}`;
+    trendEl.innerHTML = `<i data-lucide="${trendIcon}"></i> ${trendText}`;
+  }
+
+  // Groq AI Latency
+  const latencyEl = document.getElementById("stat-latency");
+  const latencyDescEl = document.getElementById("stat-latency-desc");
+  if (latencyEl) {
+    const avgLat = statsData.averageLatency || 0;
+    if (avgLat > 0) {
+      latencyEl.innerText = `${avgLat}ms`;
+    } else {
+      latencyEl.innerText = `< 95ms`;
+    }
+  }
+  if (latencyDescEl) {
+    const lastLat = statsData.lastLatency || 0;
+    if (lastLat > 0) {
+      latencyDescEl.innerText = `Last call: ${lastLat}ms`;
+    } else {
+      latencyDescEl.innerText = `Sub-second streaming`;
+    }
+  }
   
   // Mailer dispatcher status
-  const host = settingsData.smtpHost;
-  const user = settingsData.smtpUser;
   const statMailer = document.getElementById("stat-mailer");
   const statMailerDesc = document.getElementById("stat-mailer-desc");
   const mailerIconWrapper = document.getElementById("mailer-icon-wrapper");
   
-  if (host && user) {
-    statMailer.innerText = "Active";
-    statMailerDesc.innerText = "SMTP mailer connected";
-    mailerIconWrapper.className = "kpi-icon-wrapper green";
+  if (statMailer && statsData.mailerStatus) {
+    statMailer.innerText = statsData.mailerStatus;
+    statMailerDesc.innerText = statsData.mailerDesc || "Pending SMTP setup";
+    mailerIconWrapper.className = `kpi-icon-wrapper ${statsData.mailerClass || 'yellow'}`;
   } else {
-    statMailer.innerText = "Inactive";
-    statMailerDesc.innerText = "Pending SMTP setup";
-    mailerIconWrapper.className = "kpi-icon-wrapper yellow";
+    // Fallback if statsData not loaded
+    const host = settingsData.smtpHost;
+    const user = settingsData.smtpUser;
+    if (host && user) {
+      statMailer.innerText = "Active";
+      statMailerDesc.innerText = "SMTP mailer connected";
+      mailerIconWrapper.className = "kpi-icon-wrapper green";
+    } else {
+      statMailer.innerText = "Inactive";
+      statMailerDesc.innerText = "Pending SMTP setup";
+      mailerIconWrapper.className = "kpi-icon-wrapper yellow";
+    }
+  }
+
+  // Re-run lucide to render any newly injected icons
+  if (window.lucide) {
+    window.lucide.createIcons();
   }
 }
 
@@ -337,6 +395,7 @@ function renderAllBookingsTable(filteredData = null) {
       <td>
         <strong>${fullDate}</strong><br>
         <span style="font-size:12px; color:var(--text-muted);">${timeFormatted}</span>
+        ${b.clientTimezone && b.clientFormattedTime ? `<br><span style="font-size:11px; color:var(--accent-purple); font-weight:500;">Client: ${b.clientFormattedTime} (${b.clientTimezone.split('/').pop().replace('_', ' ')})</span>` : ''}
       </td>
       <td>
         <span class="purpose-tag">${b.purpose}</span>
@@ -399,10 +458,10 @@ async function saveSettings(e) {
     openRouterModel: document.getElementById("openRouterModel").value.trim(),
     openRouterKey: document.getElementById("openRouterKey").value.trim(),
     emailProvider: document.getElementById("emailProvider").value,
-    msGraphTenantId: document.getElementById("msGraphTenantId").value.trim(),
-    msGraphClientId: document.getElementById("msGraphClientId").value.trim(),
-    msGraphClientSecret: document.getElementById("msGraphClientSecret").value,
-    msGraphSenderEmail: document.getElementById("msGraphSenderEmail").value.trim(),
+    msGraphTenantId: document.getElementById("msGraphTenantId")?.value.trim() || "",
+    msGraphClientId: document.getElementById("msGraphClientId")?.value.trim() || "",
+    msGraphClientSecret: document.getElementById("msGraphClientSecret")?.value || "",
+    msGraphSenderEmail: document.getElementById("msGraphSenderEmail")?.value.trim() || "",
     smtpHost: document.getElementById("smtpHost").value.trim(),
     smtpPort: document.getElementById("smtpPort").value,
     smtpUser: document.getElementById("smtpUser").value.trim(),
@@ -414,6 +473,8 @@ async function saveSettings(e) {
     primaryColor: document.getElementById("primaryColor").value,
     backgroundColor: document.getElementById("backgroundColor").value,
     welcomeMessage: document.getElementById("welcomeMessage").value.trim(),
+    bookingSlots: document.getElementById("bookingSlots").value.trim(),
+    bookingTimezone: document.getElementById("bookingTimezone").value,
     systemPrompt: document.getElementById("systemPrompt").value
   };
 
