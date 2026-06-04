@@ -771,7 +771,17 @@ function scrollToBottom() {
 // Quick markdown formatter for bolding (**bold**), code blocks (`code`), and hyperlinked text ([lbl](url))
 function formatTextMarkdown(text) {
   if (!text) return "";
-  let html = text
+  
+  // Clean up any literal template section headers
+  let cleanText = text
+    .replace(/^(?:\*\*)?Direct\s*&\s*Warm\s*Response:?(?:\*\*)?:?\s*/gim, "")
+    .replace(/^(?:\*\*)?Structured\s*Details\s*(?:\(Bullet\s*Points\))?:?(?:\*\*)?:?\s*/gim, "")
+    .replace(/^(?:\*\*)?Value-Add\s*\/\s*Consulting\s*Insight:?(?:\*\*)?:?\s*/gim, "")
+    .replace(/^(?:\*\*)?Standardized\s*Next-Step:?(?:\*\*)?:?\s*/gim, "");
+    
+  cleanText = cleanText.replace(/\n{3,}/g, '\n\n').trim();
+
+  let html = cleanText
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
