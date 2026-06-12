@@ -1037,7 +1037,7 @@ async function startWebsiteTraining() {
   } catch (error) {
     clearInterval(interval);
     addConsoleLog(`❌ Scraper system encountered an error: ${error.message}`, 'error');
-    addConsoleLog(`💡 Troubleshooting tip: Verify your Tata Communications API key is set in 'Chatbot Settings' and the URL is public.`, 'info');
+    addConsoleLog(`💡 Troubleshooting tip: Verify your AI Cloud API key is set in 'Chatbot Settings' and the URL is public.`, 'info');
     
     statusBadge.className = "console-badge failed";
     statusBadge.innerText = "FAILED";

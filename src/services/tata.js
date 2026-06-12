@@ -60,7 +60,7 @@ async function getChatResponse(messages, botId = 'bot-default') {
         console.log(`Tata Chat Service: Successful completion with model: ${modelName}`);
         return response.data.choices[0].message.content;
       } else {
-        throw new Error("Invalid response format from Tata AI API");
+        throw new Error("Invalid response format from AI Cloud API");
       }
     } catch (error) {
       console.warn(`Tata Chat Service Model Fallback warning: Model ${modelName} failed. Details: ${error.message}`);
@@ -411,7 +411,7 @@ Instruct the chatbot to format EVERY single response using a clean, elite consul
 
 async function callTataSynthesis(tataKey, tataUrl, configModel, promptText) {
   if (!tataKey) {
-    throw new Error("Tata API key is missing. Please set it in Settings to train the AI.");
+    throw new Error("AI Cloud API key is missing. Please set it in Settings to train the AI.");
   }
 
   const preferredModel = configModel || 'meta/Llama-3.3-70B-Instruct';
@@ -485,14 +485,14 @@ async function callTataSynthesis(tataKey, tataUrl, configModel, promptText) {
         }
       }
 
-      throw new Error("Empty response from Tata completions endpoint.");
+      throw new Error("Empty response from AI Cloud completions endpoint.");
     } catch (error) {
       console.warn(`Tata Prompt Synthesis Fallback warning: Model ${modelName} failed. Details: ${error.message}`);
       lastError = error;
     }
   }
 
-  throw new Error(`All Tata fallback models failed for synthesis. Last Error: ${lastError.message}`);
+  throw new Error(`All AI Cloud fallback models failed for synthesis. Last Error: ${lastError.message}`);
 }
 
 function sanitizeJsonString(str) {

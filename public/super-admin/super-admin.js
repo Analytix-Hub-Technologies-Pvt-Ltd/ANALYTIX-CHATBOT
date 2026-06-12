@@ -514,7 +514,14 @@ document.addEventListener('DOMContentLoaded', () => {
         throw new Error('Failed to load global settings');
       }
       const data = await res.json();
-      if (tataUrlInput) tataUrlInput.value = data.tataUrl || "https://models.cloudservices.tatacommunications.com/v1";
+      if (tataUrlInput) {
+        const urlVal = data.tataUrl || "";
+        if (urlVal === "https://models.cloudservices.tatacommunications.com/v1") {
+          tataUrlInput.value = "";
+        } else {
+          tataUrlInput.value = urlVal;
+        }
+      }
       if (tataModelSelect) tataModelSelect.value = data.tataModel || "meta/Llama-3.3-70B-Instruct";
       if (tataKeyInput) tataKeyInput.value = data.tataKey || "";
       if (razorpayKeyIdInput) razorpayKeyIdInput.value = data.razorpayKeyId || "";
@@ -537,8 +544,9 @@ document.addEventListener('DOMContentLoaded', () => {
         settingsStatusMsg.textContent = 'Saving global settings...';
       }
 
+      const rawUrl = tataUrlInput.value.trim();
       const payload = {
-        tataUrl: tataUrlInput.value.trim(),
+        tataUrl: rawUrl === "" ? "https://models.cloudservices.tatacommunications.com/v1" : rawUrl,
         tataModel: tataModelSelect.value,
         tataKey: tataKeyInput.value.trim(),
         razorpayKeyId: razorpayKeyIdInput ? razorpayKeyIdInput.value.trim() : "",
