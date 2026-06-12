@@ -13,17 +13,22 @@
   
   <style>
     :root {
-      --bg-dark: #0b0f19;
-      --card-bg: rgba(18, 24, 38, 0.85);
-      --border-color: rgba(255, 255, 255, 0.08);
+      --bg-dark: #f8fafc;
+      --card-bg: rgba(255, 255, 255, 0.95);
+      --border-color: rgba(0, 0, 0, 0.08);
       --primary: #2563eb;
-      --primary-glow: rgba(37, 99, 235, 0.2);
-      --accent-purple: #8b5cf6;
-      --accent-purple-glow: rgba(139, 92, 246, 0.2);
-      --text-white: #f8fafc;
-      --text-muted: #94a3b8;
+      --primary-glow: rgba(37, 99, 235, 0.15);
+      --accent-purple: #7c3aed;
+      --accent-purple-glow: rgba(124, 58, 237, 0.15);
+      --text-white: #0f172a;
+      --text-muted: #475569;
       --error-red: #ef4444;
       --success-green: #10b981;
+
+      /* Alerts High Contrast for Light Mode */
+      --alert-error-text: #b91c1c;
+      --alert-error-bg: #fef2f2;
+      --alert-error-border: #fca5a5;
     }
 
     * {
@@ -100,7 +105,7 @@
       border: 1px solid var(--border-color);
       border-radius: 24px;
       padding: 40px;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.08);
       backdrop-filter: blur(25px);
       -webkit-backdrop-filter: blur(25px);
       display: flex;
@@ -142,7 +147,7 @@
       font-size: 18px;
       font-weight: 700;
       letter-spacing: -0.3px;
-      background: linear-gradient(to right, #ffffff, #e2e8f0);
+      background: linear-gradient(to right, var(--text-white), var(--text-muted));
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
@@ -175,7 +180,7 @@
       left: 10px;
       right: 10px;
       height: 2px;
-      background: rgba(255, 255, 255, 0.08);
+      background: rgba(0, 0, 0, 0.08);
       z-index: 1;
     }
 
@@ -205,7 +210,7 @@
       height: 32px;
       border-radius: 50%;
       background: var(--bg-dark);
-      border: 2px solid rgba(255, 255, 255, 0.12);
+      border: 2px solid rgba(0, 0, 0, 0.1);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -239,7 +244,7 @@
     }
 
     .step-node.active .step-label {
-      color: white;
+      color: var(--primary);
     }
 
     /* Onboarding Content Panes */
@@ -297,10 +302,10 @@
     .input-wrapper input, .input-wrapper select, .input-wrapper textarea {
       width: 100%;
       padding: 12px 14px 12px 42px;
-      background: rgba(0, 0, 0, 0.25);
+      background: rgba(0, 0, 0, 0.02);
       border: 1px solid var(--border-color);
       border-radius: 10px;
-      color: white;
+      color: var(--text-white);
       font-size: 14px;
       outline: none;
       transition: all 0.3s ease;
@@ -313,7 +318,7 @@
 
     .input-wrapper input:focus, .input-wrapper select:focus, .input-wrapper textarea:focus {
       border-color: var(--primary);
-      background: rgba(0, 0, 0, 0.4);
+      background: #ffffff;
       box-shadow: 0 0 0 3px var(--primary-glow);
     }
 
@@ -343,8 +348,8 @@
     }
 
     .preset-circle.active {
-      border-color: white;
-      box-shadow: 0 0 10px rgba(255,255,255,0.4);
+      border-color: var(--primary);
+      box-shadow: 0 0 10px rgba(37,99,235,0.2);
       transform: scale(1.1);
     }
 
@@ -369,7 +374,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      border-top: 1px solid rgba(0, 0, 0, 0.06);
       padding-top: 20px;
     }
 
@@ -387,14 +392,14 @@
     }
 
     .btn-secondary {
-      background: rgba(255, 255, 255, 0.05);
+      background: rgba(0, 0, 0, 0.02);
       border: 1px solid var(--border-color);
       color: var(--text-muted);
     }
 
     .btn-secondary:hover {
-      background: rgba(255, 255, 255, 0.08);
-      color: white;
+      background: rgba(0, 0, 0, 0.04);
+      color: var(--text-white);
     }
 
     .btn-primary {
@@ -445,9 +450,9 @@
     }
 
     .alert-error {
-      background: rgba(239, 68, 68, 0.15);
-      border: 1px solid rgba(239, 68, 68, 0.3);
-      color: #fca5a5;
+      background: var(--alert-error-bg);
+      border: 1px solid var(--alert-error-border);
+      color: var(--alert-error-text);
     }
 
     /* Right Column - Premium Chatbot Live Widget Preview */
@@ -675,6 +680,48 @@
       width: 24px;
       height: 24px;
     }
+
+    /* Light theme overrides for onboarding live assistant mock preview */
+    .widget-preview-box.light-theme .widget-body {
+      background-color: var(--bg-color, #ffffff);
+    }
+    
+    .widget-preview-box.light-theme .bubble-bot {
+      background: rgba(0, 0, 0, 0.05);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      color: #0f172a;
+    }
+    
+    .widget-preview-box.light-theme .mock-booking-card {
+      background: rgba(0, 0, 0, 0.03);
+      border-color: rgba(0, 0, 0, 0.08);
+    }
+    
+    .widget-preview-box.light-theme .mock-booking-card h6 {
+      color: #475569;
+    }
+    
+    .widget-preview-box.light-theme .mock-slot {
+      background: #ffffff;
+      border-color: rgba(0, 0, 0, 0.1);
+      color: #1e293b;
+    }
+    
+    .widget-preview-box.light-theme .mock-slot.highlight {
+      background: var(--primary) !important;
+      color: white !important;
+      border-color: transparent !important;
+    }
+    
+    .widget-preview-box.light-theme .widget-footer {
+      border-top-color: rgba(0, 0, 0, 0.08);
+    }
+    
+    .widget-preview-box.light-theme .widget-input-mock {
+      background: rgba(0, 0, 0, 0.03);
+      border-color: rgba(0, 0, 0, 0.08);
+      color: #64748b;
+    }
   </style>
 </head>
 <body>
@@ -767,13 +814,6 @@
                 <i data-lucide="briefcase"></i>
               </div>
             </div>
-            <div class="form-group">
-              <label for="websiteUrl">Website URL (Optional)</label>
-              <div class="input-wrapper">
-                <input type="url" id="websiteUrl" placeholder="e.g. https://apextech.com">
-                <i data-lucide="globe"></i>
-              </div>
-            </div>
           </div>
 
           <!-- STEP 3: custom assistant layout -->
@@ -789,15 +829,15 @@
             <div class="form-group">
               <label>Brand Primary Color</label>
               <div class="color-presets-wrapper">
-                <div class="preset-circle active" style="background:#2563eb;" data-color="#2563eb" onclick="selectColorPreset(this)"></div>
+                <div class="preset-circle active" style="background:#4f46e5;" data-color="#4f46e5" onclick="selectColorPreset(this)"></div>
                 <div class="preset-circle" style="background:#10b981;" data-color="#10b981" onclick="selectColorPreset(this)"></div>
                 <div class="preset-circle" style="background:#8b5cf6;" data-color="#8b5cf6" onclick="selectColorPreset(this)"></div>
                 <div class="preset-circle" style="background:#ea580c;" data-color="#ea580c" onclick="selectColorPreset(this)"></div>
                 <div class="preset-circle" style="background:#0d9488;" data-color="#0d9488" onclick="selectColorPreset(this)"></div>
                 
                 <div class="custom-hex-group">
-                  <input type="color" id="customColorPicker" class="color-picker-input" value="#2563eb" oninput="handleCustomColorInput(this.value)">
-                  <input type="text" id="customColorHex" value="#2563EB" style="width: 80px; padding: 6px; text-transform: uppercase; font-size:12px; background:rgba(0,0,0,0.25); border:1px solid var(--border-color); border-radius:6px; color:white;" oninput="handleHexTextChange(this.value)">
+                  <input type="color" id="customColorPicker" class="color-picker-input" value="#4f46e5" oninput="handleCustomColorInput(this.value)">
+                  <input type="text" id="customColorHex" value="#4F46E5" style="width: 80px; padding: 6px; text-transform: uppercase; font-size:12px; background:rgba(0,0,0,0.25); border:1px solid var(--border-color); border-radius:6px; color:white;" oninput="handleHexTextChange(this.value)">
                 </div>
               </div>
             </div>
@@ -805,8 +845,8 @@
             <div class="form-group">
               <label>Brand Background Color</label>
               <div class="custom-hex-group">
-                <input type="color" id="onboardingBgColorPicker" class="color-picker-input" value="#090d16" oninput="handleOnboardingBgColorInput(this.value)">
-                <input type="text" id="onboardingBgColorHex" value="#090D16" style="width: 80px; padding: 6px; text-transform: uppercase; font-size:12px; background:rgba(0,0,0,0.25); border:1px solid var(--border-color); border-radius:6px; color:white;" oninput="handleOnboardingBgHexChange(this.value)">
+                <input type="color" id="onboardingBgColorPicker" class="color-picker-input" value="#ffffff" oninput="handleOnboardingBgColorInput(this.value)">
+                <input type="text" id="onboardingBgColorHex" value="#FFFFFF" style="width: 80px; padding: 6px; text-transform: uppercase; font-size:12px; background:rgba(0,0,0,0.25); border:1px solid var(--border-color); border-radius:6px; color:white;" oninput="handleOnboardingBgHexChange(this.value)">
               </div>
             </div>
 
@@ -951,8 +991,8 @@
 
     // Onboarding global State
     let currentStep = 1;
-    let selectedColor = '#2563eb';
-    let selectedBgColor = '#090d16';
+    let selectedColor = '#4f46e5';
+    let selectedBgColor = '#ffffff';
 
     function handleOnboardingBgColorInput(color) {
       selectedBgColor = color;
@@ -968,7 +1008,34 @@
       }
     }
 
+    function isLightColor(color) {
+      if (!color) return false;
+      const hex = color.replace('#', '');
+      if (hex.length !== 3 && hex.length !== 6) return false;
+      let r, g, b;
+      if (hex.length === 3) {
+        r = parseInt(hex[0] + hex[0], 16);
+        g = parseInt(hex[1] + hex[1], 16);
+        b = parseInt(hex[2] + hex[2], 16);
+      } else {
+        r = parseInt(hex.substr(0, 2), 16);
+        g = parseInt(hex.substr(2, 2), 16);
+        b = parseInt(hex.substr(4, 2), 16);
+      }
+      const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+      return yiq >= 128;
+    }
+
     function applyBgColorPreview(color) {
+      const widgetPreviewBox = document.querySelector(".widget-preview-box");
+      if (widgetPreviewBox) {
+        if (isLightColor(color)) {
+          widgetPreviewBox.classList.add("light-theme");
+        } else {
+          widgetPreviewBox.classList.remove("light-theme");
+        }
+      }
+
       // 1. Update Preview Widget Background Colors dynamically
       const widgetBody = document.querySelector(".widget-preview-box .widget-body");
       if (widgetBody) widgetBody.style.backgroundColor = color;
@@ -977,10 +1044,30 @@
       if (widgetFooter) widgetFooter.style.backgroundColor = color;
     }
 
-    // Auto-redirect if token is missing
-    document.addEventListener("DOMContentLoaded", () => {
+    // Auto-redirect if token is missing or unpaid
+    document.addEventListener("DOMContentLoaded", async () => {
       const token = localStorage.getItem('ah_chatbot_auth_token');
       if (!token) {
+        window.location.href = '/admin/login.html';
+        return;
+      }
+
+      try {
+        const res = await fetch("/api/auth/me");
+        if (!res.ok) throw new Error();
+        const data = await res.json();
+        if (data.paymentStatus === 'unpaid') {
+          window.location.href = '/admin/subscription.html';
+          return;
+        }
+        if (data.websiteUrl) {
+          const webInput = document.getElementById("websiteUrl");
+          if (webInput) {
+            webInput.value = data.websiteUrl;
+          }
+        }
+      } catch (e) {
+        localStorage.clear();
         window.location.href = '/admin/login.html';
         return;
       }
@@ -1051,7 +1138,8 @@
           return false;
         }
         
-        const websiteUrl = document.getElementById("websiteUrl").value.trim();
+        const websiteUrlEl = document.getElementById("websiteUrl");
+        const websiteUrl = websiteUrlEl ? websiteUrlEl.value.trim() : "";
         if (websiteUrl && !websiteUrl.startsWith("http://") && !websiteUrl.startsWith("https://")) {
           showAlert("Invalid website URL schema. URL must start with 'http://' or 'https://'.");
           return false;
@@ -1255,7 +1343,7 @@
         phone: document.getElementById("phone").value.trim(),
         organizationName: document.getElementById("orgName").value.trim(),
         industry: document.getElementById("industry").value,
-        websiteUrl: document.getElementById("websiteUrl").value.trim(),
+        websiteUrl: document.getElementById("websiteUrl") ? document.getElementById("websiteUrl").value.trim() : "",
         botName: document.getElementById("botName").value.trim(),
         primaryColor: selectedColor,
         backgroundColor: selectedBgColor,

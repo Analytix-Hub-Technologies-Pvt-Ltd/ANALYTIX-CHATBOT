@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Super Admin Login | AnalytixHub Chatbot</title>
+  <link rel="stylesheet" href="super-admin.css">
+  <link rel="icon" href="/favicon.ico" type="image/x-icon">
+  <!-- Early Theme Checker to prevent flash of wrong theme -->
+  <script>
+    (function() {
+      const savedTheme = localStorage.getItem('super_theme') || 'light';
+      document.documentElement.setAttribute('data-theme', savedTheme);
+    })();
+  </script>
+</head>
+<body>
+  <div class="login-container">
+    <div class="login-card">
+      <div class="logo-header">
+        <h2>Super Admin</h2>
+        <p>Enterprise AI consulting chatbot control desk</p>
+      </div>
+
+      <div id="errorBox" class="error-msg"></div>
+
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="username">Super Username</label>
+          <input type="text" id="username" class="form-input" placeholder="e.g. superadmin" required autofocus>
+        </div>
+
+        <div class="form-group">
+          <label for="password">Security Password</label>
+          <input type="password" id="password" class="form-input" placeholder="••••••••••••" required>
+        </div>
+
+        <button type="submit" class="btn-primary" style="margin-top: 12px;">Verify & Enter Portal</button>
+      </form>
+      <div style="text-align: center; margin-top: 24px; border-top: 1px solid var(--border-color); padding-top: 16px;">
+        <a href="/admin/login.html" style="color: var(--accent-color); text-decoration: none; font-size: 13px; font-weight: 600; transition: opacity 0.2s;" onmouseover="this.style.opacity=0.8" onmouseout="this.style.opacity=1">← Go to Tenant Admin Portal</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="super-admin.js"></script>
+  <script>
+    // Verify user is not already logged in
+    if (localStorage.getItem('super_token')) {
+      window.location.href = 'index.html';
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const errorBox = document.getElementById('errorBox');
+      errorBox.style.display = 'none';
+
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+
+      try {
+        const res = await fetch('/api/super/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.error || 'Login failed.');
+        }
+
+        // Store session token
+        localStorage.setItem('super_token', data.token);
+        localStorage.setItem('super_username', username);
+        window.location.href = 'index.html';
+
+      } catch (err) {
+        errorBox.textContent = err.message;
+        errorBox.style.display = 'block';
+      }
+    });
+  </script>
+</body>
+</html>

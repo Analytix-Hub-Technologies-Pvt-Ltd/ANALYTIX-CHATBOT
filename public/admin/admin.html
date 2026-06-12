@@ -23,7 +23,10 @@
         </div>
         <div class="brand-text">
           <h2 id="sidebar-org-name">Enterprise</h2>
-          <span>AI Chatbot Control</span>
+          <div style="display: flex; align-items: center; gap: 6px; margin-top: 4px; flex-wrap: wrap;">
+            <span style="font-size: 11px; color: var(--text-muted);">AI Chatbot Control</span>
+            <span id="plan-badge" onclick="switchTab('billing')" style="font-size: 9px; font-weight: 800; text-transform: uppercase; padding: 1px 6px; border-radius: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15); color: #fff; cursor: pointer;" title="View Billing & Plans">FREE</span>
+          </div>
         </div>
       </div>
       
@@ -36,6 +39,10 @@
           <i data-lucide="calendar-days"></i>
           <span>Appointments</span>
         </button>
+        <button class="nav-btn" data-tab="conversations">
+          <i data-lucide="messages-square"></i>
+          <span>Chat Sessions</span>
+        </button>
         <button class="nav-btn" data-tab="settings">
           <i data-lucide="sliders"></i>
           <span>Chatbot Settings</span>
@@ -47,6 +54,10 @@
         <button class="nav-btn" data-tab="embed">
           <i data-lucide="code-2"></i>
           <span>Widget Embed</span>
+        </button>
+        <button class="nav-btn" data-tab="billing" id="nav-btn-billing">
+          <i data-lucide="credit-card"></i>
+          <span>Billing & Plans</span>
         </button>
         <button class="nav-btn" onclick="logout()" style="color: #fca5a5; margin-top: 20px; cursor: pointer;">
           <i data-lucide="log-out"></i>
@@ -65,6 +76,12 @@
 
     <!-- Main Content Area -->
     <main class="main-content">
+      <!-- Plan Limitation Warning Banner -->
+      <div id="plan-warning-banner" style="display: none; background: linear-gradient(90deg, #f59e0b 0%, #d97706 100%); color: #fff; padding: 12px 20px; font-size: 13px; font-weight: 600; text-align: center; border-radius: var(--radius-md); margin-bottom: 20px; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);">
+        <i data-lucide="alert-triangle" style="width: 16px; height: 16px; flex-shrink: 0; display: inline-block; vertical-align: middle;"></i>
+        <span id="plan-warning-text">You are on the Free Trial Plan. Upgrade to unlock the Website Crawler and custom SMTP.</span>
+      </div>
+
       <header class="content-header">
         <div class="header-title">
           <h1 id="tab-title">Dashboard Overview</h1>
@@ -227,85 +244,84 @@
         </div>
       </section>
 
+      <!-- TAB: CONVERSATIONS -->
+      <section id="tab-content-conversations" class="tab-panel">
+        <div class="dashboard-panel-card">
+          <div class="panel-header search-bar-header">
+            <h3><i data-lucide="messages-square"></i> Active Chat Sessions & Leads</h3>
+            <div class="panel-actions" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+              <div class="search-box">
+                <i data-lucide="search"></i>
+                <input type="text" id="conversations-search" placeholder="Search by location, IP or message content..." oninput="searchConversations()">
+              </div>
+            </div>
+          </div>
+          
+          <div class="table-container">
+            <table id="all-conversations-table">
+              <thead>
+                <tr>
+                  <th>Session ID</th>
+                  <th>IP Address</th>
+                  <th>Geographical Location</th>
+                  <th>Lead Details</th>
+                  <th>First Active</th>
+                  <th>Last Message</th>
+                  <th>Messages</th>
+                  <th>Avg. Latency</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="conversations-tbody">
+                <tr>
+                  <td colspan="8" class="table-empty">No conversations recorded yet.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
       <!-- TAB: SETTINGS -->
       <section id="tab-content-settings" class="tab-panel">
         <form id="settings-form" onsubmit="saveSettings(event)">
           <div class="settings-grid">
             <!-- Col 1: Credentials & Mailer -->
             <div class="settings-col">
-              <!-- Groq Credentials -->
-              <div class="dashboard-panel-card">
+              <!-- Subscription & Trial Management Card -->
+              <div class="dashboard-panel-card" style="position: relative; overflow: hidden;">
+                <div style="position: absolute; top: -50px; right: -50px; width: 150px; height: 150px; border-radius: 50%; background: radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, transparent 70%); pointer-events: none;"></div>
+                
                 <div class="card-header-accent">
-                  <i data-lucide="key" class="accent-orange"></i>
-                  <h4>Groq LLM Configuration</h4>
+                  <i data-lucide="sparkles" class="accent-purple"></i>
+                  <h4>Subscription Plan Status</h4>
                 </div>
                 
-                <!-- Hidden input to prevent Javascript errors -->
-                <input type="hidden" id="groqKey">
-                
-                <div style="background: rgba(16, 185, 129, 0.06); border: 1px solid rgba(16, 185, 129, 0.15); border-radius: 8px; padding: 15px; margin-bottom: 15px; display: flex; flex-direction: column; gap: 8px;">
-                  <div style="display: flex; align-items: center; gap: 8px; color: #10b981; font-weight: 600; font-size: 13px;">
-                    <i data-lucide="shield-check" style="width: 16px; height: 16px; flex-shrink: 0;"></i>
-                    <span>Secure Server Configuration Enabled</span>
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px;">
+                  <div>
+                    <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Current Plan</span>
+                    <h3 id="billing-plan-name" style="font-size: 20px; font-weight: 800; font-family: 'Outfit', sans-serif; color: #fff; margin-top: 4px; display: flex; align-items: center; gap: 8px;">
+                      Advanced
+                      <span id="billing-plan-badge" style="font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 9999px; background: rgba(168, 85, 247, 0.15); border: 1px solid rgba(168, 85, 247, 0.3); color: #c084fc; text-transform: uppercase;">Trial</span>
+                    </h3>
                   </div>
-                  <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5; margin: 0;">
-                    Groq Cloud API Key is securely loaded from the backend's environment variables (`.env`) for maximum protection.
-                  </p>
+                  <div style="text-align: right;">
+                    <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Expires In</span>
+                    <div id="billing-plan-expiry" style="font-size: 14px; font-weight: 600; color: #c084fc; margin-top: 4px;">59 Days</div>
+                  </div>
                 </div>
-
-                <div class="form-group">
-                  <label for="groqModel">Groq LLM Model</label>
-                  <select id="groqModel">
-                    <option value="llama-3.1-8b-instant">llama-3.1-8b-instant (Recommended - Free Tier High Limits)</option>
-                    <option value="llama-3.3-70b-versatile">llama-3.3-70b-versatile (High IQ - Premium/Heavy)</option>
-                    <option value="llama3-8b-8192">llama3-8b-8192 (Legacy Fast)</option>
-                    <option value="mixtral-8x7b-32768">mixtral-8x7b-32768 (MoE Context)</option>
-                  </select>
-                </div>
+                
+                <p id="billing-plan-desc" style="font-size: 12px; color: var(--text-muted); line-height: 1.5; margin-bottom: 15px;">
+                  Your 2-Month Advanced Trial Plan provides full access to high-fidelity crawling, custom SMTP, Microsoft Graph API integration, and booking systems.
+                </p>
+                
+                <button type="button" class="btn primary" id="btn-activate-trial-settings" onclick="activateAdvancedTrial()" style="width: 100%; background: linear-gradient(135deg, var(--primary), var(--accent-purple)); border: none; box-shadow: 0 4px 12px var(--primary-glow); font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                  <i data-lucide="zap"></i>
+                  <span>Activate 2-Month Advanced Trial</span>
+                </button>
               </div>
 
-              <!-- OpenRouter Cloud Configuration -->
-              <div class="dashboard-panel-card">
-                <div class="card-header-accent">
-                  <i data-lucide="cpu" class="accent-purple"></i>
-                  <h4>OpenRouter Cloud Configuration</h4>
-                </div>
-                
-                <div class="form-group">
-                  <label for="synthesisProvider">AI Synthesis Provider</label>
-                  <select id="synthesisProvider" onchange="toggleSynthesisFields()">
-                    <option value="groq">Groq Cloud API (Recommended - Fast & Free)</option>
-                    <option value="openrouter">OpenRouter Cloud API (100+ Models & Free Tiers)</option>
-                  </select>
-                  <span class="input-hint">Select the engine used to crawl websites and generate custom chatbot prompts.</span>
-                </div>
-                
-                <div id="openrouter-settings-group" class="hidden">
-                  <div class="form-group">
-                    <label for="openRouterUrl">OpenRouter API Endpoint</label>
-                    <input type="text" id="openRouterUrl" placeholder="https://openrouter.ai/api/v1/chat/completions">
-                  </div>
-                  
-                  <div class="form-group">
-                    <label for="openRouterModel">OpenRouter Model Name</label>
-                    <input type="text" id="openRouterModel" placeholder="meta-llama/llama-3.1-8b-instruct:free">
-                    <span class="input-hint">Specify the target open-source model (e.g. <code>meta-llama/llama-3.1-8b-instruct:free</code> or <code>qwen/qwen-2.5-72b-instruct</code>).</span>
-                  </div>
 
-                  <!-- Hidden input to prevent Javascript errors -->
-                  <input type="hidden" id="openRouterKey">
-
-                  <div style="background: rgba(16, 185, 129, 0.06); border: 1px solid rgba(16, 185, 129, 0.15); border-radius: 8px; padding: 15px; margin-bottom: 15px; display: flex; flex-direction: column; gap: 8px;">
-                    <div style="display: flex; align-items: center; gap: 8px; color: #10b981; font-weight: 600; font-size: 13px;">
-                      <i data-lucide="shield-check" style="width: 16px; height: 16px; flex-shrink: 0;"></i>
-                      <span>Secure Server Configuration Enabled</span>
-                    </div>
-                    <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5; margin: 0;">
-                      OpenRouter API Key is securely loaded from the backend's environment variables (`.env`) for maximum protection.
-                    </p>
-                  </div>
-                </div>
-              </div>
 
               <!-- Email Protocol Selector Card -->
               <div class="dashboard-panel-card">
@@ -428,6 +444,74 @@
                   <span class="input-hint">The primary Microsoft 365 email account authorized to send invites.</span>
                 </div>
               </div>
+
+              <!-- Consultation Payments Setup -->
+              <div class="dashboard-panel-card">
+                <div class="card-header-accent">
+                  <i data-lucide="credit-card" class="accent-green"></i>
+                  <h4>Consultation Payments Setup</h4>
+                </div>
+                
+                <div class="form-group">
+                  <label class="checkbox-container">
+                    <input type="checkbox" id="paymentEnabled">
+                    <span class="checkbox-checkmark"></span>
+                    <span class="checkbox-label" style="font-weight: 600;">Enable Consultation Payments</span>
+                  </label>
+                  <span class="input-hint">If enabled, users must complete payment checkout before booking.</span>
+                </div>
+
+                <div class="form-group">
+                  <label for="paymentGateway">Payment Gateway</label>
+                  <select id="paymentGateway" onchange="togglePaymentGatewayFields()">
+                    <option value="mock">Mock Sandbox Credit Card (Default)</option>
+                    <option value="razorpay">Razorpay Payment Gateway</option>
+                  </select>
+                  <span class="input-hint">Select the active checkout method for consultation fees.</span>
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group col-6">
+                    <label for="paymentAmount">Consultation Fee</label>
+                    <input type="number" id="paymentAmount" step="0.01" min="0" placeholder="15.00">
+                  </div>
+                  <div class="form-group col-6">
+                    <label for="paymentCurrency">Currency</label>
+                    <select id="paymentCurrency">
+                      <option value="USD">USD ($)</option>
+                      <option value="INR">INR (₹)</option>
+                      <option value="EUR">EUR (€)</option>
+                      <option value="GBP">GBP (£)</option>
+                      <option value="CAD">CAD (C$)</option>
+                      <option value="AUD">AUD (A$)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="form-group" id="mock-instructions-wrapper">
+                  <label for="paymentInstructions">Sandbox Payment Instructions</label>
+                  <textarea id="paymentInstructions" rows="3" placeholder="Use test card 4242..."></textarea>
+                  <span class="input-hint">Provide instructions or test card details for the payment step.</span>
+                </div>
+
+                <div id="razorpay-credentials-container" class="hidden" style="margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 15px;">
+                  <div class="form-group">
+                    <label for="razorpayKeyId">Razorpay Key ID</label>
+                    <input type="text" id="razorpayKeyId" placeholder="rzp_test_...">
+                    <span class="input-hint">API Key obtained from Razorpay Dashboard settings.</span>
+                  </div>
+                  <div class="form-group" style="margin-bottom: 0;">
+                    <label for="razorpayKeySecret">Razorpay Key Secret</label>
+                    <div class="input-password-wrapper">
+                      <input type="password" id="razorpayKeySecret" placeholder="••••••••••••" autocomplete="new-password">
+                      <button type="button" class="toggle-password" onclick="togglePassVisibility('razorpayKeySecret')">
+                        <i data-lucide="eye" id="eye-razorpayKeySecret"></i>
+                      </button>
+                    </div>
+                    <span class="input-hint">Secure Secret Key from Razorpay (will remain hidden on the server).</span>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <!-- Col 2: Theme, Bot Customizer, and System Prompt -->
@@ -447,15 +531,15 @@
                   <div class="form-group col-4">
                     <label for="primaryColor">Theme Color</label>
                     <div class="color-picker-wrapper">
-                      <input type="color" id="primaryColor" value="#2563eb">
-                      <input type="text" id="primaryColorHex" value="#2563eb" oninput="document.getElementById('primaryColor').value = this.value">
+                      <input type="color" id="primaryColor" value="#4f46e5">
+                      <input type="text" id="primaryColorHex" value="#4f46e5" oninput="document.getElementById('primaryColor').value = this.value">
                     </div>
                   </div>
                   <div class="form-group col-4">
                     <label for="backgroundColor">Background Color</label>
                     <div class="color-picker-wrapper">
-                      <input type="color" id="backgroundColor" value="#090d16">
-                      <input type="text" id="backgroundColorHex" value="#090d16" oninput="document.getElementById('backgroundColor').value = this.value">
+                      <input type="color" id="backgroundColor" value="#ffffff">
+                      <input type="text" id="backgroundColorHex" value="#ffffff" oninput="document.getElementById('backgroundColor').value = this.value">
                     </div>
                   </div>
                 </div>
@@ -580,12 +664,12 @@
               </div>
               <p class="trainer-desc">Input any public website URL. Our system will recursively crawl the pages, analyze the brand services, and generate a customized high-fidelity AI Helpdesk prompt instantly.</p>
               
-              <div class="form-group" style="margin-top: 15px;">
+               <div class="form-group" style="margin-top: 15px;">
                 <label for="crawl-url">Website URL</label>
                 <div class="input-glow-wrapper">
-                  <input type="text" id="crawl-url" placeholder="https://example.com" value="">
+                  <input type="text" id="crawl-url" placeholder="https://example.com" value="" readonly style="background-color: rgba(255, 255, 255, 0.04) !important; color: var(--text-muted) !important; cursor: not-allowed !important;" title="Website URL is locked to your registered domain">
                 </div>
-                <span class="input-hint">Make sure the website is public and starts with http:// or https://</span>
+                <span class="input-hint">Website URL is locked to your registered domain.</span>
               </div>
               
               <button type="button" class="btn primary trainer-submit-btn" id="btn-start-crawl" onclick="startWebsiteTraining()" style="width: 100%; justify-content: center; height: 46px; font-size: 14px;">
@@ -827,13 +911,279 @@
           </div>
         </div>
       </section>
+
+      <!-- TAB: BILLING & PLANS -->
+      <section id="tab-content-billing" class="tab-panel">
+        <div class="billing-layout">
+          <!-- Current Plan Details Card -->
+          <div class="current-plan-card">
+            <div style="position: absolute; top: -50px; right: -50px; width: 150px; height: 150px; border-radius: 50%; background: radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, transparent 70%); pointer-events: none;"></div>
+            <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 20px;">
+              <h3 style="font-family: var(--font-display); font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px; color: var(--text-main); margin: 0;">
+                <i data-lucide="shield-check" style="color: var(--primary); width: 22px; height: 22px;"></i>
+                <span>Active Subscription Status</span>
+              </h3>
+              <span id="billing-current-plan-badge" style="font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 9999px; background: rgba(37, 99, 235, 0.15); border: 1px solid rgba(37, 99, 235, 0.3); color: var(--primary); text-transform: uppercase;">FREE</span>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 20px;">
+              <div>
+                <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; display: block;">Current Plan Name</span>
+                <h4 id="billing-current-plan-name" style="font-size: 20px; font-weight: 800; font-family: var(--font-display); color: var(--text-main); margin-top: 4px;">Free Trial</h4>
+              </div>
+              <div>
+                <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; display: block;">Expires In / Next Invoice</span>
+                <div id="billing-current-plan-expiry" style="font-size: 16px; font-weight: 600; color: var(--accent-purple); margin-top: 6px;">Unlimited (Free Forever)</div>
+              </div>
+              <div>
+                <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; display: block;">Amount Paid</span>
+                <div id="billing-current-plan-amount" style="font-size: 16px; font-weight: 600; color: var(--accent-green); margin-top: 6px;">$0.00</div>
+              </div>
+              <div>
+                <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; display: block;">Transaction ID</span>
+                <div id="billing-current-plan-tx" style="font-size: 13px; font-family: monospace; color: var(--text-muted); margin-top: 8px;">N/A</div>
+              </div>
+            </div>
+            <p id="billing-current-plan-desc" style="font-size: 13px; color: var(--text-muted); line-height: 1.5; margin: 0;">
+              Your Free Trial plan has standard chat conversations and appointment scheduling. Upgrade to Pro or Advanced to unlock full AI brain crawling capabilities and custom SMTP.
+            </p>
+          </div>
+
+          <!-- Alert banner inside Billing tab -->
+          <div id="billing-alert-box" class="alert-banner hidden">
+            <i data-lucide="alert-circle" style="flex-shrink:0;"></i>
+            <span id="billing-alert-msg"></span>
+          </div>
+
+          <!-- Plans Comparison Grid -->
+          <div>
+            <h3 style="font-family: var(--font-display); font-size: 18px; font-weight: 700; color: var(--text-main); margin-bottom: 8px;">Select a Subscription Plan</h3>
+            <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 20px;">Choose the tier that fits your messaging load. Upgrades take effect immediately.</p>
+            
+            <div class="pricing-grid">
+              <!-- Plan 1: Free -->
+              <div class="price-card" id="billing-card-free" onclick="selectBillingPlan('free')">
+                <div class="card-header">
+                  <h2 class="plan-name">Free Trial</h2>
+                  <p class="plan-desc">Perfect for testing out chatbot capabilities on a staging or sandbox environment.</p>
+                </div>
+                <div class="plan-price-wrapper">
+                  <span class="plan-price">$0</span>
+                  <span class="plan-period">/ month</span>
+                </div>
+                <ul class="plan-features">
+                  <li><i data-lucide="check"></i> 15 active conversations limit</li>
+                  <li><i data-lucide="check"></i> 9 appointment booking slots</li>
+                  <li><i data-lucide="check"></i> Interactive Widget styling</li>
+                  <li><i data-lucide="check"></i> Standard Groq LLM integration</li>
+                  <li><i data-lucide="x" style="color:var(--text-dimmed);"></i> Web scraper & brain training locked</li>
+                  <li><i data-lucide="x" style="color:var(--text-dimmed);"></i> Custom SMTP notifier locked</li>
+                </ul>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:20px;">
+                  <span style="font-size:12px; font-weight:600; color:var(--text-muted);">Free Forever</span>
+                  <div class="select-ring"></div>
+                </div>
+              </div>
+
+              <!-- Plan 2: Pro -->
+              <div class="price-card" id="billing-card-pro" onclick="selectBillingPlan('pro')">
+                <div class="badge-pop">Popular</div>
+                <div class="card-header">
+                  <h2 class="plan-name">Pro Plan</h2>
+                  <p class="plan-desc">For small and medium enterprises needing expanded bookings and custom messaging schedules.</p>
+                </div>
+                <div class="plan-price-wrapper">
+                  <span class="plan-price">$20</span>
+                  <span class="plan-period">/ month</span>
+                </div>
+                <ul class="plan-features">
+                  <li><i data-lucide="check"></i> 100 conversations / month</li>
+                  <li><i data-lucide="check"></i> Custom scheduling & slot configuration</li>
+                  <li><i data-lucide="check"></i> Premium branding customizations</li>
+                  <li><i data-lucide="check"></i> Lead email notifications (default mailer)</li>
+                  <li><i data-lucide="x" style="color:var(--text-dimmed);"></i> Web scraper & brain training locked</li>
+                </ul>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:20px;">
+                  <span style="font-size:12px; font-weight:600; color:var(--text-muted);">Best Value</span>
+                  <div class="select-ring"></div>
+                </div>
+              </div>
+
+              <!-- Plan 3: Advanced -->
+              <div class="price-card" id="billing-card-advanced" onclick="selectBillingPlan('advanced')">
+                <div class="badge-pop" id="billing-advanced-card-badge" style="background: linear-gradient(135deg, var(--accent-purple), #ec4899); border: 1px solid rgba(255, 255, 255, 0.15);">2-Month Trial</div>
+                <div class="card-header">
+                  <h2 class="plan-name">Advanced</h2>
+                  <p class="plan-desc">Unlocks full automation power, automatic AI brain training, and custom Graph API mail integration.</p>
+                </div>
+                <div class="plan-price-wrapper" id="billing-advanced-price-wrapper">
+                  <span class="plan-price">$30</span>
+                  <span class="plan-period">/ month</span>
+                </div>
+                <ul class="plan-features">
+                  <li><i data-lucide="check"></i> Unlimited conversations & bookings</li>
+                  <li><i data-lucide="check"></i> Web Crawler & AI Brain Training</li>
+                  <li><i data-lucide="check"></i> Custom SMTP / Microsoft Graph API email</li>
+                  <li><i data-lucide="check"></i> Multi-agent customization support</li>
+                  <li><i data-lucide="check"></i> Real-time booking reports export</li>
+                </ul>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:20px;">
+                  <span style="font-size:12px; font-weight:600; color:var(--text-muted);">Power User</span>
+                  <div class="select-ring"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Checkout Wrapper Panel (Initially Hidden) -->
+          <div class="checkout-wrapper hidden" id="billing-checkout-panel">
+            <!-- Left: Payment Form -->
+            <div>
+              <div style="margin-bottom: 24px;">
+                <h3 style="font-family:var(--font-display); font-size:20px; font-weight: 700; color: var(--text-main); margin-bottom:6px;">Secure Upgrade Checkout</h3>
+                <p style="color:var(--text-muted); font-size:13px; line-height:1.5;">
+                  Complete your plan transition. Your resources will be updated instantly.
+                </p>
+              </div>
+
+              <!-- Payment Method Tabs -->
+              <div style="display: flex; gap: 12px; margin-bottom: 24px; background: rgba(0, 0, 0, 0.05); padding: 4px; border-radius: 10px; border: 1px solid var(--border-color);">
+                <button type="button" id="billing-pay-tab-razorpay" class="action-btn" onclick="switchBillingPaymentMethod('razorpay')" style="flex: 1; padding: 10px; font-size: 13px; font-weight: 600; border-radius: 8px; border: none; background: rgba(255, 255, 255, 0.1); color: var(--text-main); box-shadow: none; height: auto; justify-content: center;">
+                  <i data-lucide="credit-card" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle; margin-right: 6px;"></i>Razorpay
+                </button>
+                <button type="button" id="billing-pay-tab-mock" class="action-btn outline" onclick="switchBillingPaymentMethod('mock')" style="flex: 1; padding: 10px; font-size: 13px; font-weight: 600; border-radius: 8px; border: 1px solid transparent; background: transparent; color: var(--text-muted); box-shadow: none; height: auto; justify-content: center;">
+                  <i data-lucide="alert-circle" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle; margin-right: 6px;"></i>Demo Mode
+                </button>
+              </div>
+
+              <!-- Razorpay Container -->
+              <div id="billing-payment-container-razorpay" style="text-align: center; padding: 32px 24px; background: rgba(255, 255, 255, 0.01); border: 1px solid var(--border-color); border-radius: 16px; margin-bottom: 20px;">
+                <div style="width: 56px; height: 56px; border-radius: 50%; background: rgba(37, 99, 235, 0.1); border: 1px solid rgba(37, 99, 235, 0.3); display: inline-flex; align-items: center; justify-content: center; color: var(--primary); margin-bottom: 16px;">
+                  <i data-lucide="shield-check" style="width: 28px; height: 28px;"></i>
+                </div>
+                <h4 style="font-family: var(--font-display); font-size: 16px; margin-bottom: 8px; color: var(--text-main); font-weight: 700;">Pay securely via Razorpay</h4>
+                <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5; margin-bottom: 24px; max-width: 320px; margin-left: auto; margin-right: auto;">
+                  Supports cards, UPI, netbanking, and popular digital wallets.
+                </p>
+                
+                <div style="display:flex; gap:16px;">
+                  <button type="button" class="btn secondary" onclick="cancelBillingCheckout()" style="flex:1; justify-content: center;">
+                    <i data-lucide="x"></i>
+                    <span>Cancel</span>
+                  </button>
+                  <button type="button" id="btn-billing-razorpay-checkout" class="btn primary" onclick="payBillingWithRazorpay()" style="flex:2; justify-content: center;">
+                    <i data-lucide="external-link"></i>
+                    <span>Pay Now via Razorpay</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Mock Card Container -->
+              <div id="billing-payment-container-mock" class="hidden">
+                <div style="text-align: center; padding: 32px 24px; background: rgba(255, 255, 255, 0.01); border: 1px solid var(--border-color); border-radius: 16px; margin-bottom: 20px;">
+                  <div style="width: 56px; height: 56px; border-radius: 50%; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); display: inline-flex; align-items: center; justify-content: center; color: var(--primary); margin-bottom: 16px;">
+                    <i data-lucide="play-circle" style="width: 28px; height: 28px; color: var(--primary);"></i>
+                  </div>
+                  <h4 style="font-family: var(--font-display); font-size: 16px; margin-bottom: 8px; color: var(--text-main); font-weight: 700;">Simulated Quick Checkout</h4>
+                  <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5; margin-bottom: 24px; max-width: 320px; margin-left: auto; margin-right: auto;">
+                    Verify subscription flows instantly without entering credit card credentials.
+                  </p>
+                  
+                  <div style="display:flex; gap:16px;">
+                    <button type="button" class="btn secondary" onclick="cancelBillingCheckout()" style="flex:1; justify-content: center;">
+                      <i data-lucide="x"></i>
+                      <span>Cancel</span>
+                    </button>
+                    <button type="button" id="btn-billing-pay-submit" class="btn primary" onclick="handleBillingPaymentSubmitSimulated()" style="flex:2; justify-content: center;">
+                      <i data-lucide="zap"></i>
+                      <span>Simulate Payment Now</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right: Order Summary -->
+            <div>
+              <div class="checkout-summary-card">
+                <h3>Order Summary</h3>
+                <div class="checkout-summary-item">
+                  <span style="color:var(--text-muted);">Plan Selected</span>
+                  <span id="billing-summary-plan-name" style="font-weight:600; text-transform:capitalize; color: var(--text-main);">Pro Plan</span>
+                </div>
+                <div class="checkout-summary-item">
+                  <span style="color:var(--text-muted);">Subtotal</span>
+                  <span id="billing-summary-subtotal" style="font-weight:600; color: var(--text-main);">$20.00</span>
+                </div>
+                <div class="checkout-summary-item">
+                  <span style="color:var(--text-muted);">Tax (GST / VAT)</span>
+                  <span style="font-weight:600; color: var(--text-main);">$0.00</span>
+                </div>
+                <div class="checkout-summary-item total">
+                  <span style="color: var(--text-main);">Total Due</span>
+                  <span id="billing-summary-total" style="color:var(--primary); font-size:18px;">$20.00</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
     </main>
+  </div>
+
+  <!-- Modal: Chat Log Viewer -->
+  <div id="chatLogModal" class="modal">
+    <div class="modal-content" style="max-width: 650px; text-align: left;">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 20px;">
+        <h3 style="margin: 0; font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px; color: white;">
+          <i data-lucide="message-square" style="color: var(--primary); width: 20px; height: 20px;"></i>
+          <span>Chat Log Viewer</span>
+        </h3>
+        <button onclick="closeChatLogModal()" style="background: none; border: none; color: var(--text-dimmed); cursor: pointer; display: flex; align-items: center; justify-content: center;">
+          <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+        </button>
+      </div>
+      
+      <div style="margin-bottom: 15px; display: flex; flex-direction: column; gap: 6px; padding: 14px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: 8px; font-size: 13px;">
+        <div style="display: flex; justify-content: space-between;">
+          <span style="color: var(--text-muted);">Session ID:</span>
+          <span id="chat-session-id" style="color: #60a5fa; font-family: monospace; font-weight: 600;"></span>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <span style="color: var(--text-muted);">Visitor IP:</span>
+          <span id="chat-session-ip" style="font-family: monospace; color: var(--text-main);"></span>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <span style="color: var(--text-muted);">Location:</span>
+          <span id="chat-session-location" style="color: var(--text-main); font-weight: 500;"></span>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <span style="color: var(--text-muted);">Lead Details:</span>
+          <span id="chat-session-lead-details" style="color: var(--text-main); font-weight: 500; text-align: right;"></span>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <span style="color: var(--text-muted);">First Active:</span>
+          <span id="chat-session-active" style="color: var(--text-main);"></span>
+        </div>
+      </div>
+
+      <!-- Messages Thread -->
+      <div id="chat-log-messages" style="max-height: 380px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding: 15px; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); border-radius: 10px; margin-bottom: 20px;">
+        <!-- Dynamically populated messages -->
+      </div>
+      
+      <div style="display: flex; justify-content: flex-end; gap: 10px;">
+        <button class="btn secondary" onclick="closeChatLogModal()">Close Details</button>
+      </div>
+    </div>
   </div>
 
   <!-- Lucide Replacement script -->
   <script>
     lucide.createIcons();
   </script>
+  <!-- Razorpay Checkout SDK -->
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
   <!-- Client script -->
   <script src="admin.js"></script>
 </body>

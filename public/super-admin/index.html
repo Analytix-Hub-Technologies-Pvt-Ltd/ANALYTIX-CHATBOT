@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Super Admin Control Center | AnalytixHub Chatbot</title>
+  <link rel="stylesheet" href="super-admin.css">
+  <link rel="icon" href="/favicon.ico" type="image/x-icon">
+  <!-- Early Theme Checker to prevent flash of wrong theme -->
+  <script>
+    (function() {
+      const savedTheme = localStorage.getItem('super_theme') || 'light';
+      document.documentElement.setAttribute('data-theme', savedTheme);
+    })();
+  </script>
+  <!-- Feather Icons for modern vector glyphs -->
+  <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-container">
+      <div class="brand">
+        <i data-feather="sliders" style="color: #6366f1;"></i>
+        <h1>SaaS Super Admin</h1>
+        <span class="brand-badge">Control Center</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <button id="themeToggleBtn" class="btn-logout" title="Toggle Light/Dark Theme" style="display: inline-flex; align-items: center; justify-content: center; padding: 8px; border-radius: 8px;">
+          <i id="themeIcon" data-feather="moon" style="width:16px; height:16px; vertical-align:middle;"></i>
+        </button>
+        <span id="superUserDisplay" style="color: var(--text-secondary); font-size: 14px; font-weight: 500;"></span>
+        <button id="logoutBtn" class="btn-logout"><i data-feather="log-out" style="width:14px; height:14px; vertical-align:middle; margin-right:6px;"></i>Log Out</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="main-content">
+    <!-- Stats Cards Overview -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-title">Total Tenants</div>
+        <div class="stat-value" id="statTotalTenants">-</div>
+        <div class="stat-footer">Active organizations</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-title">Free Trial Tiers</div>
+        <div class="stat-value" id="statFreeCount" style="color: var(--text-secondary);">-</div>
+        <div class="stat-footer">Limited features</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-title">Pro Plan Tiers</div>
+        <div class="stat-value" id="statProCount" style="color: var(--warning-color);">-</div>
+        <div class="stat-footer">Medium level limits</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-title">Advanced Tiers</div>
+        <div class="stat-value" id="statAdvCount" style="color: #c084fc;">-</div>
+        <div class="stat-footer">Unlimited + Crawler</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-title">Total Bookings</div>
+        <div class="stat-value" id="statTotalBookings" style="color: var(--success-color);">-</div>
+        <div class="stat-footer">Across all bots</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-title">Total Chats</div>
+        <div class="stat-value" id="statTotalConversations" style="color: #60a5fa;">-</div>
+        <div class="stat-footer">Conversations recorded</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-title">Platform Revenue</div>
+        <div class="stat-value" id="statTotalRevenue" style="color: var(--success-color);">-</div>
+        <div class="stat-footer">Gross earnings (USD)</div>
+      </div>
+    </div>
+
+    <!-- Global AI Cloud Configuration Panel -->
+    <div class="settings-panel" style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 20px; overflow: hidden; box-shadow: 0 4px 30px rgba(148, 163, 184, 0.08); margin-bottom: 40px; padding: 24px;">
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 24px; border-bottom: 1px solid var(--border-color); padding-bottom: 16px;">
+        <i data-feather="cpu" style="color: #6366f1; width: 24px; height: 24px;"></i>
+        <h3 style="font-size: 18px; font-weight: 700; color: var(--text-primary);">Tata Communications AI Cloud</h3>
+      </div>
+      <form id="globalSettingsForm">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+          <div class="form-group">
+            <label for="tataUrl">Tata API Base URL</label>
+            <input type="text" id="tataUrl" class="form-input" placeholder="https://models.cloudservices.tatacommunications.com/v1">
+            <div style="font-size: 11px; color: var(--text-secondary); margin-top: 6px;">Default is <code>https://models.cloudservices.tatacommunications.com/v1</code></div>
+          </div>
+          <div class="form-group">
+            <label for="tataModel">Tata Model Name</label>
+            <select id="tataModel" class="form-input" style="cursor: pointer; height: 50px;">
+              <option value="meta/Llama-3.3-70B-Instruct">meta/Llama-3.3-70B-Instruct (Recommended - Standard High-IQ)</option>
+              <option value="meta/Llama-3.1-8B-Instruct">meta/Llama-3.1-8B-Instruct (Lightweight / Fast)</option>
+              <option value="google/gemma-4-26B-A4B-it">google/gemma-4-26B-A4B-it (Gemma 4 Instruct)</option>
+              <option value="Qwen/Qwen2.5-Coder-14B-Instruct">Qwen/Qwen2.5-Coder-14B-Instruct (Qwen Coder)</option>
+            </select>
+            <div style="font-size: 11px; color: var(--text-secondary); margin-top: 6px;">Select the primary model used for completions and crawler training.</div>
+          </div>
+        </div>
+        
+        <div class="form-group" style="margin-bottom: 24px;">
+          <label for="tataKey">Tata API Key</label>
+          <div style="position: relative;">
+            <input type="password" id="tataKey" class="form-input" placeholder="••••••••••••" style="padding-right: 48px;">
+            <button type="button" id="toggleTataKeyBtn" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: transparent; border: none; color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 4px;">
+              <i data-feather="eye" style="width: 18px; height: 18px;"></i>
+            </button>
+          </div>
+          <div style="font-size: 11px; color: var(--text-secondary); margin-top: 6px;">Input your custom Tata Cloud bearer token. If left blank, server-side env variable is used.</div>
+        </div>
+
+        <!-- Global Razorpay SaaS Payment Gateway -->
+        <div style="display: flex; align-items: center; gap: 10px; margin-top: 32px; margin-bottom: 24px; border-bottom: 1px solid var(--border-color); padding-bottom: 16px;">
+          <i data-feather="credit-card" style="color: #6366f1; width: 24px; height: 24px;"></i>
+          <h3 style="font-size: 18px; font-weight: 700; color: var(--text-primary);">Global Razorpay SaaS Payment Gateway</h3>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+          <div class="form-group">
+            <label for="razorpayKeyId">Razorpay Key ID</label>
+            <input type="text" id="razorpayKeyId" class="form-input" placeholder="rzp_test_...">
+            <div style="font-size: 11px; color: var(--text-secondary); margin-top: 6px;">Used to charge new users subscribing to Pro ($20) / Advanced ($30) plans.</div>
+          </div>
+          <div class="form-group">
+            <label for="razorpayKeySecret">Razorpay Key Secret</label>
+            <div style="position: relative;">
+              <input type="password" id="razorpayKeySecret" class="form-input" placeholder="••••••••••••" style="padding-right: 48px;">
+              <button type="button" id="toggleRazorpaySecretBtn" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: transparent; border: none; color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 4px;">
+                <i data-feather="eye" style="width: 18px; height: 18px;"></i>
+              </button>
+            </div>
+            <div style="font-size: 11px; color: var(--text-secondary); margin-top: 6px;">Input your custom Razorpay API secret. If left blank, server-side env variable is used.</div>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 16px;">
+          <span id="settingsStatusMsg" style="font-size: 13px; font-weight: 600; transition: all 0.3s;"></span>
+          <button type="submit" class="btn-primary" style="width: auto; padding: 12px 32px; font-size: 14px; font-weight: 700; border-radius: 10px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; margin-top: 0;">
+            <i data-feather="save" style="width: 16px; height: 16px;"></i>
+            Save Global Settings
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Tenant Management Table Panel -->
+    <div class="table-panel">
+      <div class="panel-header">
+        <div class="panel-title">
+          <h3>Tenant Administrators</h3>
+          <p>Configure subscription plans, track operational stats, or revoke organization access</p>
+        </div>
+        <div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
+          <button id="exportBookingsBtn" class="btn-primary" style="padding: 10px 16px; font-size: 14px; display: inline-flex; align-items: center; gap: 8px; width: auto; margin-top: 0;">
+            <i data-feather="download" style="width: 16px; height: 16px;"></i> Export Bookings
+          </button>
+          <div class="search-box">
+            <input type="text" id="searchInput" class="search-input" placeholder="Search by email or organization...">
+          </div>
+        </div>
+      </div>
+
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Tenant / User</th>
+              <th>Organization</th>
+              <th>Website</th>
+              <th>Joined Date</th>
+              <th>Bookings</th>
+              <th>Chats</th>
+              <th>Subscription Level</th>
+              <th>Billing Info</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="adminsTableBody">
+            <tr>
+              <td colspan="9" class="no-data">Loading tenant directories...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <!-- Delete Confirmation Modal Dialog -->
+  <div id="deleteModal" class="modal">
+    <div class="modal-content">
+      <i data-feather="alert-triangle" style="color: var(--danger-color); width: 48px; height: 48px; margin-bottom: 16px;"></i>
+      <h4>Confirm Account Deletion</h4>
+      <p>Are you sure you want to permanently delete <strong id="deleteTenantEmail">tenant@example.com</strong>? This will immediately wipe their database record, customized chatbot settings, conversations, and all scheduled bookings. This action is irreversible.</p>
+      <div class="modal-actions">
+        <button id="cancelDeleteBtn" class="btn-cancel">Cancel</button>
+        <button id="confirmDeleteBtn" class="btn-danger-confirm">Delete Tenant</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tenant Info Modal Dialog -->
+  <div id="infoModal" class="modal">
+    <div class="modal-content info-modal-content" style="max-width: 650px; text-align: left;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px;">
+        <h4 style="margin-bottom: 0; display: flex; align-items: center; gap: 8px; font-size: 20px; color: var(--text-primary);">
+          <i data-feather="user" style="color: var(--accent-color); width: 24px; height: 24px;"></i>
+          Tenant Details Profile
+        </h4>
+        <button id="closeInfoBtn" style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 4px; border-radius: 50%; transition: all 0.2s;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">
+          <i data-feather="x" style="width: 20px; height: 20px;"></i>
+        </button>
+      </div>
+
+      <div class="info-grid">
+        <!-- Section 1: Tenant Profile -->
+        <div class="info-section">
+          <h5>Account & Profile</h5>
+          <div class="info-item">
+            <div class="info-label">User ID</div>
+            <div class="info-value" id="infoUserId">-</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Username / Email</div>
+            <div class="info-value" id="infoUsername">-</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Full Name</div>
+            <div class="info-value" id="infoFullName">-</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Organization Name</div>
+            <div class="info-value" id="infoOrgName">-</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Website URL</div>
+            <div class="info-value" id="infoWebsite">-</div>
+          </div>
+        </div>
+
+        <!-- Section 2: Subscription & Billing -->
+        <div class="info-section">
+          <h5>Subscription & Billing</h5>
+          <div class="info-item">
+            <div class="info-label">Plan Tier</div>
+            <div class="info-value" id="infoPlan">-</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Payment Status</div>
+            <div class="info-value" id="infoPaymentStatus">-</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Amount Paid</div>
+            <div class="info-value" id="infoAmountPaid">-</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Transaction ID</div>
+            <div class="info-value" id="infoTransactionId">-</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Joined Date</div>
+            <div class="info-value" id="infoJoinedDate">-</div>
+          </div>
+        </div>
+
+        <!-- Section 3: Bot Settings -->
+        <div class="info-section" style="grid-column: span 2;">
+          <h5>Chatbot Settings & LLM Prompt</h5>
+          <div class="info-item">
+            <div class="info-label">Bot ID</div>
+            <div class="info-value-code" id="infoBotId">-</div>
+          </div>
+          <div class="info-item" style="margin-top: 10px;">
+            <div class="info-label">Bot Name</div>
+            <div class="info-value" id="infoBotName">-</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Welcome Message</div>
+            <div class="info-value" id="infoWelcomeMsg">-</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Primary Brand Color</div>
+            <div class="info-value" id="infoPrimaryColor">-</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">System Prompt</div>
+            <div class="info-value" id="infoSystemPrompt" style="white-space: pre-wrap; font-family: monospace; font-size: 11px; background: rgba(0,0,0,0.2); padding: 8px; border-radius: 6px; max-height: 120px; overflow-y: auto;">-</div>
+          </div>
+        </div>
+
+        <!-- Section 4: Captured Visitor Leads -->
+        <div class="info-section" style="grid-column: span 2; margin-top: 15px;">
+          <h5>Captured Visitor Leads & Chat Sessions</h5>
+          <div style="background: var(--code-bg); padding: 12px; border-radius: 12px; max-height: 250px; overflow-y: auto; border: 1px solid var(--border-color);">
+            <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+              <thead>
+                <tr style="border-bottom: 2px solid var(--border-color); text-align: left;">
+                  <th style="padding: 8px 6px; font-weight: 700; color: var(--text-secondary); background: transparent; border-bottom: none; font-size: 11px;">Name</th>
+                  <th style="padding: 8px 6px; font-weight: 700; color: var(--text-secondary); background: transparent; border-bottom: none; font-size: 11px;">Contact Info</th>
+                  <th style="padding: 8px 6px; font-weight: 700; color: var(--text-secondary); background: transparent; border-bottom: none; font-size: 11px;">Company / Needs</th>
+                  <th style="padding: 8px 6px; font-weight: 700; color: var(--text-secondary); background: transparent; border-bottom: none; font-size: 11px;">Date</th>
+                </tr>
+              </thead>
+              <tbody id="infoCapturedLeadsBody">
+                <tr>
+                  <td colspan="4" style="text-align: center; color: var(--text-secondary); padding: 12px; font-style: italic;">No captured leads found.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 12px;">
+        <button id="closeInfoBtn2" class="btn-cancel" style="padding: 8px 20px;">Close Details</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="super-admin.js"></script>
+</body>
+</html>

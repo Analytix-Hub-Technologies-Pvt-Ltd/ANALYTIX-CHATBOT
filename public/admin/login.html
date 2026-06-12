@@ -13,6 +13,31 @@
   
   <style>
     :root {
+      /* LIGHT THEME (DEFAULT) */
+      --bg-dark: #f8fafc;
+      --card-bg: rgba(255, 255, 255, 0.95);
+      --border-color: rgba(0, 0, 0, 0.08);
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --primary-glow: rgba(37, 99, 235, 0.15);
+      --accent-purple: #7c3aed;
+      --accent-purple-glow: rgba(124, 58, 237, 0.15);
+      --text-white: #0f172a;
+      --text-muted: #475569;
+      --error-red: #ef4444;
+      --success-green: #10b981;
+
+      /* Alerts High Contrast for Light Mode */
+      --alert-error-text: #b91c1c;
+      --alert-error-bg: #fef2f2;
+      --alert-error-border: #fca5a5;
+      --alert-success-text: #15803d;
+      --alert-success-bg: #f0fdf4;
+      --alert-success-border: #86efac;
+    }
+
+    body.dark-theme {
+      /* DARK THEME (BLACK OPTION) */
       --bg-dark: #0b0f19;
       --card-bg: rgba(18, 24, 38, 0.85);
       --border-color: rgba(255, 255, 255, 0.08);
@@ -23,8 +48,14 @@
       --accent-purple-glow: rgba(139, 92, 246, 0.3);
       --text-white: #f8fafc;
       --text-muted: #94a3b8;
-      --error-red: #ef4444;
-      --success-green: #10b981;
+
+      /* Alerts for Dark Mode */
+      --alert-error-text: #fca5a5;
+      --alert-error-bg: rgba(239, 68, 68, 0.15);
+      --alert-error-border: rgba(239, 68, 68, 0.3);
+      --alert-success-text: #a7f3d0;
+      --alert-success-bg: rgba(16, 185, 129, 0.15);
+      --alert-success-border: rgba(16, 185, 129, 0.3);
     }
 
     * {
@@ -43,6 +74,48 @@
       justify-content: center;
       overflow-x: hidden;
       position: relative;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    /* Floating theme switch styling */
+    .theme-toggle-container {
+      position: absolute;
+      top: 24px;
+      right: 24px;
+      z-index: 100;
+    }
+
+    .theme-btn {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      color: var(--text-white);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    body.dark-theme .theme-btn {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    }
+
+    .theme-btn:hover {
+      transform: scale(1.08) rotate(15deg);
+      border-color: var(--primary);
+    }
+
+    .theme-btn:active {
+      transform: scale(0.95);
+    }
+
+    .theme-btn i {
+      width: 20px;
+      height: 20px;
     }
 
     /* Vibrant ambient background blobs */
@@ -51,7 +124,7 @@
       width: 400px;
       height: 400px;
       border-radius: 50%;
-      background: radial-gradient(circle, var(--primary-glow) 0%, transparent 70%);
+      background: radial-gradient(circle, rgba(37, 99, 235, 0.12) 0%, transparent 70%);
       top: -100px;
       left: -100px;
       z-index: 1;
@@ -59,17 +132,25 @@
       animation: pulse-slow 8s infinite alternate;
     }
 
+    body.dark-theme .ambient-glow-1 {
+      background: radial-gradient(circle, rgba(37, 99, 235, 0.3) 0%, transparent 70%);
+    }
+
     .ambient-glow-2 {
       position: absolute;
       width: 500px;
       height: 500px;
       border-radius: 50%;
-      background: radial-gradient(circle, var(--accent-purple-glow) 0%, transparent 70%);
+      background: radial-gradient(circle, rgba(124, 58, 237, 0.12) 0%, transparent 70%);
       bottom: -150px;
       right: -100px;
       z-index: 1;
       pointer-events: none;
       animation: pulse-slow 12s infinite alternate-reverse;
+    }
+
+    body.dark-theme .ambient-glow-2 {
+      background: radial-gradient(circle, rgba(139, 92, 246, 0.3) 0%, transparent 70%);
     }
 
     @keyframes pulse-slow {
@@ -91,10 +172,14 @@
       border: 1px solid var(--border-color);
       border-radius: 20px;
       padding: 40px;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.08);
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
-      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.3s ease;
+    }
+
+    body.dark-theme .portal-card {
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
     }
 
     .portal-header {
@@ -125,7 +210,7 @@
       font-size: 26px;
       font-weight: 700;
       letter-spacing: -0.5px;
-      background: linear-gradient(to right, #ffffff, #e2e8f0);
+      background: linear-gradient(to right, var(--text-white), var(--text-muted));
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       margin-bottom: 6px;
@@ -134,16 +219,22 @@
     .portal-header p {
       color: var(--text-muted);
       font-size: 14px;
+      transition: color 0.3s ease;
     }
 
     /* Authentication Form Toggle Controls */
     .auth-toggle {
       display: flex;
-      background: rgba(0, 0, 0, 0.2);
+      background: rgba(0, 0, 0, 0.04);
       border: 1px solid var(--border-color);
       border-radius: 12px;
       padding: 4px;
       margin-bottom: 25px;
+      transition: background-color 0.3s ease;
+    }
+
+    body.dark-theme .auth-toggle {
+      background: rgba(0, 0, 0, 0.2);
     }
 
     .toggle-btn {
@@ -197,6 +288,7 @@
       letter-spacing: 0.5px;
       color: var(--text-muted);
       margin-bottom: 8px;
+      transition: color 0.3s ease;
     }
 
     .input-wrapper {
@@ -217,19 +309,32 @@
     .input-wrapper input {
       width: 100%;
       padding: 12px 14px 12px 42px;
-      background: rgba(0, 0, 0, 0.25);
+      background: rgba(0, 0, 0, 0.03);
       border: 1px solid var(--border-color);
       border-radius: 10px;
-      color: white;
+      color: var(--text-white);
       font-size: 14px;
       outline: none;
       transition: all 0.3s ease;
     }
 
+    body.dark-theme .input-wrapper input {
+      background: rgba(0, 0, 0, 0.25);
+    }
+
+    .input-wrapper input::placeholder {
+      color: var(--text-muted);
+      opacity: 0.6;
+    }
+
     .input-wrapper input:focus {
       border-color: var(--primary);
-      background: rgba(0, 0, 0, 0.4);
+      background: #ffffff;
       box-shadow: 0 0 0 3px var(--primary-glow);
+    }
+
+    body.dark-theme .input-wrapper input:focus {
+      background: rgba(0, 0, 0, 0.4);
     }
 
     .input-wrapper input:focus + i {
@@ -299,15 +404,15 @@
     }
 
     .alert-error {
-      background: rgba(239, 68, 68, 0.15);
-      border: 1px solid rgba(239, 68, 68, 0.3);
-      color: #fca5a5;
+      background: var(--alert-error-bg);
+      border: 1px solid var(--alert-error-border);
+      color: var(--alert-error-text);
     }
 
     .alert-success {
-      background: rgba(16, 185, 129, 0.15);
-      border: 1px solid rgba(16, 185, 129, 0.3);
-      color: #a7f3d0;
+      background: var(--alert-success-bg);
+      border: 1px solid var(--alert-success-border);
+      color: var(--alert-success-text);
     }
 
     @keyframes slideDown {
@@ -329,6 +434,13 @@
   </style>
 </head>
 <body>
+
+  <!-- Floating Theme Switcher Option -->
+  <div class="theme-toggle-container">
+    <button id="theme-toggle-btn" class="theme-btn" onclick="toggleTheme()" aria-label="Toggle Light/Dark Theme">
+      <i data-lucide="moon" id="theme-icon"></i>
+    </button>
+  </div>
 
   <div class="ambient-glow-1"></div>
   <div class="ambient-glow-2"></div>
@@ -422,12 +534,49 @@
       <div class="hint-text" id="footer-hint">
         Default credential pre-loaded: <br>Email: <strong>admin</strong> | Password: <strong>admin123</strong>
       </div>
+
+      <div style="text-align: center; margin-top: 24px; border-top: 1px solid var(--border-color); padding-top: 16px;">
+        <a href="/super-admin/login.html" style="color: var(--accent-purple); text-decoration: none; font-size: 13px; font-weight: 600; transition: opacity 0.2s; display: inline-flex; align-items: center; gap: 4px;" onmouseover="this.style.opacity=0.8" onmouseout="this.style.opacity=1">
+          <i data-lucide="shield-check" style="width: 14px; height: 14px;"></i> Super Admin SaaS Login
+        </a>
+      </div>
     </div>
   </div>
 
   <script src="login.js"></script>
   <script>
-    lucide.createIcons();
+    function initTheme() {
+      const savedTheme = localStorage.getItem('admin_portal_login_theme');
+      const body = document.body;
+      const themeIcon = document.getElementById('theme-icon');
+      
+      if (savedTheme === 'dark') {
+        body.classList.add('dark-theme');
+        if (themeIcon) themeIcon.setAttribute('data-lucide', 'sun');
+      } else {
+        body.classList.remove('dark-theme');
+        if (themeIcon) themeIcon.setAttribute('data-lucide', 'moon');
+      }
+      lucide.createIcons();
+    }
+
+    function toggleTheme() {
+      const body = document.body;
+      const themeIcon = document.getElementById('theme-icon');
+      const isDark = body.classList.toggle('dark-theme');
+      
+      if (isDark) {
+        localStorage.setItem('admin_portal_login_theme', 'dark');
+        if (themeIcon) themeIcon.setAttribute('data-lucide', 'sun');
+      } else {
+        localStorage.setItem('admin_portal_login_theme', 'light');
+        if (themeIcon) themeIcon.setAttribute('data-lucide', 'moon');
+      }
+      lucide.createIcons();
+    }
+
+    // Initialize the theme state on load
+    initTheme();
   </script>
 </body>
 </html>

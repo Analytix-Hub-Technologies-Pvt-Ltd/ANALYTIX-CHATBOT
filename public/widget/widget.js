@@ -52,7 +52,31 @@ let selectedSlot = ""; // HH:MM
 let activeAvailableSlots = [];
 let activeFetchedDateStr = "";
 
+// Geolocation coordinates
+let userCoords = null;
+
+// Request location on widget load
+function requestUserGeolocation() {
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        userCoords = {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude
+        };
+        console.log("Browser coordinates successfully resolved:", userCoords);
+      },
+      (error) => {
+        console.warn("Browser geolocation access refused or failed:", error);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  }
+}
+
 document.addEventListener("DOMContentLoaded", () => {
+  // Request coordinates
+  requestUserGeolocation();
   // Init Lucide
   lucide.createIcons();
   
@@ -83,7 +107,7 @@ async function loadWidgetSettings() {
     
     botName = data.botName || "AH Bot";
     primaryColor = data.primaryColor || "#2563eb";
-    const backgroundColor = data.backgroundColor || "#090d16";
+    const backgroundColor = data.backgroundColor || "#ffffff";
     
     // Save settings globally for location card lookup
     window.activeWidgetSettings = data;
@@ -227,7 +251,7 @@ async function handleChatSubmit(e) {
     const res = await fetch("/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ messages: chatHistory, conversationId: conversationId })
+      body: JSON.stringify({ messages: chatHistory, conversationId: conversationId, coords: userCoords })
     });
     
     if (!res.ok) {
@@ -289,9 +313,19 @@ async function handleChatSubmit(e) {
               if (!hasTriggeredBooking) {
                 hasTriggeredBooking = true;
                 setTimeout(() => {
-                  triggerInlineBooking();
+                  const inlineCard = createInlineBookingCard();
+                  botRow.appendChild(inlineCard);
+                  if (window.lucide) {
+                    window.lucide.createIcons();
+                  }
+                  scrollToElement(botRow);
                 }, 800);
               }
+            }
+
+            if (displayText.includes("[CREATE_BOOKING:")) {
+              const startIdx = displayText.indexOf("[CREATE_BOOKING:");
+              displayText = displayText.substring(0, startIdx).trim();
             }
             
             bubble.innerHTML = formatTextMarkdown(displayText);
@@ -304,7 +338,43 @@ async function handleChatSubmit(e) {
     }
     
     // Final cleanup of the booking tag in our stored history
-    const finalCleanText = accumulatedText.replace(/\[TRIGGER_BOOKING\]/g, "").trim();
+    let finalCleanText = accumulatedText;
+    let hasTriggeredBookingTag = false;
+    if (finalCleanText.includes("[CREATE_BOOKING:")) {
+      const startIdx = finalCleanText.indexOf("[CREATE_BOOKING:");
+      const endIdx = finalCleanText.indexOf("]", startIdx);
+      if (endIdx !== -1) {
+        const tagStr = finalCleanText.substring(startIdx, endIdx + 1);
+        finalCleanText = finalCleanText.replace(tagStr, "").trim();
+        
+        if (!hasTriggeredBookingTag) {
+          hasTriggeredBookingTag = true;
+          const jsonStr = tagStr.substring(16, tagStr.length - 1);
+          try {
+            const bookingPayload = JSON.parse(jsonStr);
+            setTimeout(() => {
+              executeAutomaticChatBooking(bookingPayload);
+            }, 500);
+          } catch (e) {
+            console.error("Auto booking JSON parsing failed:", e);
+          }
+        }
+      } else {
+        const jsonStr = finalCleanText.substring(startIdx + 16).trim();
+        if (jsonStr.endsWith("}")) {
+          try {
+            const bookingPayload = JSON.parse(jsonStr);
+            setTimeout(() => {
+              executeAutomaticChatBooking(bookingPayload);
+            }, 500);
+          } catch (e) {
+            console.error("Auto booking fallback JSON parsing failed:", e);
+          }
+        }
+      }
+    }
+
+    finalCleanText = finalCleanText.replace(/\[TRIGGER_BOOKING\]/g, "").trim();
     chatHistory.push({ role: "assistant", content: finalCleanText });
     
     // Trigger visual location card if the office details were mentioned
@@ -431,6 +501,11 @@ function closeScheduler(didBook = false) {
 function gotoDateTimeStep() {
   document.getElementById("sched-step-details").classList.remove("active");
   document.getElementById("sched-step-success").classList.remove("active");
+  const paymentPanel = document.getElementById("sched-step-payment");
+  if (paymentPanel) {
+    paymentPanel.classList.remove("active");
+    paymentPanel.style.display = "none";
+  }
   document.getElementById("sched-step-dateTime").classList.add("active");
 }
 
@@ -439,6 +514,11 @@ function gotoDetailsStep() {
   
   // Toggle Steps
   document.getElementById("sched-step-dateTime").classList.remove("active");
+  const paymentPanel = document.getElementById("sched-step-payment");
+  if (paymentPanel) {
+    paymentPanel.classList.remove("active");
+    paymentPanel.style.display = "none";
+  }
   document.getElementById("sched-step-details").classList.add("active");
   
   // Set summary label
@@ -676,15 +756,15 @@ async function fetchSlots(dateStr) {
 // -------------------------------------------------------------
 // BOOKING FORM SUBMISSION
 // -------------------------------------------------------------
+// Global variable to hold temporary booking payload before payment is finalized
+let pendingBookingPayload = null;
+
 async function submitBooking(e) {
   e.preventDefault();
   
   const submitBtn = document.getElementById("btn-submit-booking");
   const originalHtml = submitBtn.innerHTML;
   
-  submitBtn.disabled = true;
-  submitBtn.innerHTML = `<span>Booking slot...</span>`;
-
   const payload = {
     name: document.getElementById("sched-name").value.trim(),
     email: document.getElementById("sched-email").value.trim(),
@@ -697,6 +777,50 @@ async function submitBooking(e) {
     clientFormattedTime: window.selectedClientFormattedSlot || ""
   };
 
+  if (window.activeWidgetSettings?.paymentEnabled) {
+    // Save payload and navigate to payments screen
+    pendingBookingPayload = payload;
+    
+    // Update payment summary fee banner
+    const feeAmount = window.activeWidgetSettings.paymentAmount !== undefined ? window.activeWidgetSettings.paymentAmount : "15.00";
+    const feeCurrency = window.activeWidgetSettings.paymentCurrency || "USD";
+    const currencySymbols = { USD: '$', INR: '₹', EUR: '€', GBP: '£', CAD: 'C$', AUD: 'A$' };
+    const symbol = currencySymbols[feeCurrency] || '';
+    document.getElementById("payment-summary-fee").innerText = `Consultation Fee: ${symbol}${feeAmount} ${feeCurrency}`;
+    
+    const gateway = window.activeWidgetSettings.paymentGateway || "mock";
+    const mockContainer = document.getElementById("mock-payment-container");
+    const razorpayContainer = document.getElementById("razorpay-payment-container");
+
+    if (gateway === "razorpay") {
+      if (mockContainer) mockContainer.classList.add("hidden");
+      if (razorpayContainer) razorpayContainer.classList.remove("hidden");
+    } else {
+      if (mockContainer) mockContainer.classList.remove("hidden");
+      if (razorpayContainer) razorpayContainer.classList.add("hidden");
+
+      // Populate instructions text
+      const sandboxText = document.getElementById("sandbox-instructions-text");
+      if (sandboxText) {
+        sandboxText.innerText = window.activeWidgetSettings.paymentInstructions || "Mock payment mode enabled. Use test card 4242 4242 4242 4242 and any future expiry.";
+      }
+      
+      // Bind credit card input formatters/visualizers if not already bound
+      setupCreditCardListeners();
+    }
+
+    // Switch panels
+    document.getElementById("sched-step-details").classList.remove("active");
+    const paymentPanel = document.getElementById("sched-step-payment");
+    paymentPanel.style.display = "block"; // Make sure it's visible
+    paymentPanel.classList.add("active");
+    return;
+  }
+
+  // Otherwise, book directly
+  submitBtn.disabled = true;
+  submitBtn.innerHTML = `<span>Booking slot...</span>`;
+  
   try {
     const res = await fetch("/api/bookings", {
       method: "POST",
@@ -705,7 +829,6 @@ async function submitBooking(e) {
     });
     
     const result = await res.json();
-    
     if (!res.ok) throw new Error(result.error || "Failed scheduling appointment.");
     
     // Switch to step 3 Success Screen
@@ -723,11 +846,350 @@ async function submitBooking(e) {
 
     // Reset Form fields
     document.getElementById("widget-booking-form").reset();
-    
   } catch (error) {
     alert(`Booking Error: ${error.message}`);
     submitBtn.disabled = false;
     submitBtn.innerHTML = originalHtml;
+  }
+}
+
+let ccListenersBound = false;
+function setupCreditCardListeners() {
+  if (ccListenersBound) return;
+  ccListenersBound = true;
+  
+  const cardNumInput = document.getElementById("card-number");
+  const cardExpiryInput = document.getElementById("card-expiry");
+  const cardCvcInput = document.getElementById("card-cvc");
+  const cardVisualNumber = document.getElementById("card-visual-number");
+  const cardVisualHolder = document.getElementById("card-visual-holder-val");
+  const cardVisualExpiry = document.getElementById("card-visual-expiry-val");
+  const cardHolderInput = document.getElementById("card-holder");
+  const cardIndicator = document.getElementById("card-type-icon-indicator");
+  
+  if (cardNumInput) {
+    cardNumInput.addEventListener("input", (e) => {
+      let value = e.target.value.replace(/\D/g, "");
+      // Format with spaces
+      let formatted = "";
+      for (let i = 0; i < value.length; i++) {
+        if (i > 0 && i % 4 === 0) formatted += " ";
+        formatted += value[i];
+      }
+      e.target.value = formatted;
+      
+      // Update visual card
+      if (cardVisualNumber) {
+        cardVisualNumber.innerText = formatted || "•••• •••• •••• ••••";
+      }
+      
+      // Card brand indicator
+      if (cardIndicator) {
+        if (value.startsWith("4")) {
+          cardIndicator.innerText = "VISA";
+        } else if (/^5[1-5]/.test(value)) {
+          cardIndicator.innerText = "MASTERCARD";
+        } else {
+          cardIndicator.innerText = "";
+        }
+      }
+    });
+  }
+  
+  if (cardHolderInput && cardVisualHolder) {
+    cardHolderInput.addEventListener("input", (e) => {
+      cardVisualHolder.innerText = e.target.value.toUpperCase() || "YOUR NAME";
+    });
+  }
+  
+  if (cardExpiryInput) {
+    cardExpiryInput.addEventListener("input", (e) => {
+      let value = e.target.value.replace(/\D/g, "");
+      if (value.length > 2) {
+        value = value.substring(0, 2) + "/" + value.substring(2, 4);
+      }
+      e.target.value = value;
+      
+      if (cardVisualExpiry) {
+        cardVisualExpiry.innerText = value || "MM/YY";
+      }
+    });
+  }
+  
+  if (cardCvcInput) {
+    cardCvcInput.addEventListener("input", (e) => {
+      e.target.value = e.target.value.replace(/\D/g, "").substring(0, 4);
+    });
+  }
+}
+
+async function processPayment(e) {
+  e.preventDefault();
+  
+  const errorMsgEl = document.getElementById("payment-error-msg");
+  errorMsgEl.classList.add("hidden");
+  errorMsgEl.innerText = "";
+  
+  const cardHolder = document.getElementById("card-holder").value.trim();
+  const cardNumber = document.getElementById("card-number").value.replace(/\s/g, "");
+  const cardExpiry = document.getElementById("card-expiry").value.trim();
+  const cardCvc = document.getElementById("card-cvc").value.trim();
+  
+  if (!cardHolder || cardNumber.length < 15 || cardExpiry.length < 5 || cardCvc.length < 3) {
+    errorMsgEl.classList.remove("hidden");
+    errorMsgEl.innerText = "Please fill in all credit card details correctly.";
+    return;
+  }
+  
+  if (!/^\d+$/.test(cardNumber)) {
+    errorMsgEl.classList.remove("hidden");
+    errorMsgEl.innerText = "Invalid credit card number format.";
+    return;
+  }
+  
+  const payBtn = document.getElementById("btn-pay-confirm");
+  const originalHtml = payBtn.innerHTML;
+  payBtn.disabled = true;
+  payBtn.innerHTML = `<span>Authorizing payment...</span>`;
+  
+  // Simulate payment processing delay
+  setTimeout(async () => {
+    try {
+      const mockTxId = "TXN-MOCK-" + Math.random().toString(36).substring(2, 10).toUpperCase();
+      const feeAmount = window.activeWidgetSettings.paymentAmount !== undefined ? window.activeWidgetSettings.paymentAmount : "15.00";
+      const feeCurrency = window.activeWidgetSettings.paymentCurrency || "USD";
+      const currencySymbols = { USD: '$', INR: '₹', EUR: '€', GBP: '£', CAD: 'C$', AUD: 'A$' };
+      const symbol = currencySymbols[feeCurrency] || '';
+      
+      const payload = {
+        ...pendingBookingPayload,
+        paymentStatus: "Paid",
+        paymentAmountPaid: `${symbol}${feeAmount} ${feeCurrency}`,
+        paymentTransactionId: mockTxId
+      };
+      
+      const res = await fetch("/api/bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || "Failed scheduling appointment.");
+      
+      // Update success details with payment confirmation
+      const paymentRow = document.getElementById("success-payment-row");
+      if (paymentRow) {
+        paymentRow.style.display = "flex";
+        document.getElementById("success-payment-val").innerText = `Paid ${symbol}${feeAmount} ${feeCurrency} (TxID: ${mockTxId})`;
+      }
+      
+      // Hide payment step, show success step
+      const paymentPanel = document.getElementById("sched-step-payment");
+      paymentPanel.classList.remove("active");
+      paymentPanel.style.display = "none";
+      
+      document.getElementById("sched-step-success").classList.add("active");
+      
+      // Populate success ticket
+      const bizTz = window.activeWidgetSettings?.bookingTimezone || "Asia/Kolkata";
+      const clientTzName = window.selectedClientTimezone ? window.selectedClientTimezone.split('/').pop().replace('_', ' ') : '';
+      document.getElementById("success-datetime").innerHTML = `
+        <div>${formatDateDisplay(selectedDateStr)} at ${formatTime12(selectedSlot)} (${bizTz})</div>
+        ${window.selectedClientFormattedSlot ? `<div style="font-size: 11px; opacity: 0.8; margin-top: 3px;">Local: ${window.selectedClientFormattedSlot} (${clientTzName})</div>` : ''}
+      `;
+      document.getElementById("success-purpose").innerText = payload.purpose;
+
+      // Reset forms
+      document.getElementById("widget-booking-form").reset();
+      document.getElementById("widget-payment-form").reset();
+      
+    } catch (error) {
+      errorMsgEl.classList.remove("hidden");
+      errorMsgEl.innerText = error.message;
+      payBtn.disabled = false;
+      payBtn.innerHTML = originalHtml;
+    }
+  }, 1200);
+}
+
+async function payWithRazorpay(e) {
+  if (e) e.preventDefault();
+  
+  const errorMsgEl = document.getElementById("razorpay-error-msg");
+  if (errorMsgEl) errorMsgEl.classList.add("hidden");
+  
+  const payBtn = document.getElementById("btn-razorpay-pay");
+  const originalHtml = payBtn.innerHTML;
+  payBtn.disabled = true;
+  payBtn.innerHTML = `<span>Opening Razorpay...</span>`;
+  
+  try {
+    const feeAmount = window.activeWidgetSettings.paymentAmount !== undefined ? window.activeWidgetSettings.paymentAmount : 15.00;
+    const feeCurrency = window.activeWidgetSettings.paymentCurrency || "USD";
+    
+    // 1. Create secure order on server
+    const orderRes = await fetch("/api/bookings/razorpay-order", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ amount: feeAmount, currency: feeCurrency })
+    });
+    
+    const orderData = await orderRes.json();
+    if (!orderRes.ok) throw new Error(orderData.error || "Failed to initialize secure payment order.");
+    
+    // 2. Setup checkout options
+    const options = {
+      key: orderData.keyId,
+      amount: orderData.amount * 100, // minor units
+      currency: orderData.currency,
+      name: window.activeWidgetSettings.botName || "Consultation Booking",
+      description: `Booking Fee for ${pendingBookingPayload.name}`,
+      order_id: orderData.orderId,
+      handler: async function (response) {
+        payBtn.innerHTML = `<span>Verifying payment...</span>`;
+        
+        try {
+          // 3. Confirm payment during booking creation
+          const payload = {
+            ...pendingBookingPayload,
+            paymentStatus: "Paid",
+            paymentAmountPaid: feeAmount,
+            paymentTransactionId: response.razorpay_payment_id,
+            razorpayOrderId: response.razorpay_order_id,
+            razorpaySignature: response.razorpay_signature
+          };
+          
+          const res = await fetch("/api/bookings", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+          
+          const result = await res.json();
+          if (!res.ok) throw new Error(result.error || "Failed scheduling appointment.");
+          
+          // Update success ticket
+          const paymentRow = document.getElementById("success-payment-row");
+          if (paymentRow) {
+            paymentRow.style.display = "flex";
+            const currencySymbols = { USD: '$', INR: '₹', EUR: '€', GBP: '£', CAD: 'C$', AUD: 'A$' };
+            const symbol = currencySymbols[feeCurrency] || '';
+            document.getElementById("success-payment-val").innerText = `Paid ${symbol}${feeAmount} ${feeCurrency} (TxID: ${response.razorpay_payment_id})`;
+          }
+          
+          // Toggle steps
+          const paymentPanel = document.getElementById("sched-step-payment");
+          paymentPanel.classList.remove("active");
+          paymentPanel.style.display = "none";
+          
+          document.getElementById("sched-step-success").classList.add("active");
+          
+          const bizTz = window.activeWidgetSettings?.bookingTimezone || "Asia/Kolkata";
+          const clientTzName = window.selectedClientTimezone ? window.selectedClientTimezone.split('/').pop().replace('_', ' ') : '';
+          document.getElementById("success-datetime").innerHTML = `
+            <div>${formatDateDisplay(selectedDateStr)} at ${formatTime12(selectedSlot)} (${bizTz})</div>
+            ${window.selectedClientFormattedSlot ? `<div style="font-size: 11px; opacity: 0.8; margin-top: 3px;">Local: ${window.selectedClientFormattedSlot} (${clientTzName})</div>` : ''}
+          `;
+          document.getElementById("success-purpose").innerText = payload.purpose;
+    
+          document.getElementById("widget-booking-form").reset();
+          
+        } catch (error) {
+          if (errorMsgEl) {
+            errorMsgEl.classList.remove("hidden");
+            errorMsgEl.innerText = error.message;
+          }
+          payBtn.disabled = false;
+          payBtn.innerHTML = originalHtml;
+        }
+      },
+      modal: {
+        ondismiss: function () {
+          payBtn.disabled = false;
+          payBtn.innerHTML = originalHtml;
+        }
+      },
+      prefill: {
+        name: pendingBookingPayload.name,
+        email: pendingBookingPayload.email,
+        contact: pendingBookingPayload.phone
+      },
+      theme: {
+        color: window.activeWidgetSettings.primaryColor || "#2563eb"
+      }
+    };
+    
+    const rzp = new Razorpay(options);
+    rzp.open();
+    
+  } catch (error) {
+    if (errorMsgEl) {
+      errorMsgEl.classList.remove("hidden");
+      errorMsgEl.innerText = error.message;
+    }
+    payBtn.disabled = false;
+    payBtn.innerHTML = originalHtml;
+  }
+}
+
+async function executeAutomaticChatBooking(bookingPayload) {
+  const payload = {
+    botId,
+    name: bookingPayload.name,
+    email: bookingPayload.email,
+    phone: bookingPayload.phone || '',
+    date: bookingPayload.date,
+    time: bookingPayload.time,
+    purpose: bookingPayload.purpose || 'General Consultation',
+    info: bookingPayload.info || 'Scheduled via Conversational AI Assistant',
+    clientTimezone: window.selectedClientTimezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
+    clientFormattedTime: bookingPayload.time,
+    paymentStatus: window.activeWidgetSettings?.paymentEnabled ? 'unpaid' : 'N/A',
+    paymentAmountPaid: '',
+    paymentTransactionId: ''
+  };
+
+  appendMessage("bot", `🤖 *Processing your booking request...*`);
+  
+  try {
+    const res = await fetch("/api/bookings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || "Failed scheduling appointment.");
+    
+    const bizTz = window.activeWidgetSettings?.bookingTimezone || "Asia/Kolkata";
+    
+    let successMsg = `🎉 **Appointment Successfully Booked!**\n\n`;
+    successMsg += `📅 **Date:** ${formatDateDisplay(payload.date)}\n`;
+    successMsg += `⏰ **Time:** ${formatTime12(payload.time)} (${bizTz})\n`;
+    successMsg += `👤 **Name:** ${payload.name}\n`;
+    successMsg += `✉️ **Email:** ${payload.email}\n`;
+    
+    if (window.activeWidgetSettings?.paymentEnabled) {
+      const feeAmount = window.activeWidgetSettings.paymentAmount !== undefined ? window.activeWidgetSettings.paymentAmount : "15.00";
+      const feeCurrency = window.activeWidgetSettings.paymentCurrency || "USD";
+      const currencySymbols = { USD: '$', INR: '₹', EUR: '€', GBP: '£', CAD: 'C$', AUD: 'A$' };
+      const symbol = currencySymbols[feeCurrency] || '';
+      
+      successMsg += `\n💳 **Payment Status:** Unpaid (Fee: ${symbol}${feeAmount} ${feeCurrency}). Please check your email for the payment link to complete the booking confirmation.`;
+    } else {
+      successMsg += `\n✅ A calendar invitation has been sent to your email.`;
+    }
+    
+    appendMessage("bot", successMsg);
+    
+    chatHistory.push({
+      role: "assistant",
+      content: `Appointment successfully scheduled for ${formatDateDisplay(payload.date)} at ${formatTime12(payload.time)}. Details sent via email.`
+    });
+    
+  } catch (error) {
+    appendMessage("bot", `❌ **Booking Failed:** ${error.message || "An error occurred while booking. Please try booking manually using the calendar icon."}`);
   }
 }
 
@@ -926,3 +1388,397 @@ function createLocationCard(settings = {}) {
   `;
   return card;
 }
+
+function createInlineBookingCard() {
+  const card = document.createElement("div");
+  card.className = "inline-booking-card";
+  
+  let selectedDate = "";
+  let selectedSlot = "";
+  let activeSlots = [];
+  
+  // Step 1: Select Date & Time
+  const stepDate = document.createElement("div");
+  stepDate.className = "inline-step step-date active";
+  stepDate.innerHTML = `
+    <div class="step-title"><i data-lucide="calendar"></i> Select a Date</div>
+    <div class="date-tabs"></div>
+    <div class="step-title" style="margin-top:16px;"><i data-lucide="clock"></i> Available Slots</div>
+    <div class="slots-grid"><div class="slots-info-msg">Choose a date to see times</div></div>
+  `;
+  card.appendChild(stepDate);
+  
+  // Step 2: Form Details
+  const stepForm = document.createElement("div");
+  stepForm.className = "inline-step step-form";
+  stepForm.style.display = "none";
+  stepForm.innerHTML = `
+    <div class="step-title"><i data-lucide="user"></i> Contact Information</div>
+    <div class="details-form-container">
+      <div class="form-group">
+        <label>Full Name *</label>
+        <input type="text" class="form-input-name" placeholder="John Doe" required />
+      </div>
+      <div class="form-group">
+        <label>Email Address *</label>
+        <input type="email" class="form-input-email" placeholder="john@example.com" required />
+      </div>
+      <div class="form-group">
+        <label>Phone Number *</label>
+        <input type="tel" class="form-input-phone" placeholder="1234567890" required />
+      </div>
+      <button type="button" class="action-btn btn-submit-details" disabled>Confirm details & Proceed</button>
+    </div>
+  `;
+  card.appendChild(stepForm);
+  
+  // Step 3: Payment
+  const stepPayment = document.createElement("div");
+  stepPayment.className = "inline-step step-payment";
+  stepPayment.style.display = "none";
+  
+  const feeAmount = window.activeWidgetSettings?.paymentAmount !== undefined ? window.activeWidgetSettings.paymentAmount : "15.00";
+  const feeCurrency = window.activeWidgetSettings?.paymentCurrency || "USD";
+  const currencySymbols = { USD: '$', INR: '₹', EUR: '€', GBP: '£', CAD: 'C$', AUD: 'A$' };
+  const symbol = currencySymbols[feeCurrency] || '';
+  const instructions = window.activeWidgetSettings?.paymentInstructions || "Mock payment mode: Use test card 4242 4242 4242 4242";
+  const gateway = window.activeWidgetSettings?.paymentGateway || "mock";
+
+  if (gateway === "razorpay") {
+    stepPayment.innerHTML = `
+      <div class="step-title"><i data-lucide="credit-card"></i> Consultation Payment</div>
+      <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 15px; line-height: 1.4;">
+        Please complete payment through the secure Razorpay Gateway to book your consultation appointment.
+      </p>
+      <div class="payment-error-alert hidden" style="margin-top:10px; margin-bottom:10px;"></div>
+      <button type="button" class="action-btn btn-submit-payment" style="width:100%; max-width:none;">Pay Now via Razorpay</button>
+    `;
+  } else {
+    stepPayment.innerHTML = `
+      <div class="step-title"><i data-lucide="credit-card"></i> Consultation Payment</div>
+      <div class="sandbox-payment-alert" style="margin-bottom: 10px;">
+        <i data-lucide="info" style="width:14px;height:14px;flex-shrink:0;"></i>
+        <span>${instructions}</span>
+      </div>
+      <div class="form-group">
+        <label>Cardholder Name</label>
+        <input type="text" class="card-holder" placeholder="JOHN DOE" required />
+      </div>
+      <div class="form-group">
+        <label>Card Number</label>
+        <input type="text" class="card-number" placeholder="4242 4242 4242 4242" required />
+      </div>
+      <div style="display:flex;gap:8px;">
+        <div class="form-group" style="flex:1;">
+          <label>Expiry Date</label>
+          <input type="text" class="card-expiry" placeholder="MM/YY" required />
+        </div>
+        <div class="form-group" style="flex:1;">
+          <label>CVC / CVV</label>
+          <input type="password" class="card-cvc" placeholder="•••" required />
+        </div>
+      </div>
+      <div class="payment-error-alert hidden" style="margin-top:10px;"></div>
+      <button type="button" class="action-btn btn-submit-payment">Pay ${symbol}${feeAmount} ${feeCurrency}</button>
+    `;
+  }
+  card.appendChild(stepPayment);
+
+  // Step 4: Success Ticket
+  const stepSuccess = document.createElement("div");
+  stepSuccess.className = "inline-step step-success";
+  stepSuccess.style.display = "none";
+  card.appendChild(stepSuccess);
+
+  // LOGIC & EVENTS
+  const dates = getNext5Days();
+  const dateTabsContainer = stepDate.querySelector(".date-tabs");
+  const slotsGrid = stepDate.querySelector(".slots-grid");
+  const btnSubmitDetails = stepForm.querySelector(".btn-submit-details");
+  
+  dates.forEach(d => {
+    const tab = document.createElement("button");
+    tab.className = "date-tab";
+    tab.innerText = d.label;
+    tab.type = "button";
+    tab.addEventListener("click", async () => {
+      dateTabsContainer.querySelectorAll(".date-tab").forEach(t => t.classList.remove("active"));
+      tab.classList.add("active");
+      selectedDate = d.dateStr;
+      selectedSlot = "";
+      slotsGrid.innerHTML = `<div class="slots-info-msg">Retrieving open slots...</div>`;
+      
+      try {
+        const res = await fetch(`/api/bookings/available-slots?date=${d.dateStr}`);
+        if (!res.ok) throw new Error();
+        const { availableSlots } = await res.json();
+        activeSlots = availableSlots;
+        
+        slotsGrid.innerHTML = "";
+        if (activeSlots.length === 0) {
+          slotsGrid.innerHTML = `<div class="slots-info-msg">No slots available on this date.</div>`;
+          return;
+        }
+        
+        activeSlots.forEach(slot => {
+          const btn = document.createElement("button");
+          btn.className = "slot-pill";
+          btn.type = "button";
+          btn.innerText = formatTime12(slot);
+          btn.addEventListener("click", () => {
+            slotsGrid.querySelectorAll(".slot-pill").forEach(p => p.classList.remove("selected"));
+            btn.classList.add("selected");
+            selectedSlot = slot;
+            
+            stepForm.style.display = "block";
+            scrollToBottom();
+          });
+          slotsGrid.appendChild(btn);
+        });
+      } catch (err) {
+        slotsGrid.innerHTML = `<div class="slots-info-msg" style="color:var(--accent-red)">Failed to load slots.</div>`;
+      }
+    });
+    dateTabsContainer.appendChild(tab);
+  });
+  
+  const inputs = stepForm.querySelectorAll("input");
+  const validateForm = () => {
+    let valid = true;
+    inputs.forEach(i => {
+      if (!i.value.trim()) valid = false;
+    });
+    btnSubmitDetails.disabled = !valid;
+  };
+  inputs.forEach(i => i.addEventListener("input", validateForm));
+  
+  btnSubmitDetails.addEventListener("click", () => {
+    if (window.activeWidgetSettings?.paymentEnabled) {
+      stepForm.style.display = "none";
+      stepPayment.style.display = "block";
+      
+      const ccNum = stepPayment.querySelector(".card-number");
+      const ccExp = stepPayment.querySelector(".card-expiry");
+      const ccCvc = stepPayment.querySelector(".card-cvc");
+      
+      if (ccNum && ccExp && ccCvc) {
+        ccNum.addEventListener("input", (e) => {
+          let val = e.target.value.replace(/\D/g, "");
+          let fmt = "";
+          for (let i = 0; i < val.length; i++) {
+            if (i > 0 && i % 4 === 0) fmt += " ";
+            fmt += val[i];
+          }
+          e.target.value = fmt;
+        });
+        ccExp.addEventListener("input", (e) => {
+          let val = e.target.value.replace(/\D/g, "");
+          if (val.length > 2) {
+            val = val.substring(0, 2) + "/" + val.substring(2, 4);
+          }
+          e.target.value = val;
+        });
+        ccCvc.addEventListener("input", (e) => {
+          e.target.value = e.target.value.replace(/\D/g, "").substring(0, 4);
+        });
+      }
+      
+    } else {
+      executeInlineBooking();
+    }
+    scrollToBottom();
+  });
+  
+  const btnSubmitPayment = stepPayment.querySelector(".btn-submit-payment");
+  btnSubmitPayment.addEventListener("click", async () => {
+    const errorAlert = stepPayment.querySelector(".payment-error-alert");
+    errorAlert.classList.add("hidden");
+
+    if (window.activeWidgetSettings?.paymentGateway === "razorpay") {
+      btnSubmitPayment.disabled = true;
+      btnSubmitPayment.innerText = "Opening Razorpay...";
+
+      const clientName = stepForm.querySelector(".form-input-name").value.trim();
+      const clientEmail = stepForm.querySelector(".form-input-email").value.trim();
+      const clientPhone = stepForm.querySelector(".form-input-phone").value.trim();
+
+      try {
+        const orderRes = await fetch("/api/bookings/razorpay-order", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ amount: feeAmount, currency: feeCurrency })
+        });
+        
+        const orderData = await orderRes.json();
+        if (!orderRes.ok) throw new Error(orderData.error || "Failed to initialize secure payment order.");
+
+        const options = {
+          key: orderData.keyId,
+          amount: orderData.amount * 100,
+          currency: orderData.currency,
+          name: window.activeWidgetSettings.botName || "Consultation Booking",
+          description: `Booking Fee for ${clientName}`,
+          order_id: orderData.orderId,
+          handler: async function (response) {
+            btnSubmitPayment.innerText = "Verifying...";
+            try {
+              await executeInlineBooking(
+                "Paid", 
+                `${symbol}${feeAmount} ${feeCurrency}`, 
+                response.razorpay_payment_id,
+                response.razorpay_order_id,
+                response.razorpay_signature
+              );
+            } catch (err) {
+              errorAlert.classList.remove("hidden");
+              errorAlert.innerText = err.message;
+              btnSubmitPayment.disabled = false;
+              btnSubmitPayment.innerText = "Pay Now via Razorpay";
+            }
+          },
+          modal: {
+            ondismiss: function () {
+              btnSubmitPayment.disabled = false;
+              btnSubmitPayment.innerText = "Pay Now via Razorpay";
+            }
+          },
+          prefill: {
+            name: clientName,
+            email: clientEmail,
+            contact: clientPhone
+          },
+          theme: {
+            color: window.activeWidgetSettings.primaryColor || "#2563eb"
+          }
+        };
+
+        const rzp = new Razorpay(options);
+        rzp.open();
+
+      } catch (error) {
+        errorAlert.classList.remove("hidden");
+        errorAlert.innerText = error.message;
+        btnSubmitPayment.disabled = false;
+        btnSubmitPayment.innerText = "Pay Now via Razorpay";
+      }
+
+    } else {
+      const ccHolderInput = stepPayment.querySelector(".card-holder");
+      const ccNumInput = stepPayment.querySelector(".card-number");
+      const ccExpInput = stepPayment.querySelector(".card-expiry");
+      const ccCvcInput = stepPayment.querySelector(".card-cvc");
+
+      const ccName = ccHolderInput ? ccHolderInput.value.trim() : "";
+      const ccNum = ccNumInput ? ccNumInput.value.replace(/\s/g, "") : "";
+      const ccExp = ccExpInput ? ccExpInput.value.trim() : "";
+      const ccCvc = ccCvcInput ? ccCvcInput.value.trim() : "";
+      
+      if (!ccName || ccNum.length < 15 || ccExp.length < 5 || ccCvc.length < 3) {
+        errorAlert.classList.remove("hidden");
+        errorAlert.innerText = "Please fill in all credit card details correctly.";
+        return;
+      }
+      
+      btnSubmitPayment.disabled = true;
+      btnSubmitPayment.innerText = "Authorizing...";
+      
+      setTimeout(() => {
+        const mockTxId = "TXN-MOCK-" + Math.random().toString(36).substring(2, 10).toUpperCase();
+        executeInlineBooking("Paid", `${symbol}${feeAmount} ${feeCurrency}`, mockTxId);
+      }, 1200);
+    }
+  });
+  
+  async function executeInlineBooking(payStatus = "N/A", payAmount = "", payTxId = "", razorpayOrderId = "", razorpaySignature = "") {
+    const payload = {
+      botId,
+      name: stepForm.querySelector(".form-input-name").value.trim(),
+      email: stepForm.querySelector(".form-input-email").value.trim(),
+      phone: stepForm.querySelector(".form-input-phone").value.trim(),
+      date: selectedDate,
+      time: selectedSlot,
+      purpose: "General Consultation",
+      info: "Scheduled via Interactive Chat Selection Form",
+      clientTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      clientFormattedTime: selectedSlot,
+      paymentStatus: payStatus,
+      paymentAmountPaid: payAmount,
+      paymentTransactionId: payTxId,
+      razorpayOrderId: razorpayOrderId,
+      razorpaySignature: razorpaySignature
+    };
+    
+    try {
+      const res = await fetch("/api/bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Failed scheduling booking");
+      }
+      
+      stepDate.style.display = "none";
+      stepForm.style.display = "none";
+      stepPayment.style.display = "none";
+      
+      stepSuccess.style.display = "block";
+      stepSuccess.innerHTML = `
+        <div class="success-ticket text-center">
+          <div class="success-badge"><i data-lucide="check"></i></div>
+          <h4 style="color:white;font-weight:600;margin-bottom:8px;">Booking Confirmed!</h4>
+          <p style="font-size:11px;color:var(--text-muted);line-height:1.4;margin-bottom:12px;">
+            Your session has been scheduled successfully. An invitation has been sent to <strong>${payload.email}</strong>.
+          </p>
+          <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:10px;text-align:left;font-size:11px;line-height:1.5;">
+            <div><strong style="color:var(--text-muted);">Date:</strong> <span style="float:right;color:white;">${formatDateDisplay(payload.date)}</span></div>
+            <div><strong style="color:var(--text-muted);">Time:</strong> <span style="float:right;color:white;">${formatTime12(payload.time)}</span></div>
+            ${payStatus !== "N/A" ? `
+            <div style="margin-top:6px;border-top:1px dashed rgba(255,255,255,0.06);padding-top:6px;"><strong style="color:var(--text-muted);">Paid Amount:</strong> <span style="float:right;color:var(--accent-green);">${payAmount}</span></div>
+            <div><strong style="color:var(--text-muted);">Transaction ID:</strong> <span style="float:right;color:white;font-family:monospace;font-size:9.5px;">${payTxId}</span></div>
+            ` : ''}
+          </div>
+        </div>
+      `;
+      
+      if (window.lucide) {
+        window.lucide.createIcons({
+          attrs: {
+            "stroke-width": 3
+          },
+          nameAttr: "data-lucide",
+          nodeList: stepSuccess.querySelectorAll("[data-lucide]")
+        });
+      }
+      
+    } catch (err) {
+      alert(`Booking failed: ${err.message}`);
+      btnSubmitPayment.disabled = false;
+      btnSubmitPayment.innerText = `Pay ${symbol}${feeAmount} ${feeCurrency}`;
+    }
+  }
+  
+  return card;
+}
+
+function getNext5Days() {
+  const dates = [];
+  const today = new Date();
+  let current = new Date(today);
+  while (dates.length < 5) {
+    const day = current.getDay();
+    if (day !== 0 && day !== 6) {
+      const yyyy = current.getFullYear();
+      const mm = String(current.getMonth() + 1).padStart(2, '0');
+      const dd = String(current.getDate()).padStart(2, '0');
+      const dateStr = `${yyyy}-${mm}-${dd}`;
+      const label = current.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+      dates.push({ dateStr, label });
+    }
+    current.setDate(current.getDate() + 1);
+  }
+  return dates;
+}
+

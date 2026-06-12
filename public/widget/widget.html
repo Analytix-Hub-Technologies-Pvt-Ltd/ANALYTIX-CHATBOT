@@ -183,6 +183,99 @@
             </form>
           </div>
 
+          <!-- Step 2.5: Consultation Payment -->
+          <div class="scheduler-step" id="sched-step-payment" style="display: none;">
+            <div class="step-label">Consultation Payment</div>
+            
+            <div class="booking-summary-banner">
+              <i data-lucide="credit-card" style="color:var(--primary);width:16px;height:16px;"></i>
+              <span id="payment-summary-fee">Consultation Fee: $15.00 USD</span>
+            </div>
+
+            <!-- Mock Credit Card Payment Container -->
+            <div id="mock-payment-container">
+              <!-- Glassmorphic credit card visual -->
+              <div class="credit-card-wrapper">
+                <div class="credit-card-visual" id="credit-card-visual">
+                  <div class="card-visual-front">
+                    <div class="card-visual-header">
+                      <div class="card-visual-chip"></div>
+                      <div class="card-visual-brand" id="card-visual-brand">
+                        <i data-lucide="credit-card" style="width: 24px; height: 24px; color: rgba(255,255,255,0.7);"></i>
+                      </div>
+                    </div>
+                    <div class="card-visual-number" id="card-visual-number">•••• •••• •••• ••••</div>
+                    <div class="card-visual-footer">
+                      <div class="card-visual-holder">
+                        <div class="card-label">CARDHOLDER</div>
+                        <div class="card-value" id="card-visual-holder-val">YOUR NAME</div>
+                      </div>
+                      <div class="card-visual-expiry">
+                        <div class="card-label">EXPIRES</div>
+                        <div class="card-value" id="card-visual-expiry-val">MM/YY</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Custom Sandbox instructions warning box -->
+              <div class="sandbox-payment-alert" id="sandbox-payment-alert">
+                <i data-lucide="info" style="width: 16px; height: 16px; flex-shrink: 0; color: #3b82f6;"></i>
+                <span id="sandbox-instructions-text">Mock payment mode enabled. Use test card 4242 4242 4242 4242 and any future expiry.</span>
+              </div>
+
+              <form id="widget-payment-form" onsubmit="processPayment(event)">
+                <div class="widget-form-group">
+                  <label for="card-holder">Cardholder Name *</label>
+                  <input type="text" id="card-holder" required placeholder="John Doe">
+                </div>
+                <div class="widget-form-group">
+                  <label for="card-number">Card Number *</label>
+                  <div class="input-with-icon-wrapper" style="position: relative;">
+                    <input type="text" id="card-number" required placeholder="4242 4242 4242 4242" maxlength="19">
+                    <span class="card-type-icon" id="card-type-icon-indicator" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.6); pointer-events: none;"></span>
+                  </div>
+                </div>
+                <div class="form-row" style="display: flex; gap: 12px;">
+                  <div class="widget-form-group" style="flex: 1;">
+                    <label for="card-expiry">Expiry Date *</label>
+                    <input type="text" id="card-expiry" required placeholder="MM/YY" maxlength="5">
+                  </div>
+                  <div class="widget-form-group" style="flex: 1;">
+                    <label for="card-cvc">CVC / CVV *</label>
+                    <input type="password" id="card-cvc" required placeholder="•••" maxlength="4">
+                  </div>
+                </div>
+
+                <div id="payment-error-msg" class="payment-error-alert hidden"></div>
+
+                <div class="form-btn-row">
+                  <button type="button" class="btn-back-step" onclick="gotoDetailsStep()">Back</button>
+                  <button type="submit" class="btn-confirm-booking" id="btn-pay-confirm">
+                    <span>Pay & Confirm</span>
+                    <i data-lucide="lock" id="btn-pay-icon" style="width:16px;height:16px;"></i>
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <!-- Razorpay Payment Container -->
+            <div id="razorpay-payment-container" class="hidden" style="margin-top: 15px; text-align: center;">
+              <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">
+                Please complete payment through the secure Razorpay Gateway to book your consultation appointment.
+              </p>
+              <div id="razorpay-error-msg" class="payment-error-alert hidden" style="margin-bottom: 15px;"></div>
+              <div class="form-btn-row">
+                <button type="button" class="btn-back-step" onclick="gotoDetailsStep()">Back</button>
+                <button type="button" class="btn-confirm-booking" id="btn-razorpay-pay" onclick="payWithRazorpay(event)" style="width:100%; max-width:none;">
+                  <span>Proceed to Payment</span>
+                  <i data-lucide="shield-check" style="width:16px;height:16px;"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
           <!-- Step 3: Success Confirmation Screen -->
           <div class="scheduler-step text-center" id="sched-step-success">
             <div class="success-icon-wrapper animate-bounce">
@@ -199,6 +292,10 @@
               <div class="success-row">
                 <span class="lbl">Topic:</span>
                 <span class="val" id="success-purpose">Generative AI</span>
+              </div>
+              <div class="success-row" id="success-payment-row" style="display: none;">
+                <span class="lbl">Payment Info:</span>
+                <span class="val" id="success-payment-val">Paid ($15.00) via TxID</span>
               </div>
               <div class="success-row">
                 <span class="lbl">Notifications:</span>
@@ -232,6 +329,8 @@
   <script>
     lucide.createIcons();
   </script>
+  <!-- Razorpay Checkout Library -->
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
   <!-- Widget Scripts -->
   <script src="widget.js?v=1.0.1"></script>
 </body>

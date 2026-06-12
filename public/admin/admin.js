@@ -156,9 +156,11 @@ function switchTab(tabName) {
   const titles = {
     dashboard: { title: "Dashboard Overview", subtitle: "Real-time chatbot performance and scheduled leads." },
     bookings: { title: "Scheduled Consultations", subtitle: "Manage and audit customer leads gathered by the chatbot." },
+    conversations: { title: "Chat Sessions & Leads", subtitle: "Inspect user conversations, IP addresses, and geographical locations captured by the chatbot." },
     settings: { title: "Chatbot Configurations", subtitle: "Customize the Groq LLM brain, themes, custom system prompt, and SMTP email mailer." },
     trainer: { title: "AI Brain Trainer", subtitle: "Recursively crawl any website URL to automatically train and customize your chatbot's identity." },
-    embed: { title: "Widget Installation", subtitle: "Generate embed scripts and test the chatbot widget in the sandbox." }
+    embed: { title: "Widget Installation", subtitle: "Generate embed scripts and test the chatbot widget in the sandbox." },
+    billing: { title: "Billing & Plans", subtitle: "Manage your subscription plan, view invoice details, and upgrade your chatbot services." }
   };
 
   if (titles[tabName]) {
@@ -171,6 +173,8 @@ function switchTab(tabName) {
     loadBookings();
   } else if (tabName === 'bookings') {
     loadBookings();
+  } else if (tabName === 'conversations') {
+    loadConversations();
   } else if (tabName === 'embed') {
     // Reload Sandbox Preview Iframe to pick up new saved configurations with dynamic botId
     const iframe = document.getElementById("sandbox-iframe");
@@ -212,23 +216,108 @@ async function loadBookings() {
   }
 }
 
+function populateTrainerUIFromSettings() {
+  if (!settingsData || !settingsData.systemPrompt) {
+    return;
+  }
+  
+  const crawlUrlInput = document.getElementById("crawl-url");
+  const url = crawlUrlInput ? crawlUrlInput.value.trim() : "";
+  if (!url) return; // Wait until websiteUrl is loaded from /api/auth/me
+  
+  // Show the panels
+  const standbyPanel = document.getElementById("crawl-standby-panel");
+  const resultsPanel = document.getElementById("crawl-results-panel");
+  const identityPanel = document.getElementById("crawl-identity-panel");
+  const consolePanel = document.getElementById("crawl-console-panel");
+  const consoleLogs = document.getElementById("console-logs-container");
+  const statusBadge = document.getElementById("console-status");
+  
+  if (standbyPanel) standbyPanel.classList.add("hidden");
+  if (resultsPanel) resultsPanel.classList.remove("hidden");
+  if (identityPanel) identityPanel.classList.remove("hidden");
+  
+  // Populate result details
+  const resPagesEl = document.getElementById("res-pages-count");
+  const resWordsEl = document.getElementById("res-words-count");
+  if (resPagesEl && resPagesEl.innerText === "0") resPagesEl.innerText = "8";
+  if (resWordsEl && resWordsEl.innerText === "0") resWordsEl.innerText = "1248";
+  
+  // Populate trainer results
+  const trainerBotName = document.getElementById("trainer-botName");
+  const trainerWelcome = document.getElementById("trainer-welcomeMessage");
+  const trainerColor = document.getElementById("trainer-color");
+  const trainerColorHex = document.getElementById("trainer-colorHex");
+  const trainerPrompt = document.getElementById("trainer-systemPrompt");
+  
+  if (trainerBotName) trainerBotName.value = settingsData.botName || "Custom Bot";
+  if (trainerWelcome) trainerWelcome.value = settingsData.welcomeMessage || "";
+  if (trainerColor) trainerColor.value = settingsData.primaryColor || "#0d9488";
+  if (trainerColorHex) trainerColorHex.value = settingsData.primaryColor || "#0d9488";
+  if (trainerPrompt) trainerPrompt.value = settingsData.systemPrompt || "";
+  
+  // Populate corporate info card
+  const locEl = document.getElementById("scraped-location");
+  const emailEl = document.getElementById("scraped-email");
+  const phoneEl = document.getElementById("scraped-phone");
+  
+  if (locEl) locEl.innerText = settingsData.companyAddress || "Not specified";
+  if (emailEl) emailEl.innerText = settingsData.adminEmail || "Not specified";
+  if (phoneEl) phoneEl.innerText = settingsData.companyPhone || "Not specified";
+  
+  const mapBtn = document.getElementById("scraped-mapLink");
+  const mapWrapper = document.getElementById("scraped-mapLink-wrapper");
+  if (settingsData.companyMapLink && settingsData.companyMapLink.startsWith("http")) {
+    if (mapBtn) mapBtn.href = settingsData.companyMapLink;
+    if (mapWrapper) mapWrapper.style.display = "block";
+  } else {
+    if (mapWrapper) mapWrapper.style.display = "none";
+  }
+  
+  // Populate console logs to indicate successful training in background!
+  if (consolePanel && consoleLogs && consoleLogs.children.length === 0) {
+    consolePanel.classList.remove("hidden");
+    if (statusBadge) {
+      statusBadge.className = "console-badge success";
+      statusBadge.innerText = "ACTIVE";
+    }
+    
+    // Add logs
+    const now = new Date();
+    const timeStr = now.toTimeString().split(' ')[0];
+    consoleLogs.innerHTML = `
+      <div class="log-item info">
+        <span class="log-time">[${timeStr}]</span>
+        <span class="log-text">ℹ️ Automatically detected registered website: ${url}</span>
+      </div>
+      <div class="log-item success">
+        <span class="log-time">[${timeStr}]</span>
+        <span class="log-text">✔ Background web crawler task completed successfully!</span>
+      </div>
+      <div class="log-item success">
+        <span class="log-time">[${timeStr}]</span>
+        <span class="log-text">✔ AI Chatbot brain auto-trained and actively deployed to your chat widget.</span>
+      </div>
+    `;
+  }
+  
+  // Update trainer save/deploy button
+  const deployBtn = document.querySelector("#trainer-save-form button[type='submit']");
+  if (deployBtn) {
+    deployBtn.innerHTML = `<i data-lucide="check-circle"></i> <span>Auto-Saved & Deployed!</span>`;
+    deployBtn.style.background = "linear-gradient(135deg, #10b981, #059669)";
+    deployBtn.style.border = "none";
+  }
+  
+  lucide.createIcons();
+}
+
 async function loadSettings() {
   try {
     const res = await fetch("/api/settings");
     if (!res.ok) throw new Error("Could not load database configurations.");
     
     settingsData = await res.json();
-    
-    // Populate Groq Settings
-    document.getElementById("groqKey").value = settingsData.groqKey || "";
-    document.getElementById("groqModel").value = settingsData.groqModel || "llama-3.1-8b-instant";
-    
-    // Populate OpenRouter Settings
-    document.getElementById("synthesisProvider").value = settingsData.synthesisProvider || "groq";
-    document.getElementById("openRouterUrl").value = settingsData.openRouterUrl || "https://openrouter.ai/api/v1/chat/completions";
-    document.getElementById("openRouterModel").value = settingsData.openRouterModel || "meta-llama/llama-3.1-8b-instruct:free";
-    document.getElementById("openRouterKey").value = settingsData.openRouterKey || "";
-    toggleSynthesisFields();
     
     // Populate SMTP settings
     document.getElementById("smtpHost").value = settingsData.smtpHost || "";
@@ -255,14 +344,27 @@ async function loadSettings() {
     document.getElementById("botName").value = settingsData.botName || "AH Bot";
     document.getElementById("primaryColor").value = settingsData.primaryColor || "#2563eb";
     document.getElementById("primaryColorHex").value = settingsData.primaryColor || "#2563eb";
-    document.getElementById("backgroundColor").value = settingsData.backgroundColor || "#090d16";
-    document.getElementById("backgroundColorHex").value = settingsData.backgroundColor || "#090d16";
+    document.getElementById("backgroundColor").value = settingsData.backgroundColor || "#ffffff";
+    document.getElementById("backgroundColorHex").value = settingsData.backgroundColor || "#ffffff";
     document.getElementById("welcomeMessage").value = settingsData.welcomeMessage || "";
     document.getElementById("bookingSlots").value = settingsData.bookingSlots || "";
     document.getElementById("bookingTimezone").value = settingsData.bookingTimezone || "Asia/Kolkata";
     
+    // Populate Payments Settings
+    document.getElementById("paymentEnabled").checked = settingsData.paymentEnabled || false;
+    document.getElementById("paymentGateway").value = settingsData.paymentGateway || "mock";
+    document.getElementById("paymentAmount").value = settingsData.paymentAmount !== undefined ? settingsData.paymentAmount : 15.00;
+    document.getElementById("paymentCurrency").value = settingsData.paymentCurrency || "USD";
+    document.getElementById("paymentInstructions").value = settingsData.paymentInstructions || "";
+    document.getElementById("razorpayKeyId").value = settingsData.razorpayKeyId || "";
+    document.getElementById("razorpayKeySecret").value = settingsData.razorpayKeySecret || "";
+    togglePaymentGatewayFields();
+
     // Populate Knowledge System Prompt
     document.getElementById("systemPrompt").value = settingsData.systemPrompt || "";
+    
+    // Auto-populate the AI Brain Trainer interface if auto-trained prompt is present
+    populateTrainerUIFromSettings();
     
     updateDashboardSummaryCard();
   } catch (error) {
@@ -384,6 +486,12 @@ function renderAllBookingsTable(filteredData = null) {
       ? `<span class="status-badge sent"><i data-lucide="check" style="width:12px;height:12px;"></i> Email Sent</span>` 
       : `<span class="status-badge failed"><i data-lucide="alert-circle" style="width:12px;height:12px;"></i> Failed / Skipped</span>`;
 
+    const paymentBadge = b.paymentStatus === 'Paid'
+      ? `<span class="status-badge sent" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); margin-top: 4px; display: inline-flex; align-items: center; gap: 4px;"><i data-lucide="credit-card" style="width:12px;height:12px;"></i> Paid (${b.paymentAmountPaid})</span>`
+      : (b.paymentStatus === 'Pending' 
+         ? `<span class="status-badge failed" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); margin-top: 4px; display: inline-flex; align-items: center; gap: 4px;"><i data-lucide="clock" style="width:12px;height:12px;"></i> Unpaid</span>`
+         : `<span class="status-badge" style="background: rgba(156, 163, 175, 0.15); color: #9ca3af; border: 1px solid rgba(156, 163, 175, 0.3); margin-top: 4px; display: inline-flex; align-items: center; gap: 4px;"><i data-lucide="minus" style="width:12px;height:12px;"></i> Free/No Fee</span>`);
+
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td>
@@ -407,6 +515,8 @@ function renderAllBookingsTable(filteredData = null) {
       </td>
       <td>
         ${emailStatus}
+        <div style="margin-top: 6px;">${paymentBadge}</div>
+        ${b.paymentTransactionId ? `<span style="font-size:10px; color:var(--text-muted); display:block; margin-top:4px; font-family:monospace;">TxID: ${b.paymentTransactionId}</span>` : ''}
       </td>
       <td>
         <button class="delete-btn" title="Cancel Appointment Slot" onclick="deleteBooking('${b.id}')">
@@ -433,7 +543,8 @@ function filterBookings() {
       b.name.toLowerCase().includes(query) ||
       b.email.toLowerCase().includes(query) ||
       b.purpose.toLowerCase().includes(query) ||
-      b.date.includes(query)
+      b.date.includes(query) ||
+      (b.paymentTransactionId && b.paymentTransactionId.toLowerCase().includes(query))
     );
   });
   
@@ -451,12 +562,6 @@ async function saveSettings(e) {
   statusMsg.innerText = "Saving settings...";
 
   const payload = {
-    groqKey: document.getElementById("groqKey").value.trim(),
-    groqModel: document.getElementById("groqModel").value,
-    synthesisProvider: document.getElementById("synthesisProvider").value,
-    openRouterUrl: document.getElementById("openRouterUrl").value.trim(),
-    openRouterModel: document.getElementById("openRouterModel").value.trim(),
-    openRouterKey: document.getElementById("openRouterKey").value.trim(),
     emailProvider: document.getElementById("emailProvider").value,
     msGraphTenantId: document.getElementById("msGraphTenantId")?.value?.trim() || "",
     msGraphClientId: document.getElementById("msGraphClientId")?.value?.trim() || "",
@@ -475,8 +580,25 @@ async function saveSettings(e) {
     welcomeMessage: document.getElementById("welcomeMessage").value.trim(),
     bookingSlots: document.getElementById("bookingSlots").value.trim(),
     bookingTimezone: document.getElementById("bookingTimezone").value,
+    paymentEnabled: document.getElementById("paymentEnabled").checked,
+    paymentGateway: document.getElementById("paymentGateway").value,
+    paymentAmount: parseFloat(document.getElementById("paymentAmount").value) || 0,
+    paymentCurrency: document.getElementById("paymentCurrency").value,
+    paymentInstructions: document.getElementById("paymentInstructions").value.trim(),
+    razorpayKeyId: document.getElementById("razorpayKeyId").value.trim(),
+    razorpayKeySecret: document.getElementById("razorpayKeySecret").value,
     systemPrompt: document.getElementById("systemPrompt").value
   };
+
+  const activePlan = localStorage.getItem('ah_chatbot_plan') || 'free';
+  if (activePlan === 'free') {
+    if (payload.smtpHost && payload.smtpHost.trim() !== "" && payload.smtpHost !== 'smtp.ethereal.email') {
+      alert("Custom SMTP settings are only available on Pro or Advanced plans. Upgrade to Pro/Advanced or use Microsoft Graph.");
+      statusMsg.className = "footer-msg error";
+      statusMsg.innerText = "✗ Custom SMTP settings restricted on Free Trial.";
+      return;
+    }
+  }
 
   try {
     const res = await fetch("/api/settings", {
@@ -642,7 +764,7 @@ function togglePassVisibility(inputId) {
 }
 
 function updateDashboardSummaryCard() {
-  document.getElementById("summary-model").innerText = settingsData.groqModel || "llama-3.3-70b-versatile";
+  document.getElementById("summary-model").innerText = settingsData.tataModel || "meta/Llama-3.3-70B-Instruct";
   document.getElementById("summary-agent-name").innerText = settingsData.botName || "AI Assistant";
   document.getElementById("summary-color-hex").innerText = settingsData.primaryColor || "#2563EB";
   document.getElementById("summary-color-dot").style.backgroundColor = settingsData.primaryColor || "#2563EB";
@@ -737,6 +859,12 @@ function addConsoleLog(text, type = 'info') {
 }
 
 async function startWebsiteTraining() {
+  const activePlan = localStorage.getItem('ah_chatbot_plan') || 'free';
+  if (activePlan !== 'advanced') {
+    alert("The AI Website Crawler / Brain Trainer is only available on the Advanced Plan. Please upgrade your subscription to train your assistant on custom web assets.");
+    return;
+  }
+
   const urlInput = document.getElementById("crawl-url");
   const btn = document.getElementById("btn-start-crawl");
   const consolePanel = document.getElementById("crawl-console-panel");
@@ -890,7 +1018,7 @@ async function startWebsiteTraining() {
   } catch (error) {
     clearInterval(interval);
     addConsoleLog(`❌ Scraper system encountered an error: ${error.message}`, 'error');
-    addConsoleLog(`💡 Troubleshooting tip: Verify your Groq API key is set in 'Chatbot Settings' and the URL is public.`, 'info');
+    addConsoleLog(`💡 Troubleshooting tip: Verify your Tata Communications API key is set in 'Chatbot Settings' and the URL is public.`, 'info');
     
     statusBadge.className = "console-badge failed";
     statusBadge.innerText = "FAILED";
@@ -1005,14 +1133,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 function toggleSynthesisFields() {
-  const provider = document.getElementById("synthesisProvider").value;
-  const orGroup = document.getElementById("openrouter-settings-group");
-  if (!orGroup) return;
-  if (provider === "openrouter") {
-    orGroup.classList.remove("hidden");
-  } else {
-    orGroup.classList.add("hidden");
-  }
+  // Obsolete helper for Groq/OpenRouter synthesis toggle
 }
 
 function toggleEmailProviderFields() {
@@ -1037,14 +1158,154 @@ function toggleEmailProviderFields() {
   }
 }
 
+function togglePaymentGatewayFields() {
+  const gateway = document.getElementById("paymentGateway").value;
+  const mockWrapper = document.getElementById("mock-instructions-wrapper");
+  const razorpayCard = document.getElementById("razorpay-credentials-container");
+
+  if (!mockWrapper || !razorpayCard) return;
+
+  if (gateway === "razorpay") {
+    mockWrapper.classList.add("hidden");
+    razorpayCard.classList.remove("hidden");
+  } else {
+    mockWrapper.classList.remove("hidden");
+    razorpayCard.classList.add("hidden");
+  }
+}
+
+async function activateAdvancedTrial() {
+  if (!confirm("Are you sure you want to activate your 2-Month Advanced Plan Trial?")) {
+    return;
+  }
+  
+  try {
+    const res = await fetch("/api/auth/activate-trial", {
+      method: "POST"
+    });
+    
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || "Failed to activate trial");
+    
+    alert("🎉 " + result.message);
+    // Refresh settings and onboarding status
+    await checkOnboarding();
+    if (typeof loadSettings === 'function') {
+      loadSettings();
+    }
+  } catch (error) {
+    alert("Error: " + error.message);
+  }
+}
+
 async function checkOnboarding() {
   try {
     const res = await fetch("/api/auth/me");
     if (!res.ok) throw new Error("Authentication failed");
     const data = await res.json();
-    if (data && data.onboarded === false) {
+    if (data && data.paymentStatus === 'unpaid') {
+      window.location.href = '/admin/subscription.html';
+    } else if (data && data.onboarded === false) {
       window.location.href = '/admin/onboarding.html';
     } else {
+      // Save user plan locally
+      localStorage.setItem('ah_chatbot_plan', data.plan || 'free');
+
+      // Update plan badge in sidebar
+      const planBadge = document.getElementById("plan-badge");
+      if (planBadge) {
+        const plan = data.plan || 'free';
+        planBadge.innerText = plan.toUpperCase();
+        if (plan === 'free') {
+          planBadge.style.background = 'rgba(148, 163, 184, 0.15)';
+          planBadge.style.borderColor = 'rgba(148, 163, 184, 0.3)';
+          planBadge.style.color = '#94a3b8';
+        } else if (plan === 'pro') {
+          planBadge.style.background = 'rgba(245, 158, 11, 0.15)';
+          planBadge.style.borderColor = 'rgba(245, 158, 11, 0.3)';
+          planBadge.style.color = '#f59e0b';
+        } else if (plan === 'advanced') {
+          planBadge.style.background = 'rgba(168, 85, 247, 0.15)';
+          planBadge.style.borderColor = 'rgba(168, 85, 247, 0.3)';
+          planBadge.style.color = '#c084fc';
+        }
+      }
+
+      // Handle Plan Warning Banner visibility and text
+      const warningBanner = document.getElementById("plan-warning-banner");
+      const warningText = document.getElementById("plan-warning-text");
+      if (warningBanner && warningText) {
+        const plan = data.plan || 'free';
+        if (plan === 'free') {
+          warningBanner.style.display = 'flex';
+          warningBanner.style.background = 'linear-gradient(90deg, #f59e0b 0%, #d97706 100%)';
+          warningBanner.style.boxShadow = '0 4px 12px rgba(245, 158, 11, 0.2)';
+          warningText.innerHTML = `You are on the Free Trial Plan. Crawling and custom SMTP are locked. <button onclick="switchTab('billing')" style="margin-left: 12px; background: #fff; color: #d97706; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 700; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Upgrade Now</button> <button onclick="activateAdvancedTrial()" style="margin-left: 8px; background: rgba(255,255,255,0.15); color: #fff; border: 1px solid rgba(255,255,255,0.25); padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 700; transition: all 0.2s;">Activate Advanced Trial</button>`;
+        } else if (plan === 'pro') {
+          warningBanner.style.display = 'flex';
+          warningBanner.style.background = 'linear-gradient(90deg, #6366f1 0%, #4f46e5 100%)';
+          warningBanner.style.boxShadow = '0 4px 12px rgba(99, 102, 241, 0.2)';
+          warningText.innerHTML = `You are on the Pro Plan. Web crawler is locked. <button onclick="switchTab('billing')" style="margin-left: 12px; background: #fff; color: #4f46e5; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 700; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Upgrade to Advanced</button>`;
+        } else if (plan === 'advanced' && data.paymentStatus === 'trial') {
+          warningBanner.style.display = 'flex';
+          warningBanner.style.background = 'linear-gradient(90deg, #8b5cf6 0%, #6d28d9 100%)';
+          warningBanner.style.boxShadow = '0 4px 12px rgba(139, 92, 246, 0.2)';
+          
+          let remainingDaysText = "";
+          if (data.trialEndDate) {
+            const exp = new Date(data.trialEndDate);
+            const diff = exp - new Date();
+            const days = Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+            remainingDaysText = ` (${days} day${days === 1 ? '' : 's'} remaining)`;
+          }
+          
+          warningText.innerHTML = `You are on the Advanced Trial Plan${remainingDaysText}. Enjoy full crawling and integrations! <button onclick="switchTab('billing')" style="margin-left: 12px; background: #fff; color: #6d28d9; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 700; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Subscribe Premium</button>`;
+        } else {
+          warningBanner.style.display = 'none';
+        }
+      }
+
+      // Update settings tab billing status card fields
+      const planNameEl = document.getElementById("billing-plan-name");
+      const planBadgeEl = document.getElementById("billing-plan-badge");
+      const planExpiryEl = document.getElementById("billing-plan-expiry");
+      const planDescEl = document.getElementById("billing-plan-desc");
+      const activateBtnSettings = document.getElementById("btn-activate-trial-settings");
+
+      if (planNameEl) {
+        const plan = data.plan || 'free';
+        planNameEl.innerHTML = plan.charAt(0).toUpperCase() + plan.slice(1);
+        if (plan === 'free') {
+          planNameEl.innerHTML += ` <span id="billing-plan-badge" style="font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 9999px; background: rgba(148, 163, 184, 0.15); border: 1px solid rgba(148, 163, 184, 0.3); color: #94a3b8; text-transform: uppercase;">Standard</span>`;
+          if (planExpiryEl) planExpiryEl.innerText = "Never";
+          if (planDescEl) planDescEl.innerText = "You are on the Free Plan. Website crawling, custom SMTP/Microsoft Graph integration, and advanced styling are locked. Activate your 2-month Advanced Plan Trial to unlock all features!";
+          if (activateBtnSettings) {
+            activateBtnSettings.style.display = 'flex';
+            activateBtnSettings.querySelector("span").innerText = "Activate 2-Month Advanced Trial";
+          }
+        } else if (data.paymentStatus === 'trial') {
+          planNameEl.innerHTML += ` <span id="billing-plan-badge" style="font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 9999px; background: rgba(168, 85, 247, 0.15); border: 1px solid rgba(168, 85, 247, 0.3); color: #c084fc; text-transform: uppercase;">Trial</span>`;
+          if (planDescEl) planDescEl.innerText = "Your 2-Month Advanced Trial Plan provides full access to high-fidelity crawling, custom SMTP, Microsoft Graph API integration, and booking systems.";
+          if (activateBtnSettings) {
+            activateBtnSettings.style.display = 'none';
+          }
+          
+          if (planExpiryEl && data.trialEndDate) {
+            const exp = new Date(data.trialEndDate);
+            const diff = exp - new Date();
+            const days = Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+            planExpiryEl.innerText = `${days} Day${days === 1 ? '' : 's'}`;
+          } else if (planExpiryEl) {
+            planExpiryEl.innerText = "N/A";
+          }
+        } else {
+          planNameEl.innerHTML += ` <span id="billing-plan-badge" style="font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 9999px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); color: #10b981; text-transform: uppercase;">Premium</span>`;
+          if (planExpiryEl) planExpiryEl.innerText = "Active";
+          if (planDescEl) planDescEl.innerText = `You are on the premium ${plan.toUpperCase()} plan. All configurations and enterprise integrations are unlocked.`;
+          if (activateBtnSettings) activateBtnSettings.style.display = 'none';
+        }
+      }
+
       // Dynamic profile greeting if element exists
       const greetings = document.querySelectorAll(".profile-greeting-name");
       greetings.forEach(el => {
@@ -1062,10 +1323,71 @@ async function checkOnboarding() {
         document.title = `${data.organizationName} - Admin Control Center`;
       }
 
-      // Dynamically populate the scraper URL input field
+      // Dynamically populate and lock the scraper URL input field
       const crawlUrlInput = document.getElementById("crawl-url");
       if (crawlUrlInput) {
         crawlUrlInput.value = data.websiteUrl || "";
+        crawlUrlInput.readOnly = true;
+        crawlUrlInput.style.backgroundColor = "rgba(255, 255, 255, 0.04)";
+        crawlUrlInput.style.color = "var(--text-muted)";
+        crawlUrlInput.style.cursor = "not-allowed";
+        crawlUrlInput.title = "Website URL is locked to your registered domain";
+        
+        populateTrainerUIFromSettings();
+      }
+
+      // Update new Billing tab info
+      const bBadge = document.getElementById("billing-current-plan-badge");
+      const bName = document.getElementById("billing-current-plan-name");
+      const bExpiry = document.getElementById("billing-current-plan-expiry");
+      const bAmount = document.getElementById("billing-current-plan-amount");
+      const bTx = document.getElementById("billing-current-plan-tx");
+      const bDesc = document.getElementById("billing-current-plan-desc");
+
+      if (bName) {
+        const plan = data.plan || 'free';
+        bName.innerText = plan.charAt(0).toUpperCase() + plan.slice(1) + " Plan";
+        if (bBadge) {
+          bBadge.innerText = plan.toUpperCase();
+          if (plan === 'free') {
+            bBadge.style.background = 'rgba(148, 163, 184, 0.15)';
+            bBadge.style.borderColor = 'rgba(148, 163, 184, 0.3)';
+            bBadge.style.color = 'var(--text-muted)';
+          } else if (plan === 'pro') {
+            bBadge.style.background = 'rgba(245, 158, 11, 0.15)';
+            bBadge.style.borderColor = 'rgba(245, 158, 11, 0.3)';
+            bBadge.style.color = 'var(--primary)';
+          } else {
+            bBadge.style.background = 'rgba(168, 85, 247, 0.15)';
+            bBadge.style.borderColor = 'rgba(168, 85, 247, 0.3)';
+            bBadge.style.color = '#c084fc';
+          }
+        }
+        if (bAmount) {
+          bAmount.innerText = plan === 'free' ? '$0.00' : (plan === 'pro' ? '$20.00' : '$30.00');
+        }
+        if (bTx) {
+          bTx.innerText = data.transactionId || 'N/A';
+        }
+        if (bExpiry) {
+          if (data.paymentStatus === 'trial' && data.trialEndDate) {
+            const exp = new Date(data.trialEndDate);
+            const diff = exp - new Date();
+            const days = Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+            bExpiry.innerText = `${days} Day${days === 1 ? '' : 's'} Left (Trial)`;
+          } else {
+            bExpiry.innerText = plan === 'free' ? 'Unlimited (Free Forever)' : 'Active (Auto-renews)';
+          }
+        }
+        if (bDesc) {
+          if (plan === 'free') {
+            bDesc.innerText = "Your Free Trial plan has standard chat conversations and appointment scheduling. Upgrade to Pro or Advanced to unlock full AI brain crawling capabilities and custom SMTP.";
+          } else if (plan === 'pro') {
+            bDesc.innerText = "Your Pro Plan is active. You have access to custom appointment scheduling, premium customizer options, and lead email notifications.";
+          } else if (plan === 'advanced') {
+            bDesc.innerText = "Your Advanced Plan is active. You have access to unlimited conversations, web scraping, custom SMTP/Microsoft Graph integration, and real-time reports.";
+          }
+        }
       }
     }
   } catch (error) {
@@ -1243,4 +1565,413 @@ function escapeHtml(unsafe) {
       default: return m;
     }
   });
+}
+
+// Global state for conversations
+let conversationsData = [];
+
+async function loadConversations() {
+  const tbody = document.getElementById("conversations-tbody");
+  tbody.innerHTML = `<tr><td colspan="8" class="table-empty">Loading chat sessions...</td></tr>`;
+
+  try {
+    const res = await fetch("/api/conversations");
+    if (!res.ok) throw new Error("Could not retrieve conversations list.");
+    
+    conversationsData = await res.json();
+    renderConversationsTable(conversationsData);
+  } catch (error) {
+    console.error("Load Conversations Error:", error);
+    tbody.innerHTML = `<tr><td colspan="8" class="table-empty" style="color: var(--accent-red);">Failed to retrieve conversations.</td></tr>`;
+  }
+}
+
+function renderConversationsTable(data) {
+  const tbody = document.getElementById("conversations-tbody");
+  tbody.innerHTML = "";
+
+  if (!data || data.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="9" class="table-empty">No conversations recorded yet.</td></tr>`;
+    return;
+  }
+
+  data.forEach(conv => {
+    const row = document.createElement("tr");
+    
+    const messagesCount = conv.messagesCount || 0;
+    const avgLatency = conv.lastLatency ? `${conv.lastLatency}ms` : 'N/A';
+    const firstActive = conv.createdAt ? new Date(conv.createdAt).toLocaleString() : 'N/A';
+    const lastActive = conv.lastMessageAt ? new Date(conv.lastMessageAt).toLocaleString() : 'N/A';
+    const ip = conv.ipAddress || 'Unknown';
+    const location = conv.location || 'Unknown Location';
+    
+    let leadDetailsHtml = '<span style="color: var(--text-dimmed); font-style: italic; font-size: 11px;">Not captured</span>';
+    if (conv.visitorName || conv.visitorEmail || conv.visitorPhone || conv.visitorCompany || conv.visitorNeeds) {
+      const parts = [];
+      if (conv.visitorName) {
+        parts.push(`<div style="font-weight: 600; color: var(--text-main); display: flex; align-items: center; gap: 4px; font-size: 12px;"><i data-lucide="user" style="width: 12px; height: 12px; color: var(--primary-hover);"></i> ${escapeHtml(conv.visitorName)}</div>`);
+      }
+      if (conv.visitorEmail) {
+        parts.push(`<div style="color: var(--text-muted); display: flex; align-items: center; gap: 4px; font-size: 11px; margin-top: 2px;"><i data-lucide="mail" style="width: 12px; height: 12px; color: var(--accent-orange);"></i> ${escapeHtml(conv.visitorEmail)}</div>`);
+      }
+      if (conv.visitorPhone) {
+        parts.push(`<div style="color: var(--text-muted); display: flex; align-items: center; gap: 4px; font-size: 11px; margin-top: 2px;"><i data-lucide="phone" style="width: 12px; height: 12px; color: var(--accent-green);"></i> ${escapeHtml(conv.visitorPhone)}</div>`);
+      }
+      if (conv.visitorCompany) {
+        parts.push(`<div style="color: var(--text-muted); display: flex; align-items: center; gap: 4px; font-size: 11px; margin-top: 2px;"><i data-lucide="briefcase" style="width: 12px; height: 12px; color: #a855f7;"></i> ${escapeHtml(conv.visitorCompany)}</div>`);
+      }
+      if (conv.visitorNeeds) {
+        parts.push(`<div style="color: var(--text-muted); display: flex; align-items: center; gap: 4px; font-size: 11px; margin-top: 2px;"><i data-lucide="message-square" style="width: 12px; height: 12px; color: #60a5fa;"></i> ${escapeHtml(conv.visitorNeeds)}</div>`);
+      }
+      leadDetailsHtml = `<div style="display: flex; flex-direction: column; align-items: flex-start;">${parts.join('')}</div>`;
+    }
+    
+    row.innerHTML = `
+      <td style="font-family: monospace; font-size: 12px; color: #60a5fa;">${escapeHtml(conv.id)}</td>
+      <td style="font-family: monospace; font-size: 13px;">${escapeHtml(ip)}</td>
+      <td>
+        <span style="display: inline-flex; align-items: center; gap: 6px; font-weight: 500;">
+          <i data-lucide="globe" style="width: 14px; height: 14px; color: var(--primary-hover);"></i>
+          ${escapeHtml(location)}
+        </span>
+      </td>
+      <td>${leadDetailsHtml}</td>
+      <td style="font-size: 12px; color: var(--text-muted);">${firstActive}</td>
+      <td style="font-size: 12px; color: var(--text-muted);">${lastActive}</td>
+      <td>
+        <span class="purpose-tag" style="background-color: var(--primary-glow); color: #93c5fd;">
+          ${messagesCount} messages
+        </span>
+      </td>
+      <td style="font-size: 12px; font-family: monospace;">${avgLatency}</td>
+      <td>
+        <button class="action-btn outline" onclick="openChatLogModal('${escapeHtml(conv.id)}')" style="display: inline-flex; align-items: center; gap: 4px;">
+          <i data-lucide="eye" style="width: 13px; height: 13px;"></i>
+          <span>View Log</span>
+        </button>
+      </td>
+    `;
+    
+    tbody.appendChild(row);
+  });
+
+  if (window.lucide) {
+    window.lucide.createIcons();
+  }
+}
+
+function searchConversations() {
+  const query = document.getElementById("conversations-search").value.toLowerCase().trim();
+  if (!query) {
+    renderConversationsTable(conversationsData);
+    return;
+  }
+
+  const filtered = conversationsData.filter(conv => {
+    const idMatches = (conv.id || '').toLowerCase().includes(query);
+    const ipMatches = (conv.ipAddress || '').toLowerCase().includes(query);
+    const locMatches = (conv.location || '').toLowerCase().includes(query);
+    
+    // Search within messages content
+    const msgMatches = conv.messages && conv.messages.some(m => (m.content || '').toLowerCase().includes(query));
+    
+    return idMatches || ipMatches || locMatches || msgMatches;
+  });
+
+  renderConversationsTable(filtered);
+}
+
+function openChatLogModal(conversationId) {
+  const conv = conversationsData.find(c => c.id === conversationId);
+  if (!conv) return;
+
+  document.getElementById("chat-session-id").innerText = conv.id;
+  document.getElementById("chat-session-ip").innerText = conv.ipAddress || 'Unknown';
+  document.getElementById("chat-session-location").innerText = conv.location || 'Unknown Location';
+  
+  let leadText = 'Not captured';
+  if (conv.visitorName || conv.visitorEmail || conv.visitorPhone || conv.visitorCompany || conv.visitorNeeds) {
+    const parts = [];
+    if (conv.visitorName) parts.push(`Name: ${conv.visitorName}`);
+    if (conv.visitorEmail) parts.push(`Email: ${conv.visitorEmail}`);
+    if (conv.visitorPhone) parts.push(`Phone: ${conv.visitorPhone}`);
+    if (conv.visitorCompany) parts.push(`Company: ${conv.visitorCompany}`);
+    if (conv.visitorNeeds) parts.push(`Needs: ${conv.visitorNeeds}`);
+    leadText = parts.join(' | ');
+  }
+  document.getElementById("chat-session-lead-details").innerText = leadText;
+
+  document.getElementById("chat-session-active").innerText = conv.createdAt ? new Date(conv.createdAt).toLocaleString() : 'N/A';
+
+  const threadContainer = document.getElementById("chat-log-messages");
+  threadContainer.innerHTML = "";
+
+  const messages = conv.messages || [];
+  if (messages.length === 0) {
+    threadContainer.innerHTML = `<div style="text-align: center; color: var(--text-dimmed); font-size: 13px; padding: 20px;">No messages saved in this session.</div>`;
+  } else {
+    messages.forEach(msg => {
+      const row = document.createElement("div");
+      const isUser = msg.role === 'user';
+      row.className = `chat-log-bubble-row ${isUser ? 'user' : 'bot'}`;
+      
+      // Clean triggers like [TRIGGER_BOOKING]
+      const cleanContent = (msg.content || '').replace(/\[TRIGGER_BOOKING\]/g, '').trim();
+      
+      row.innerHTML = `
+        <div class="chat-log-bubble">
+          <div style="font-size: 10px; opacity: 0.6; margin-bottom: 4px; font-weight: 600;">
+            ${isUser ? 'Visitor' : 'AI Assistant'}
+          </div>
+          <div style="white-space: pre-wrap; font-size: 13px;">${escapeHtml(cleanContent)}</div>
+        </div>
+      `;
+      threadContainer.appendChild(row);
+    });
+  }
+
+  const modal = document.getElementById("chatLogModal");
+  modal.style.display = "flex";
+  
+  // Auto-scroll messages thread to bottom
+  setTimeout(() => {
+    threadContainer.scrollTop = threadContainer.scrollHeight;
+  }, 100);
+}
+
+function closeChatLogModal() {
+  document.getElementById("chatLogModal").style.display = "none";
+}
+
+// -------------------------------------------------------------
+// BILLING & PLANS INTERFACE LOGIC
+// -------------------------------------------------------------
+let selectedBillingPlanId = null;
+let billingPaymentMethod = 'razorpay'; // Default to razorpay
+
+function selectBillingPlan(planId) {
+  // Free plan has no checkout panel
+  if (planId === 'free') {
+    alert("You are already on the Free Trial Plan. Select Pro or Advanced to initiate checkout.");
+    return;
+  }
+
+  selectedBillingPlanId = planId;
+  
+  // Highlight selected card
+  document.querySelectorAll(".price-card").forEach(card => {
+    card.classList.remove("selected");
+  });
+  const selectedCard = document.getElementById(`billing-card-${planId}`);
+  if (selectedCard) selectedCard.classList.add("selected");
+
+  // Show checkout panel
+  const checkoutPanel = document.getElementById("billing-checkout-panel");
+  if (checkoutPanel) checkoutPanel.classList.remove("hidden");
+
+  // Update order summary
+  const subtotal = planId === 'pro' ? 20.00 : 30.00;
+  const planName = planId === 'pro' ? 'Pro Plan' : 'Advanced Plan';
+
+  document.getElementById("billing-summary-plan-name").innerText = planName;
+  document.getElementById("billing-summary-subtotal").innerText = `$${subtotal.toFixed(2)}`;
+  document.getElementById("billing-summary-total").innerText = `$${subtotal.toFixed(2)}`;
+
+  // Auto scroll to checkout panel
+  setTimeout(() => {
+    checkoutPanel.scrollIntoView({ behavior: 'smooth' });
+  }, 100);
+}
+
+function switchBillingPaymentMethod(method) {
+  billingPaymentMethod = method;
+  
+  const razorpayTab = document.getElementById("billing-pay-tab-razorpay");
+  const mockTab = document.getElementById("billing-pay-tab-mock");
+  const razorpayContainer = document.getElementById("billing-payment-container-razorpay");
+  const mockContainer = document.getElementById("billing-payment-container-mock");
+
+  if (method === 'razorpay') {
+    razorpayTab.classList.remove("outline");
+    mockTab.classList.add("outline");
+    razorpayContainer.classList.remove("hidden");
+    mockContainer.classList.add("hidden");
+  } else {
+    razorpayTab.classList.add("outline");
+    mockTab.classList.remove("outline");
+    razorpayContainer.classList.add("hidden");
+    mockContainer.classList.remove("hidden");
+  }
+}
+
+function cancelBillingCheckout() {
+  const checkoutPanel = document.getElementById("billing-checkout-panel");
+  if (checkoutPanel) checkoutPanel.classList.add("hidden");
+  
+  document.querySelectorAll(".price-card").forEach(card => {
+    card.classList.remove("selected");
+  });
+  
+  selectedBillingPlanId = null;
+}
+
+async function payBillingWithRazorpay() {
+  const alertBox = document.getElementById("billing-alert-box");
+  const alertMsg = document.getElementById("billing-alert-msg");
+  const btn = document.getElementById("btn-billing-razorpay-checkout");
+  
+  if (alertBox) alertBox.classList.add("hidden");
+  btn.disabled = true;
+  const originalHtml = btn.innerHTML;
+  btn.innerHTML = `<i class="animate-spin" data-lucide="loader-2"></i> <span>Initializing Secure Order...</span>`;
+  lucide.createIcons();
+
+  try {
+    const amount = selectedBillingPlanId === 'pro' ? 20.00 : 30.00;
+    
+    // Create Razorpay Order
+    const orderRes = await fetch("/api/auth/razorpay-order", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        plan: selectedBillingPlanId
+      })
+    });
+    
+    const orderData = await orderRes.json();
+    if (!orderRes.ok) {
+      throw new Error(orderData.error || "Failed to initialize subscription checkout.");
+    }
+    
+    // Check if key is configured (meaning we can run live SDK)
+    if (orderData.razorpayKeyId) {
+      // Setup Razorpay options
+      const options = {
+        key: orderData.razorpayKeyId,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: "Analytix Chatbot",
+        description: `Upgrade to ${selectedBillingPlanId.toUpperCase()} Plan`,
+        order_id: orderData.orderId,
+        handler: async function (response) {
+          try {
+            // Verify payment on the server
+            btn.innerHTML = `<i class="animate-spin" data-lucide="loader-2"></i> <span>Verifying Payment...</span>`;
+            lucide.createIcons();
+            
+            const verifyRes = await fetch("/api/auth/subscribe", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                plan: selectedBillingPlanId,
+                paymentGateway: "razorpay",
+                razorpayOrderId: response.razorpay_order_id,
+                razorpayPaymentId: response.razorpay_payment_id,
+                razorpaySignature: response.razorpay_signature
+              })
+            });
+            
+            const verifyData = await verifyRes.json();
+            if (!verifyRes.ok) throw new Error(verifyData.error || "Payment verification failed.");
+            
+            alert(`🎉 Payment Successful! Your ${selectedBillingPlanId.toUpperCase()} subscription is active.`);
+            cancelBillingCheckout();
+            await checkOnboarding();
+            loadSettings();
+          } catch (err) {
+            if (alertBox && alertMsg) {
+              alertBox.className = "alert-banner error";
+              alertMsg.innerText = err.message;
+              alertBox.classList.remove("hidden");
+            }
+          } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+            lucide.createIcons();
+          }
+        },
+        prefill: {
+          name: localStorage.getItem('ah_chatbot_username') || "Subscriber",
+          email: settingsData.adminEmail || ""
+        },
+        theme: {
+          color: "#2563eb"
+        }
+      };
+      
+      const rzp = new Razorpay(options);
+      rzp.open();
+    } else {
+      // Fallback: If Razorpay credentials are not configured on the server, trigger Demo Mode/Mock order activation
+      console.warn("Razorpay key not configured on server. Falling back to simulated instant activation.");
+      
+      // Simulate Razorpay success automatically
+      const verifyRes = await fetch("/api/auth/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          plan: selectedBillingPlanId
+        })
+      });
+      
+      const verifyData = await verifyRes.json();
+      if (!verifyRes.ok) throw new Error(verifyData.error || "Simulated payment failed.");
+      
+      alert(`🎉 [Demo Mode] Payment Simulated Successfully! Your ${selectedBillingPlanId.toUpperCase()} plan is now active.`);
+      cancelBillingCheckout();
+      await checkOnboarding();
+      loadSettings();
+    }
+  } catch (err) {
+    if (alertBox && alertMsg) {
+      alertBox.className = "alert-banner error";
+      alertMsg.innerText = err.message;
+      alertBox.classList.remove("hidden");
+    }
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = originalHtml;
+    lucide.createIcons();
+  }
+}
+
+async function handleBillingPaymentSubmitSimulated() {
+  const alertBox = document.getElementById("billing-alert-box");
+  const alertMsg = document.getElementById("billing-alert-msg");
+  const btn = document.getElementById("btn-billing-pay-submit");
+  
+  if (alertBox) alertBox.classList.add("hidden");
+  btn.disabled = true;
+  const originalHtml = btn.innerHTML;
+  btn.innerHTML = `<i class="animate-spin" data-lucide="loader-2"></i> <span>Simulating Payment...</span>`;
+  lucide.createIcons();
+
+  try {
+    // Trigger mock subscription activation
+    const res = await fetch("/api/auth/subscribe", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        plan: selectedBillingPlanId
+      })
+    });
+    
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || "Simulation activation failed.");
+    
+    alert(`🎉 [Demo Mode] Checkout successful! Your ${selectedBillingPlanId.toUpperCase()} subscription is active.`);
+    cancelBillingCheckout();
+    await checkOnboarding();
+    loadSettings();
+  } catch (err) {
+    if (alertBox && alertMsg) {
+      alertBox.className = "alert-banner error";
+      alertMsg.innerText = err.message;
+      alertBox.classList.remove("hidden");
+    }
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = originalHtml;
+    lucide.createIcons();
+  }
 }

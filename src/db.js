@@ -69,6 +69,14 @@ Currently, there are no active job openings or available positions at AnalytixHu
 - **Website**: https://analytixhub.org/
 
 ---
+### 🤝 FRIENDLY VISITOR INFO COLLECTION POLICY:
+- **Tone & Demeanor**: Maintain an exceptionally warm, friendly, conversational, and welcoming tone at all times. Use expressions like "I'd love to help you with that!", "That sounds like a great project!", etc.
+- **Friendly Information Request**: If visitors are hesitant or state they do not want to share their details (e.g. name, email, or company), respond in an extremely polite and understanding way. Gently try to obtain it by explaining why we need it:
+  - Explain that we ask for their name and email so that our specialized consulting team can reach out to them directly with a personalized strategy proposal, detailed answers to their questions, or follow up on their booking.
+  - Assure them: "We only ask for this information so we can stay in touch and send you the custom roadmap we discussed. We respect your privacy completely!"
+- **Phone Number Flexibility**: The visitor's phone number is NOT important. Do NOT press them or emphasize collecting their phone number. If they do not want to provide it, simply skip it and move forward with their name and email.
+
+---
 ### INTERACTIVE APPOINTMENT BOOKING:
 - ACT LIKE A FRIENDLY DESK HELPER: Serve as a warm, patient, and polite office receptionist. Your primary goal is to helpfully answer the user's specific query first. Always check in with them at the end of your response to see if they have any other questions (e.g. "Does this answer your question, or is there anything else I can help you with today?").
 - STRICT APPOINTMENT POLICY: NEVER aggressively push for bookings, and NEVER suggest opening the calendar prematurely. Only suggest booking as a polite option, and ONLY append the exact tag "[TRIGGER_BOOKING]" at the very end of your response text if the visitor explicitly states they want to book, schedule, or choose a meeting slot *right now*.
@@ -77,12 +85,6 @@ Currently, there are no active job openings or available positions at AnalytixHu
 - Always instruct the user to use the form that appears in the calendar window rather than attempting to schedule dates or confirm times manually in your text response.`;
 
 const DEFAULT_SETTINGS = {
-  groqKey: "",
-  groqModel: "llama-3.1-8b-instant",
-  synthesisProvider: "groq",
-  openRouterUrl: "https://openrouter.ai/api/v1/chat/completions",
-  openRouterModel: "meta-llama/llama-3.1-8b-instruct:free",
-  openRouterKey: "",
   smtpHost: "",
   smtpPort: 587,
   smtpUser: "",
@@ -92,8 +94,8 @@ const DEFAULT_SETTINGS = {
   adminEmail: "contactus@analytixhub.org",
   welcomeMessage: "Hello! Welcome to our conversational assistant. How can I help you today?",
   botName: "AH Bot",
-  primaryColor: "#2563eb",
-  backgroundColor: "#090d16",
+  primaryColor: "#4f46e5",
+  backgroundColor: "#ffffff",
   systemPrompt: DEFAULT_SYSTEM_PROMPT,
   botSubTitle: "AnalytixHub Consultant",
   companyAddress: "1st floor, Primus Building, Door No. SP – 7A, Guindy Industrial Estate, SIDCO Industrial Estate, Guindy, Chennai, Tamil Nadu - 600032, India.",
@@ -101,7 +103,14 @@ const DEFAULT_SETTINGS = {
   companyMapLink: "https://www.google.com/maps/search/?api=1&query=1st+floor,+Primus+Building,+SP-7A,+Guindy+Industrial+Estate,+Chennai,+Tamil+Nadu+600032",
   companyWebsite: "https://analytixhub.org",
   bookingSlots: "09:30,10:15,11:00,11:45,14:00,14:45,15:30,16:15,17:00",
-  bookingTimezone: "Asia/Kolkata"
+  bookingTimezone: "Asia/Kolkata",
+  paymentEnabled: false,
+  paymentGateway: "mock",
+  paymentAmount: 15.00,
+  paymentCurrency: "USD",
+  paymentInstructions: "Mock payment mode: Use test card 4242 4242 4242 4242, any future expiry date, and any CVC to confirm the consultation.",
+  razorpayKeyId: "",
+  razorpayKeySecret: ""
 };
 
 
@@ -113,6 +122,7 @@ const DEFAULT_DB = {
       passwordHash: "c7ad44cbad762a5da0a452f9e854fdc1e0e69a8e23f8024e5f4d1e2e4ff94e09", // sha256 of "admin123" using "default_salt"
       salt: "default_salt",
       botId: "bot-default",
+      plan: "free",
       createdAt: new Date().toISOString()
     }
   ],
@@ -122,6 +132,11 @@ const DEFAULT_DB = {
       bookings: [],
       conversations: []
     }
+  },
+  globalSettings: {
+    tataKey: "",
+    tataUrl: "https://models.cloudservices.tatacommunications.com/v1",
+    tataModel: "meta/Llama-3.3-70B-Instruct"
   }
 };
 
@@ -184,9 +199,55 @@ function initDb() {
         modified = true;
       }
 
+      // Migrate existing users to have a plan field if missing
+      if (data.users && Array.isArray(data.users)) {
+        data.users.forEach(u => {
+          if (u.plan === undefined) {
+            u.plan = 'free';
+            modified = true;
+          }
+        });
+      }
+
       if (!data.bots) {
         data.bots = { ...DEFAULT_DB.bots };
         modified = true;
+      }
+
+      if (!data.globalSettings) {
+        // Retrieve keys from first bot if available to preserve existing migration
+        let firstBotSettings = {};
+        if (data.bots && Object.keys(data.bots).length > 0) {
+          const firstBotId = Object.keys(data.bots)[0];
+          firstBotSettings = data.bots[firstBotId].settings || {};
+        }
+        data.globalSettings = {
+          tataKey: firstBotSettings.tataKey || process.env.TATA_API_KEY || "",
+          tataUrl: firstBotSettings.tataUrl || process.env.TATA_BASE_URL || "https://models.cloudservices.tatacommunications.com/v1",
+          tataModel: firstBotSettings.tataModel || process.env.TATA_MODEL || "meta/Llama-3.3-70B-Instruct"
+        };
+        modified = true;
+      }
+
+      // Also clean up local bot settings from any Tata settings
+      if (data.bots) {
+        for (const botId of Object.keys(data.bots)) {
+          const bot = data.bots[botId];
+          if (bot.settings) {
+            if (bot.settings.tataKey !== undefined) {
+              delete bot.settings.tataKey;
+              modified = true;
+            }
+            if (bot.settings.tataUrl !== undefined) {
+              delete bot.settings.tataUrl;
+              modified = true;
+            }
+            if (bot.settings.tataModel !== undefined) {
+              delete bot.settings.tataModel;
+              modified = true;
+            }
+          }
+        }
       }
 
       // Check each bot settings for standard retrocompatibility keys
@@ -214,6 +275,21 @@ function initDb() {
           if (bot.settings.ollamaKey !== undefined) {
             bot.settings.openRouterKey = bot.settings.ollamaKey;
             delete bot.settings.ollamaKey;
+            modified = true;
+          }
+
+          // Migrate Groq & OpenRouter -> Tata Communications
+          if (bot.settings.groqKey !== undefined || bot.settings.openRouterKey !== undefined) {
+            bot.settings.tataKey = bot.settings.tataKey || bot.settings.groqKey || bot.settings.openRouterKey || "";
+            bot.settings.tataUrl = bot.settings.tataUrl || "https://models.cloudservices.tatacommunications.com/v1";
+            bot.settings.tataModel = bot.settings.tataModel || "meta/Llama-3.3-70B-Instruct";
+
+            delete bot.settings.groqKey;
+            delete bot.settings.groqModel;
+            delete bot.settings.synthesisProvider;
+            delete bot.settings.openRouterUrl;
+            delete bot.settings.openRouterModel;
+            delete bot.settings.openRouterKey;
             modified = true;
           }
 
@@ -259,6 +335,89 @@ function writeDb(data) {
   fs.renameSync(tempPath, DB_PATH);
 }
 
+function extractVisitorInfo(messages) {
+  let email = null;
+  let phone = null;
+  let name = null;
+  let company = null;
+  let needs = null;
+
+  if (Array.isArray(messages)) {
+    for (const msg of messages) {
+      if (msg.role === 'user') {
+        const content = msg.content || '';
+        
+        // 1. Extract email
+        const emailMatch = content.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
+        if (emailMatch) {
+          email = emailMatch[1];
+        }
+
+        // 2. Extract phone number
+        const phoneMatch = content.match(/(\+?\d{1,4}[-.\s]?\(?\d{1,3}\)?[-.\s]?\d{3,4}[-.\s]?\d{4})/);
+        if (phoneMatch) {
+          phone = phoneMatch[1];
+        }
+
+        // 3. Extract name: Look for patterns (case-insensitive)
+        const namePatterns = [
+          /my name is\s+([a-zA-Z-]{2,}(?:\s+[a-zA-Z-]{2,})?)/i,
+          /i am\s+([a-zA-Z-]{2,}(?:\s+[a-zA-Z-]{2,})?)/i,
+          /i'm\s+([a-zA-Z-]{2,}(?:\s+[a-zA-Z-]{2,})?)/i,
+          /this is\s+([a-zA-Z-]{2,}(?:\s+[a-zA-Z-]{2,})?)/i,
+          /call me\s+([a-zA-Z-]{2,}(?:\s+[a-zA-Z-]{2,})?)/i
+        ];
+        for (const pattern of namePatterns) {
+          const match = content.match(pattern);
+          if (match && match[1]) {
+            const val = match[1].trim();
+            const commonStopwords = ['a', 'an', 'the', 'interested', 'looking', 'here', 'planning', 'trying', 'ready', 'happy', 'new', 'testing', 'just', 'hello', 'hi', 'hey', 'very', 'not', 'no', 'yes', 'fine', 'good', 'some', 'any'];
+            if (!commonStopwords.includes(val.toLowerCase())) {
+              name = val.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+              break;
+            }
+          }
+        }
+
+        // 4. Extract company: "my company is X", "work at X", "represent X", "company name is X"
+        const companyPatterns = [
+          /my company is\s+([a-zA-Z0-9\s.-]{2,})/i,
+          /i work at\s+([a-zA-Z0-9\s.-]{2,})/i,
+          /represent\s+([a-zA-Z0-9\s.-]{2,})/i,
+          /company name is\s+([a-zA-Z0-9\s.-]{2,})/i
+        ];
+        for (const pattern of companyPatterns) {
+          const match = content.match(pattern);
+          if (match && match[1]) {
+            const rawVal = match[1].trim();
+            const val = rawVal.split(/\s+(?:and|or|but|for|with|to|from|on|at|we|i|you|they|he|she)\b/i)[0].trim().split(/[.,]/)[0].trim();
+            const commonStopwords = ['a', 'an', 'the', 'some', 'any', 'my', 'your', 'our'];
+            if (!commonStopwords.includes(val.toLowerCase())) {
+              company = val;
+              break;
+            }
+          }
+        }
+
+        // 5. Extract needs: "looking for X", "need X", "want X", "interested in X"
+        const needsPatterns = [
+          /(?:looking for|need|want|interested in)\s+([a-zA-Z0-9\s.-]{4,})/i
+        ];
+        for (const pattern of needsPatterns) {
+          const match = content.match(pattern);
+          if (match && match[1]) {
+            const rawVal = match[1].trim();
+            const val = rawVal.split(/\s+(?:and|or|but|for|with|to|from|on|at|we|i|you|they|he|she)\b/i)[0].trim().split(/[.,]/)[0].trim();
+            needs = val;
+            break;
+          }
+        }
+      }
+    }
+  }
+  return { email, phone, name, company, needs };
+}
+
 module.exports = {
   // Authentication Actions
   getUsers() {
@@ -289,6 +448,13 @@ module.exports = {
       passwordHash,
       salt,
       botId,
+      plan: 'free',
+      paymentStatus: 'unpaid',
+      amountPaid: 0,
+      transactionId: null,
+      trialStartDate: null,
+      trialEndDate: null,
+      reminderSent: false,
       createdAt: new Date().toISOString()
     };
 
@@ -350,14 +516,14 @@ module.exports = {
   // Multi-tenant scoped settings & bookings CRUD
   getSettings(botId = 'bot-default') {
     const db = readDb();
-    const bot = db.bots[botId] || db.bots['bot-default'];
-    return bot.settings;
+    const bot = db.bots[botId] || db.bots['bot-default'] || Object.values(db.bots)[0];
+    return bot ? bot.settings : DEFAULT_SETTINGS;
   },
 
   saveSettings(botId = 'bot-default', newSettings) {
     const db = readDb();
     if (!db.bots[botId]) {
-      db.bots[botId] = { settings: DEFAULT_SETTINGS, bookings: [] };
+      db.bots[botId] = { settings: DEFAULT_SETTINGS, bookings: [], conversations: [] };
     }
     db.bots[botId].settings = { ...db.bots[botId].settings, ...newSettings };
     writeDb(db);
@@ -366,14 +532,14 @@ module.exports = {
 
   getBookings(botId = 'bot-default') {
     const db = readDb();
-    const bot = db.bots[botId] || db.bots['bot-default'];
-    return bot.bookings;
+    const bot = db.bots[botId] || db.bots['bot-default'] || Object.values(db.bots)[0];
+    return bot ? bot.bookings : [];
   },
 
   addBooking(botId = 'bot-default', booking) {
     const db = readDb();
     if (!db.bots[botId]) {
-      db.bots[botId] = { settings: DEFAULT_SETTINGS, bookings: [] };
+      db.bots[botId] = { settings: DEFAULT_SETTINGS, bookings: [], conversations: [] };
     }
     
     const newBooking = {
@@ -388,6 +554,9 @@ module.exports = {
       clientTimezone: booking.clientTimezone || '',
       clientFormattedTime: booking.clientFormattedTime || '',
       emailSent: booking.emailSent || false,
+      paymentStatus: booking.paymentStatus || 'N/A',
+      paymentAmountPaid: booking.paymentAmountPaid || '',
+      paymentTransactionId: booking.paymentTransactionId || '',
       createdAt: new Date().toISOString()
     };
 
@@ -409,13 +578,16 @@ module.exports = {
 
   getConversations(botId = 'bot-default') {
     const db = readDb();
-    const bot = db.bots[botId] || db.bots['bot-default'];
-    return bot.conversations || [];
+    const bot = db.bots[botId] || db.bots['bot-default'] || Object.values(db.bots)[0];
+    return bot ? (bot.conversations || []) : [];
   },
 
-  recordChatMetrics(botId = 'bot-default', conversationId, latency = 0) {
+  recordChatMetrics(botId = 'bot-default', conversationId, latency = 0, messages = [], ipAddress = '', location = '') {
     const dbData = readDb();
-    const bot = dbData.bots[botId];
+    let bot = dbData.bots[botId];
+    if (!bot) {
+      bot = dbData.bots['bot-default'] || Object.values(dbData.bots)[0];
+    }
     if (!bot) return;
 
     if (!bot.conversations) {
@@ -429,19 +601,118 @@ module.exports = {
         createdAt: new Date().toISOString(),
         messagesCount: 0,
         lastMessageAt: new Date().toISOString(),
-        lastLatency: latency
+        lastLatency: latency,
+        ipAddress: ipAddress || 'Unknown',
+        location: location || 'Unknown Location',
+        visitorName: null,
+        visitorEmail: null,
+        visitorPhone: null,
+        visitorCompany: null,
+        visitorNeeds: null,
+        messages: []
       };
       bot.conversations.push(conv);
     }
 
-    conv.messagesCount += 1;
+    if (messages && messages.length > 0) {
+      conv.messages = messages;
+      conv.messagesCount = messages.length;
+      
+      const info = extractVisitorInfo(messages);
+      if (info.email) conv.visitorEmail = info.email;
+      if (info.phone) conv.visitorPhone = info.phone;
+      if (info.name) conv.visitorName = info.name;
+      if (info.company) conv.visitorCompany = info.company;
+      if (info.needs) conv.visitorNeeds = info.needs;
+    } else {
+      conv.messagesCount += 1;
+    }
+
     conv.lastMessageAt = new Date().toISOString();
     if (latency > 0) {
       conv.lastLatency = latency;
     }
 
+    if (ipAddress) {
+      conv.ipAddress = ipAddress;
+    }
+    if (location) {
+      conv.location = location;
+    }
+
     writeDb(dbData);
     return conv;
+  },
+
+  getUserByBotId(botId) {
+    const db = readDb();
+    return (db.users || []).find(u => u.botId === botId);
+  },
+
+  deleteTenant(userId) {
+    const db = readDb();
+    const userIndex = (db.users || []).findIndex(u => u.id === userId);
+    if (userIndex === -1) return false;
+    
+    const user = db.users[userIndex];
+    db.users.splice(userIndex, 1);
+    
+    if (user.botId && db.bots[user.botId]) {
+      delete db.bots[user.botId];
+    }
+    
+    writeDb(db);
+    return true;
+  },
+
+  updateTenantPlan(userId, plan) {
+    const db = readDb();
+    const userIndex = (db.users || []).findIndex(u => u.id === userId);
+    if (userIndex === -1) return false;
+    
+    db.users[userIndex].plan = plan;
+    
+    // Also update billing status based on the selected plan from Super Admin
+    if (plan === 'free') {
+      db.users[userIndex].paymentStatus = 'free';
+      db.users[userIndex].amountPaid = 0;
+      db.users[userIndex].transactionId = 'FREE-UPGRADE';
+    } else if (plan === 'pro') {
+      db.users[userIndex].paymentStatus = 'paid';
+      db.users[userIndex].amountPaid = 20;
+      db.users[userIndex].transactionId = 'TXN-SUPER-' + Math.random().toString(36).substring(2, 10).toUpperCase();
+    } else if (plan === 'advanced') {
+      db.users[userIndex].paymentStatus = 'paid';
+      db.users[userIndex].amountPaid = 30;
+      db.users[userIndex].transactionId = 'TXN-SUPER-' + Math.random().toString(36).substring(2, 10).toUpperCase();
+    }
+
+    writeDb(db);
+    return db.users[userIndex];
+  },
+
+  getBots() {
+    const db = readDb();
+    return db.bots || {};
+  },
+
+  getGlobalSettings() {
+    const db = readDb();
+    const defaultGlobal = {
+      tataKey: "",
+      tataUrl: "https://models.cloudservices.tatacommunications.com/v1",
+      tataModel: "meta/Llama-3.3-70B-Instruct",
+      razorpayKeyId: "",
+      razorpayKeySecret: ""
+    };
+    return { ...defaultGlobal, ...(db.globalSettings || {}) };
+  },
+
+  saveGlobalSettings(newSettings) {
+    const db = readDb();
+    db.globalSettings = { ...(db.globalSettings || {}), ...newSettings };
+    writeDb(db);
+    return db.globalSettings;
   },
 
   // Password Utility Methods

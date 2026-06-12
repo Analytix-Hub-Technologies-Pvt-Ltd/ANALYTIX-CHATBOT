@@ -1,0 +1,1499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Activate Your Subscription Plan | AnalytixHub Chatbot</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Razorpay Checkout SDK -->
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  
+  <style>
+    :root {
+      --bg-dark: #f8fafc;
+      --card-bg: rgba(255, 255, 255, 0.95);
+      --border-color: rgba(0, 0, 0, 0.08);
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --primary-glow: rgba(37, 99, 235, 0.15);
+      --accent-purple: #7c3aed;
+      --accent-purple-glow: rgba(124, 58, 237, 0.15);
+      --text-white: #0f172a;
+      --text-muted: #475569;
+      --error-red: #ef4444;
+      --success-green: #10b981;
+
+      /* Alerts High Contrast for Light Mode */
+      --alert-error-text: #b91c1c;
+      --alert-error-bg: #fef2f2;
+      --alert-error-border: #fca5a5;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-white);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow-x: hidden;
+      position: relative;
+      padding: 40px 20px;
+    }
+
+    /* Vibrant ambient background blobs */
+    .ambient-glow-1 {
+      position: absolute;
+      width: 500px;
+      height: 500px;
+      border-radius: 50%;
+      background: radial-gradient(circle, var(--primary-glow) 0%, transparent 70%);
+      top: -100px;
+      left: -100px;
+      z-index: 1;
+      pointer-events: none;
+      animation: pulse-slow 8s infinite alternate;
+    }
+
+    .ambient-glow-2 {
+      position: absolute;
+      width: 600px;
+      height: 600px;
+      border-radius: 50%;
+      background: radial-gradient(circle, var(--accent-purple-glow) 0%, transparent 70%);
+      bottom: -150px;
+      right: -100px;
+      z-index: 1;
+      pointer-events: none;
+      animation: pulse-slow 12s infinite alternate-reverse;
+    }
+
+    @keyframes pulse-slow {
+      0% { transform: scale(1) translate(0, 0); opacity: 0.6; }
+      100% { transform: scale(1.15) translate(20px, 30px); opacity: 0.9; }
+    }
+
+    .portal-container {
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      max-width: 1000px;
+    }
+
+    .header-section {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .brand-logo {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 54px;
+      height: 54px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, var(--primary), var(--accent-purple));
+      margin-bottom: 16px;
+      box-shadow: 0 8px 20px rgba(37, 99, 235, 0.3);
+    }
+
+    .brand-logo i {
+      color: white;
+      width: 26px;
+      height: 26px;
+    }
+
+    .header-section h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      background: linear-gradient(to right, var(--text-white), var(--text-muted));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 8px;
+    }
+
+    .header-section p {
+      color: var(--text-muted);
+      font-size: 16px;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    /* Steps indicator */
+    .steps-indicator {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 30px;
+    }
+
+    .step-dot {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--text-muted);
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 6px 12px;
+      border-radius: 20px;
+      background: rgba(0, 0, 0, 0.02);
+      border: 1px solid var(--border-color);
+    }
+
+    .step-dot.active {
+      color: var(--text-white);
+      background: rgba(37, 99, 235, 0.15);
+      border-color: rgba(37, 99, 235, 0.4);
+    }
+
+    .step-dot.active i {
+      color: var(--primary);
+    }
+
+    .step-connector {
+      width: 24px;
+      height: 1px;
+      background: var(--border-color);
+    }
+
+    /* Main Screens Wrapper */
+    .screen-panel {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 24px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.08);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      padding: 40px;
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    /* Pricing Grid Screen */
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+      margin-bottom: 30px;
+    }
+
+    .price-card {
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      border-radius: 18px;
+      padding: 30px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .price-card:hover {
+      border-color: rgba(99, 102, 241, 0.3);
+      transform: translateY(-4px);
+      background: rgba(0, 0, 0, 0.01);
+    }
+
+    .price-card.selected {
+      border-color: var(--primary);
+      background: rgba(37, 99, 235, 0.03);
+      box-shadow: 0 0 20px rgba(37, 99, 235, 0.08);
+    }
+
+    .price-card.selected::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--primary), var(--accent-purple));
+      border-radius: 18px 18px 0 0;
+    }
+
+    .badge-pop {
+      position: absolute;
+      top: -12px;
+      right: 20px;
+      background: linear-gradient(135deg, var(--primary), var(--accent-purple));
+      color: white;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+      z-index: 10;
+    }
+
+    .card-header {
+      margin-bottom: 20px;
+    }
+
+    .plan-name {
+      font-family: 'Outfit', sans-serif;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text-white);
+      margin-bottom: 6px;
+    }
+
+    .plan-desc {
+      color: var(--text-muted);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .plan-price-wrapper {
+      margin-bottom: 24px;
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+    }
+
+    .plan-price {
+      font-family: 'Outfit', sans-serif;
+      font-size: 36px;
+      font-weight: 800;
+      color: var(--text-white);
+    }
+
+    .plan-period {
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    .plan-features {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 30px;
+      flex-grow: 1;
+    }
+
+    .plan-features li {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .plan-features li i {
+      color: var(--success-green);
+      flex-shrink: 0;
+    }
+
+    .select-ring {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 2px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: auto;
+      transition: all 0.3s ease;
+    }
+
+    .price-card.selected .select-ring {
+      border-color: var(--primary);
+      background: var(--primary);
+    }
+
+    .select-ring::after {
+      content: '';
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--text-white);
+      opacity: 0;
+      transition: all 0.3s ease;
+    }
+
+    .price-card.selected .select-ring::after {
+      opacity: 1;
+    }
+
+    /* Checkout Layout */
+    .checkout-wrapper {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 40px;
+    }
+
+    @media (max-width: 768px) {
+      .checkout-wrapper {
+        grid-template-columns: 1fr;
+        gap: 30px;
+      }
+    }
+
+     /* Checkout Card summary */
+    .checkout-summary-card {
+      background: rgba(0, 0, 0, 0.015);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 24px;
+    }
+
+    .checkout-summary-card h3 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 18px;
+      margin-bottom: 16px;
+    }
+
+    .checkout-summary-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border-color);
+      font-size: 14px;
+    }
+
+    .checkout-summary-item.total {
+      border-bottom: none;
+      font-weight: 700;
+      font-size: 16px;
+      padding-top: 16px;
+    }
+
+    /* Checkout form details */
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .form-input {
+      width: 100%;
+      background: rgba(0, 0, 0, 0.02);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 12px 14px;
+      color: var(--text-white);
+      font-size: 14px;
+      transition: all 0.3s ease;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: var(--primary);
+      background: #ffffff;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    /* Alert and success banner */
+    .alert-banner {
+      background: var(--alert-error-bg);
+      border: 1px solid var(--alert-error-border);
+      color: var(--alert-error-text);
+      border-radius: 10px;
+      padding: 12px 16px;
+      font-size: 13px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* Buttons */
+    .action-btn {
+      width: 100%;
+      background: linear-gradient(135deg, var(--primary), var(--accent-purple));
+      border: none;
+      border-radius: 12px;
+      padding: 14px;
+      color: white;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(37, 99, 235, 0.25);
+    }
+
+    .action-btn:hover {
+      opacity: 0.95;
+      transform: translateY(-1px);
+    }
+
+    .action-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-secondary {
+      background: transparent;
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      box-shadow: none;
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--text-white);
+      color: var(--text-white);
+      background: rgba(0, 0, 0, 0.02);
+    }
+
+    /* Mock credit card card preview */
+    .mock-card {
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 16px;
+      padding: 24px;
+      height: 180px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+
+    .mock-card::before {
+      content: '';
+      position: absolute;
+      top: -30px;
+      right: -30px;
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .card-chip {
+      width: 38px;
+      height: 28px;
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      border-radius: 6px;
+    }
+
+    .card-number-display {
+      font-family: 'Outfit', monospace;
+      font-size: 18px;
+      letter-spacing: 2px;
+      color: var(--text-white);
+      margin: 15px 0;
+    }
+
+    .card-bottom-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .card-label {
+      font-size: 8px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 2px;
+    }
+
+    .card-val {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    .card-brand {
+      width: 40px;
+      height: 25px;
+      display: flex;
+      gap: 4px;
+      justify-content: flex-end;
+      align-items: center;
+    }
+
+    .brand-circle {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #ea580c;
+    }
+
+    .brand-circle-2 {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #f59e0b;
+      margin-left: -8px;
+      opacity: 0.85;
+    }
+
+    /* Success Screen */
+    .success-panel {
+      text-align: center;
+      padding: 20px 0;
+    }
+
+    .success-icon {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: rgba(16, 185, 129, 0.1);
+      border: 2px solid var(--success-green);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--success-green);
+      margin-bottom: 24px;
+      animation: pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .success-icon i {
+      width: 36px;
+      height: 36px;
+    }
+
+    @keyframes pop {
+      0% { transform: scale(0.6); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    /* Spinner animation */
+    .animate-spin {
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Promo Trial Modal Overlay */
+    .promo-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(4, 6, 12, 0.85);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: fadeInModal 0.3s ease-out forwards;
+    }
+
+    .promo-modal {
+      background: rgba(18, 24, 38, 0.95);
+      border: 1px solid rgba(139, 92, 246, 0.25);
+      border-radius: 24px;
+      width: 90%;
+      max-width: 520px;
+      padding: 40px;
+      box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6), 0 0 40px rgba(139, 92, 246, 0.15);
+      position: relative;
+      overflow: hidden;
+      animation: slideUpModal 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      text-align: center;
+    }
+
+    .promo-modal::before {
+      content: '';
+      position: absolute;
+      top: -100px;
+      left: -100px;
+      width: 250px;
+      height: 250px;
+      background: radial-gradient(circle, rgba(139, 92, 246, 0.2) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .promo-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(168, 85, 247, 0.15);
+      border: 1px solid rgba(168, 85, 247, 0.4);
+      color: #c084fc;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 6px 16px;
+      border-radius: 20px;
+      margin-bottom: 24px;
+      animation: pulsePromo 2s infinite alternate;
+    }
+
+    @keyframes pulsePromo {
+      0% { box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.2); }
+      100% { box-shadow: 0 0 12px 4px rgba(168, 85, 247, 0.4); }
+    }
+
+    .promo-modal h2 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 28px;
+      font-weight: 800;
+      margin-bottom: 12px;
+      background: linear-gradient(135deg, #ffffff 30%, #c084fc 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .promo-modal p {
+      color: var(--text-muted);
+      font-size: 14px;
+      line-height: 1.6;
+      margin-bottom: 24px;
+    }
+
+    @keyframes fadeInModal {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes slideUpModal {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  
+  <div class="ambient-glow-1"></div>
+  <div class="ambient-glow-2"></div>
+
+  <div class="portal-container">
+    
+    <div class="header-section">
+      <div class="brand-logo">
+        <i data-lucide="shield-check"></i>
+      </div>
+      <h1>Select Subscription Plan</h1>
+      <p>Provision your secure chatbot environment by choosing a pricing plan that fits your organization's messaging requirements.</p>
+    </div>
+
+    <!-- Step Progress Indicator -->
+    <div class="steps-indicator">
+      <div class="step-dot active" id="dot-select">
+        <i data-lucide="list"></i>
+        <span>Choose Plan</span>
+      </div>
+      <div class="step-connector"></div>
+      <div class="step-dot" id="dot-pay">
+        <i data-lucide="credit-card"></i>
+        <span>Checkout</span>
+      </div>
+      <div class="step-connector"></div>
+      <button class="step-dot" id="btn-indicator-trial" onclick="activateTrialFromIndicator()" onmouseover="this.style.background='rgba(139, 92, 246, 0.25)'; this.style.borderColor='#c084fc';" onmouseout="this.style.background='rgba(139, 92, 246, 0.15)'; this.style.borderColor='rgba(139, 92, 246, 0.4)';" style="cursor: pointer; background: rgba(139, 92, 246, 0.15); border: 1px solid rgba(139, 92, 246, 0.4); color: #c084fc; transition: all 0.3s ease; display: flex; align-items: center; gap: 6px; font-family: inherit; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; padding: 6px 12px; border-radius: 20px; outline: none;">
+        <i data-lucide="zap" style="color: #c084fc; width: 14px; height: 14px;"></i>
+        <span>Activate 2-Month Trial</span>
+      </button>
+    </div>
+
+    <!-- Alerts Box -->
+    <div id="alert-box" class="alert-banner hidden">
+      <i data-lucide="alert-circle" style="flex-shrink:0;"></i>
+      <span id="alert-msg"></span>
+    </div>
+
+    <!-- Screen 1: Plan Selector -->
+    <div class="screen-panel" id="panel-pricing">
+      <!-- Trial Welcome Banner (Hidden by default, shown for new registrations) -->
+      <div id="trial-welcome-banner" class="hidden" style="background: linear-gradient(135deg, rgba(124, 58, 237, 0.08), rgba(236, 72, 153, 0.08)); border: 1px solid rgba(124, 58, 237, 0.2); border-radius: 16px; padding: 20px; margin-bottom: 28px; text-align: left; display: flex; align-items: center; gap: 16px; box-shadow: 0 4px 15px rgba(124, 58, 237, 0.05);">
+        <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(124, 58, 237, 0.12); display: flex; align-items: center; justify-content: center; color: var(--accent-purple); flex-shrink: 0;">
+          <i data-lucide="gift" style="width: 22px; height: 22px;"></i>
+        </div>
+        <div>
+          <h3 style="font-family: 'Outfit', sans-serif; font-size: 16px; color: var(--accent-purple); margin-bottom: 4px; font-weight: 700;">Exclusive Welcome Promo Activated!</h3>
+          <p style="font-size: 13px; color: var(--text-muted); line-height: 1.4; margin: 0;">
+            You are eligible for <strong>2 months of the Advanced Plan for FREE</strong>. We have pre-selected the Advanced Plan for you. Simply input your website URL below to start auto-training your chatbot!
+          </p>
+        </div>
+      </div>
+
+      <div class="pricing-grid">
+        
+        <!-- Plan 1: Free -->
+        <div class="price-card" onclick="selectPlan('free', this)">
+          <div class="card-header">
+            <h2 class="plan-name">Free Trial</h2>
+            <p class="plan-desc">Perfect for testing out chatbot capabilities on a staging or sandbox environment.</p>
+          </div>
+          <div class="plan-price-wrapper">
+            <span class="plan-price">$0</span>
+            <span class="plan-period">/ month</span>
+          </div>
+          <ul class="plan-features">
+            <li><i data-lucide="check"></i> 15 active conversations limit</li>
+            <li><i data-lucide="check"></i> 9 appointment booking slots</li>
+            <li><i data-lucide="check"></i> Interactive Widget styling</li>
+            <li><i data-lucide="check"></i> Standard Groq LLM integration</li>
+            <li><i data-lucide="x" style="color:var(--text-muted);"></i> Web scraper & brain training locked</li>
+            <li><i data-lucide="x" style="color:var(--text-muted);"></i> Custom SMTP notifier locked</li>
+          </ul>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:20px;">
+            <span style="font-size:12px; font-weight:600; color:var(--text-muted);">Free Forever</span>
+            <div class="select-ring"></div>
+          </div>
+        </div>
+
+        <!-- Plan 2: Pro -->
+        <div class="price-card" onclick="selectPlan('pro', this)">
+          <div class="badge-pop">Popular</div>
+          <div class="card-header">
+            <h2 class="plan-name">Pro Plan</h2>
+            <p class="plan-desc">For small and medium enterprises needing expanded bookings and custom messaging schedules.</p>
+          </div>
+          <div class="plan-price-wrapper">
+            <span class="plan-price">$20</span>
+            <span class="plan-period">/ month</span>
+          </div>
+          <ul class="plan-features">
+            <li><i data-lucide="check"></i> 100 conversations / month</li>
+            <li><i data-lucide="check"></i> Custom scheduling & slot configuration</li>
+            <li><i data-lucide="check"></i> Premium branding customizations</li>
+            <li><i data-lucide="check"></i> Lead email notifications (default mailer)</li>
+            <li><i data-lucide="x" style="color:var(--text-muted);"></i> Web scraper & brain training locked</li>
+          </ul>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:20px;">
+            <span style="font-size:12px; font-weight:600; color:var(--text-white);">Best Value</span>
+            <div class="select-ring"></div>
+          </div>
+        </div>
+
+        <!-- Plan 3: Advanced -->
+        <div class="price-card" id="card-advanced" onclick="selectPlan('advanced', this)">
+          <div class="badge-pop" id="advanced-card-badge" style="background: linear-gradient(135deg, var(--accent-purple), #ec4899); border: 1px solid rgba(255, 255, 255, 0.15);">2-Month Trial</div>
+          <div class="card-header">
+            <h2 class="plan-name">Advanced</h2>
+            <p class="plan-desc">Unlocks full automation power, automatic AI brain training, and custom Graph API mail integration.</p>
+          </div>
+          <div class="plan-price-wrapper" id="advanced-price-wrapper">
+            <span class="plan-price">$30</span>
+            <span class="plan-period">/ month</span>
+          </div>
+          <ul class="plan-features">
+            <li><i data-lucide="check"></i> Unlimited conversations & bookings</li>
+            <li><i data-lucide="check"></i> Web Crawler & AI Brain Training</li>
+            <li><i data-lucide="check"></i> Custom SMTP / Microsoft Graph API email</li>
+            <li><i data-lucide="check"></i> Multi-agent customization support</li>
+            <li><i data-lucide="check"></i> Real-time booking reports export</li>
+          </ul>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:20px;">
+            <span style="font-size:12px; font-weight:600; color:var(--text-white);">Power User</span>
+            <div class="select-ring"></div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Selected Plan Banner -->
+      <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 25px; margin-bottom: 5px; font-size: 14px; color: var(--text-muted); font-weight: 500;">
+        <span>Selected Plan:</span>
+        <span id="selected-plan-badge" style="font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 700; padding: 3px 12px; border-radius: 9999px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">No plan selected</span>
+      </div>
+
+      <!-- Mandatory Organization Website URL Input -->
+      <div class="website-input-card" style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: 18px; padding: 24px; margin-top: 30px; text-align: left; max-width: 600px; margin-left: auto; margin-right: auto; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
+        <label for="orgWebsite" style="display: block; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 10px;">Organization Website URL (Required)</label>
+        <div style="position: relative; display: flex; align-items: center;">
+          <i data-lucide="globe" style="position: absolute; left: 14px; color: var(--text-muted); width: 18px; height: 18px;"></i>
+          <input type="url" id="orgWebsite" class="form-input" style="padding-left: 44px;" placeholder="https://example.com" required>
+        </div>
+        <p style="font-size: 11px; color: var(--text-muted); margin-top: 8px; line-height: 1.4;">
+          This website will be saved as your default. Our system will automatically scrape and train the AI assistant on its contents!
+        </p>
+      </div>
+
+      <button id="btn-pricing-continue" class="action-btn" onclick="proceedToCheckout()" style="max-width:320px; margin: 24px auto 0 auto;" disabled>
+        <span>Select a Plan to Continue</span>
+        <i data-lucide="arrow-right"></i>
+      </button>
+    </div>
+
+    <!-- Screen 2: Checkout Form -->
+    <div class="screen-panel hidden" id="panel-checkout">
+      <div class="checkout-wrapper">
+        
+        <!-- Left: Payment details form -->
+        <div>
+          <div style="margin-bottom: 24px;">
+            <h2 style="font-family:'Outfit', sans-serif; font-size:22px; margin-bottom:6px;">Secure Checkout</h2>
+            <p style="color:var(--text-muted); font-size:13px; line-height:1.5;">
+              Choose your preferred payment method to complete your subscription.
+            </p>
+          </div>
+
+          <!-- Payment Method Tabs -->
+          <div style="display: flex; gap: 12px; margin-bottom: 24px; background: rgba(0, 0, 0, 0.2); padding: 4px; border-radius: 10px; border: 1px solid var(--border-color);">
+            <button type="button" id="pay-tab-razorpay" class="action-btn" onclick="switchPaymentMethod('razorpay')" style="flex: 1; padding: 10px; font-size: 13px; font-weight: 600; border-radius: 8px; border: none; background: rgba(255, 255, 255, 0.05); color: var(--text-white); box-shadow: none; height: auto;">
+              <i data-lucide="credit-card" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle; margin-right: 6px;"></i>Razorpay
+            </button>
+            <button type="button" id="pay-tab-mock" class="action-btn btn-secondary" onclick="switchPaymentMethod('mock')" style="flex: 1; padding: 10px; font-size: 13px; font-weight: 600; border-radius: 8px; border: 1px solid transparent; background: transparent; color: var(--text-muted); box-shadow: none; height: auto;">
+              <i data-lucide="alert-circle" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle; margin-right: 6px;"></i>Demo Mode
+            </button>
+          </div>
+
+          <!-- Razorpay Container -->
+          <div id="payment-container-razorpay" style="text-align: center; padding: 32px 24px; background: rgba(255, 255, 255, 0.01); border: 1px solid var(--border-color); border-radius: 16px; margin-bottom: 20px;">
+            <div style="width: 56px; height: 56px; border-radius: 50%; background: rgba(37, 99, 235, 0.1); border: 1px solid rgba(37, 99, 235, 0.3); display: inline-flex; align-items: center; justify-content: center; color: var(--primary); margin-bottom: 16px;">
+              <i data-lucide="shield-check" style="width: 28px; height: 28px;"></i>
+            </div>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 16px; margin-bottom: 8px; color: var(--text-white);">Pay securely via Razorpay</h4>
+            <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5; margin-bottom: 24px; max-width: 320px; margin-left: auto; margin-right: auto;">
+              Complete your subscription securely. Supports cards, UPI, netbanking, and popular wallets.
+            </p>
+            
+            <div style="display:flex; gap:16px;">
+              <button type="button" class="action-btn btn-secondary" onclick="goBackToPricing()" style="flex:1;">
+                <i data-lucide="arrow-left"></i>
+                <span>Back</span>
+              </button>
+              <button type="button" id="btn-razorpay-checkout" class="action-btn" onclick="payWithRazorpay()" style="flex:2;">
+                <i data-lucide="external-link"></i>
+                <span>Pay Now via Razorpay</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Mock Card Container -->
+          <div id="payment-container-mock" class="hidden">
+            <div style="margin-bottom: 16px; background: rgba(239, 68, 68, 0.08); border: 1px dashed rgba(239, 68, 68, 0.3); border-radius: 8px; padding: 12px; font-size: 12px; color: #fca5a5; line-height: 1.4;">
+              <strong>Demo Mode:</strong> Use test card <code>4242 4242 4242 4242</code>, any expiry date, and any CVV to check out.
+            </div>
+            <form id="checkout-form" onsubmit="handlePaymentSubmit(event)">
+              <div class="form-group">
+                <label for="cardholder">Cardholder Name</label>
+                <input type="text" id="cardholder" class="form-input" placeholder="e.g. Jane Doe" required>
+              </div>
+              
+              <div class="form-group">
+                <label for="cardNumber">Card Number</label>
+                <input type="text" id="cardNumber" class="form-input" placeholder="4242 4242 4242 4242" maxlength="19" required>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="expiry">Expiry Date</label>
+                  <input type="text" id="expiry" class="form-input" placeholder="MM/YY" maxlength="5" required>
+                </div>
+                <div class="form-group">
+                  <label for="cvv">CVV</label>
+                  <input type="text" id="cvv" class="form-input" placeholder="123" maxlength="4" required>
+                </div>
+              </div>
+
+              <div style="display:flex; gap:16px; margin-top:30px;">
+                <button type="button" class="action-btn btn-secondary" onclick="goBackToPricing()" style="flex:1;">
+                  <i data-lucide="arrow-left"></i>
+                  <span>Back</span>
+                </button>
+                <button type="submit" id="btn-pay-submit" class="action-btn" style="flex:1.5;">
+                  <i data-lucide="credit-card"></i>
+                  <span>Pay & Activate Plan</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Right: Order Summary -->
+        <div>
+          <!-- Visual Card Preview -->
+          <div class="mock-card">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+              <div class="card-chip"></div>
+              <div class="card-brand">
+                <div class="brand-circle"></div>
+                <div class="brand-circle-2"></div>
+              </div>
+            </div>
+            <div class="card-number-display" id="card-preview-number">•••• •••• •••• ••••</div>
+            <div class="card-bottom-row">
+              <div>
+                <div class="card-label">Card Holder</div>
+                <div class="card-val" id="card-preview-name">Jane Doe</div>
+              </div>
+              <div>
+                <div class="card-label">Expires</div>
+                <div class="card-val" id="card-preview-expiry">MM/YY</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="checkout-summary-card">
+            <h3>Order Summary</h3>
+            <div class="checkout-summary-item">
+              <span style="color:var(--text-muted);">Plan Selected</span>
+              <span id="summary-plan-name" style="font-weight:600; text-transform:capitalize;">Pro Plan</span>
+            </div>
+            <div class="checkout-summary-item">
+              <span style="color:var(--text-muted);">Subtotal</span>
+              <span id="summary-subtotal" style="font-weight:600;">$20.00</span>
+            </div>
+            <div class="checkout-summary-item">
+              <span style="color:var(--text-muted);">Tax (GST / VAT)</span>
+              <span style="font-weight:600;">$0.00</span>
+            </div>
+            <div class="checkout-summary-item total">
+              <span>Total Due</span>
+              <span id="summary-total" style="color:var(--primary); font-size:18px;">$20.00</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Screen 3: Payment Success / Processing -->
+    <div class="screen-panel hidden" id="panel-success">
+      <div class="success-panel">
+        <div class="success-icon">
+          <i data-lucide="check"></i>
+        </div>
+        <h2 style="font-family:'Outfit', sans-serif; font-size:26px; margin-bottom:12px;">Payment Successful!</h2>
+        <p style="color:var(--text-muted); font-size:15px; max-width:480px; margin: 0 auto 30px auto;" id="success-message">
+          Your payment has been successfully authorized. Setting up your tenant admin access keys now...
+        </p>
+        <div style="display:flex; justify-content:center; align-items:center; gap:12px; color:var(--text-muted); font-size:14px;">
+          <i data-lucide="loader-2" class="animate-spin" style="color:var(--primary);"></i>
+          <span>Redirecting to brand onboarding wizard...</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // Global fetch interceptor to append authorization token automatically
+    const originalFetch = window.fetch;
+    window.fetch = async function(url, options = {}) {
+      const token = localStorage.getItem('ah_chatbot_auth_token');
+      if (token) {
+        options.headers = options.headers || {};
+        options.headers['Authorization'] = `Bearer ${token}`;
+      }
+      const response = await originalFetch(url, options);
+      if (response.status === 401) {
+        localStorage.clear();
+        window.location.href = '/admin/login.html';
+      }
+      return response;
+    };
+
+    let selectedPlanCode = null;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      const token = localStorage.getItem('ah_chatbot_auth_token');
+      if (!token) {
+        window.location.href = '/admin/login.html';
+        return;
+      }
+
+      // Initialize icons
+      lucide.createIcons();
+
+      // Check current plan details
+      try {
+        const res = await fetch('/api/auth/me');
+        if (!res.ok) throw new Error();
+        const data = await res.json();
+        // If already paid, proceed to onboarding or admin
+        if (data.paymentStatus !== 'unpaid') {
+          if (data.onboarded) {
+            window.location.href = '/admin/admin.html';
+          } else {
+            window.location.href = '/admin/onboarding.html';
+          }
+        } else {
+          // Check if show_onboarding_trial_promo flag is set in localStorage
+          const showPromo = localStorage.getItem('show_onboarding_trial_promo') === 'true';
+          if (showPromo) {
+             // Show welcome banner
+             const welcomeBanner = document.getElementById('trial-welcome-banner');
+             if (welcomeBanner) welcomeBanner.classList.remove('hidden');
+
+             // Update pricing wrapper details on the Advanced card to show trial pricing details
+             const advPriceWrapper = document.getElementById('advanced-price-wrapper');
+             if (advPriceWrapper) {
+               advPriceWrapper.innerHTML = `
+                 <div style="display: flex; align-items: baseline; gap: 6px;">
+                   <span class="plan-price" style="text-decoration: line-through; color: var(--text-muted); font-size: 20px; font-weight: 600;">$30</span>
+                   <span class="plan-price" style="color: #c084fc;">$0</span>
+                   <span class="plan-period" style="color: #c084fc; font-weight: 600;">for 2 months</span>
+                 </div>
+                 <span style="font-size: 11px; color: var(--text-muted); display: block; margin-top: 4px;">then $30/month</span>
+               `;
+             }
+
+             // Pre-select the Advanced Plan card
+             const advCard = document.getElementById('card-advanced');
+             if (advCard) {
+               selectPlan('advanced', advCard);
+             }
+
+             // Auto-focus Website Input
+             const orgWebsite = document.getElementById('orgWebsite');
+             if (orgWebsite) {
+               orgWebsite.focus();
+             }
+          }
+        }
+      } catch (err) {
+        localStorage.clear();
+        window.location.href = '/admin/login.html';
+      }
+
+      // Sync Card input bindings for real-time visual credit card preview updates
+      const nameInput = document.getElementById('cardholder');
+      const numberInput = document.getElementById('cardNumber');
+      const expiryInput = document.getElementById('expiry');
+
+      nameInput.addEventListener('input', (e) => {
+        document.getElementById('card-preview-name').textContent = e.target.value.trim() || 'Jane Doe';
+      });
+
+      numberInput.addEventListener('input', (e) => {
+        let value = e.target.value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
+        let formatted = '';
+        for (let i = 0; i < value.length; i++) {
+          if (i > 0 && i % 4 === 0) formatted += ' ';
+          formatted += value[i];
+        }
+        e.target.value = formatted;
+        document.getElementById('card-preview-number').textContent = formatted || '•••• •••• •••• ••••';
+      });
+
+      expiryInput.addEventListener('input', (e) => {
+        let value = e.target.value.replace(/\D/g, '');
+        if (value.length > 2) {
+          e.target.value = value.substring(0, 2) + '/' + value.substring(2, 4);
+        } else {
+          e.target.value = value;
+        }
+        document.getElementById('card-preview-expiry').textContent = e.target.value || 'MM/YY';
+      });
+    });
+
+    function selectPlan(plan, cardElement = null) {
+      selectedPlanCode = plan;
+      
+      // Update selected card styling
+      const cards = document.querySelectorAll('.price-card');
+      cards.forEach(c => c.classList.remove('selected'));
+      
+      const targetCard = cardElement || (window.event ? window.event.currentTarget : null);
+      if (targetCard) {
+        targetCard.classList.add('selected');
+      }
+
+      // Update pricing page button labels depending on choice
+      const continueBtn = document.getElementById('btn-pricing-continue');
+      continueBtn.disabled = false;
+      if (plan === 'free') {
+        continueBtn.innerHTML = `<span>Activate Free Trial</span> <i data-lucide="check"></i>`;
+      } else if (plan === 'advanced') {
+        continueBtn.innerHTML = `<span>Activate 2-Month Advanced Trial Pack</span> <i data-lucide="zap"></i>`;
+      } else {
+        continueBtn.innerHTML = `<span>Proceed to Checkout</span> <i data-lucide="arrow-right"></i>`;
+      }
+
+      // Update selected plan badge
+      const badgeEl = document.getElementById('selected-plan-badge');
+      if (plan === 'free') {
+        badgeEl.textContent = 'Free Trial';
+        badgeEl.style.color = '#10b981';
+        badgeEl.style.background = 'rgba(16, 185, 129, 0.15)';
+        badgeEl.style.borderColor = 'rgba(16, 185, 129, 0.3)';
+      } else if (plan === 'pro') {
+        badgeEl.textContent = 'Pro Plan ($20/mo)';
+        badgeEl.style.color = '#3b82f6';
+        badgeEl.style.background = 'rgba(37, 99, 235, 0.15)';
+        badgeEl.style.borderColor = 'rgba(37, 99, 235, 0.3)';
+      } else if (plan === 'advanced') {
+        badgeEl.textContent = 'Advanced (2-Month Trial)';
+        badgeEl.style.color = '#c084fc';
+        badgeEl.style.background = 'rgba(168, 85, 247, 0.15)';
+        badgeEl.style.borderColor = 'rgba(168, 85, 247, 0.3)';
+      }
+
+      lucide.createIcons();
+    }
+
+    function proceedToCheckout() {
+      hideAlert();
+
+      const websiteUrl = document.getElementById('orgWebsite').value.trim();
+      if (!websiteUrl) {
+        showAlert("Please enter your organization's website URL.");
+        return;
+      }
+      if (!websiteUrl.startsWith('http://') && !websiteUrl.startsWith('https://')) {
+        showAlert("Invalid website URL. URL must start with 'http://' or 'https://'.");
+        return;
+      }
+
+      if (selectedPlanCode === 'free') {
+        // Free plans don't need checkout gateway card fields. Submit immediately.
+        activateSubscription({
+          plan: 'free',
+          websiteUrl: websiteUrl
+        });
+      } else if (selectedPlanCode === 'advanced') {
+        // Activate Trial Pack directly
+        activateAdvancedTrialPack(websiteUrl);
+      } else {
+        // Update checkout summaries
+        const subtotal = selectedPlanCode === 'pro' ? 20 : 30;
+        document.getElementById('summary-plan-name').textContent = selectedPlanCode + ' plan';
+        document.getElementById('summary-subtotal').textContent = `$${subtotal}.00`;
+        document.getElementById('summary-total').textContent = `$${subtotal}.00`;
+
+        // Toggle UI step indicators
+        document.getElementById('dot-select').classList.remove('active');
+        document.getElementById('dot-pay').classList.add('active');
+
+        // Toggle screen panels
+        document.getElementById('panel-pricing').classList.add('hidden');
+        document.getElementById('panel-checkout').classList.remove('hidden');
+      }
+    }
+
+    function activateTrialFromIndicator() {
+      hideAlert();
+      const websiteUrl = document.getElementById('orgWebsite').value.trim();
+      if (!websiteUrl) {
+        showAlert("Please enter your organization's website URL first to activate the trial.");
+        document.getElementById('orgWebsite').focus();
+        return;
+      }
+      if (!websiteUrl.startsWith('http://') && !websiteUrl.startsWith('https://')) {
+        showAlert("Invalid website URL. URL must start with 'http://' or 'https://'.");
+        document.getElementById('orgWebsite').focus();
+        return;
+      }
+      activateAdvancedTrialPack(websiteUrl);
+    }
+
+    async function activateAdvancedTrialPack(websiteUrl) {
+      const continueBtn = document.getElementById('btn-pricing-continue');
+      const originalText = continueBtn.innerHTML;
+
+      continueBtn.disabled = true;
+      continueBtn.innerHTML = `<i data-lucide="loader-2" class="animate-spin"></i> <span>Activating Trial Pack...</span>`;
+      lucide.createIcons();
+
+      try {
+        const res = await fetch('/api/auth/activate-trial', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ websiteUrl })
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Failed to activate Advanced Trial Pack.");
+
+        // Clear local storage promo flag if active
+        localStorage.removeItem('show_onboarding_trial_promo');
+
+        // Show Success screen panel
+        document.getElementById('panel-pricing').classList.add('hidden');
+        document.getElementById('panel-success').classList.remove('hidden');
+
+        // Complete the dots status
+        document.getElementById('dot-select').classList.add('active');
+        document.getElementById('dot-pay').classList.add('active');
+
+        // Redirect after delay for micro-interactions
+        setTimeout(() => {
+          window.location.href = '/admin/onboarding.html';
+        }, 2000);
+      } catch (err) {
+        showAlert(err.message);
+        continueBtn.disabled = false;
+        continueBtn.innerHTML = originalText;
+        lucide.createIcons();
+      }
+    }
+
+    let currentPaymentMethod = 'razorpay';
+
+    function switchPaymentMethod(method) {
+      currentPaymentMethod = method;
+      const rzpTab = document.getElementById('pay-tab-razorpay');
+      const mockTab = document.getElementById('pay-tab-mock');
+      const rzpContainer = document.getElementById('payment-container-razorpay');
+      const mockContainer = document.getElementById('payment-container-mock');
+
+      if (method === 'razorpay') {
+        rzpTab.classList.remove('btn-secondary');
+        rzpTab.style.background = 'rgba(255, 255, 255, 0.05)';
+        rzpTab.style.color = 'var(--text-white)';
+        
+        mockTab.classList.add('btn-secondary');
+        mockTab.style.background = 'transparent';
+        mockTab.style.color = 'var(--text-muted)';
+        
+        rzpContainer.classList.remove('hidden');
+        mockContainer.classList.add('hidden');
+      } else {
+        mockTab.classList.remove('btn-secondary');
+        mockTab.style.background = 'rgba(255, 255, 255, 0.05)';
+        mockTab.style.color = 'var(--text-white)';
+        
+        rzpTab.classList.add('btn-secondary');
+        rzpTab.style.background = 'transparent';
+        rzpTab.style.color = 'var(--text-muted)';
+        
+        mockContainer.classList.remove('hidden');
+        rzpContainer.classList.add('hidden');
+      }
+    }
+
+    async function payWithRazorpay() {
+      hideAlert();
+      const websiteUrl = document.getElementById('orgWebsite').value.trim();
+      if (!websiteUrl) {
+        showAlert("Please enter your organization's website URL.");
+        return;
+      }
+      if (!websiteUrl.startsWith('http://') && !websiteUrl.startsWith('https://')) {
+        showAlert("Invalid website URL. URL must start with 'http://' or 'https://'.");
+        return;
+      }
+
+      const btn = document.getElementById('btn-razorpay-checkout');
+      const originalText = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = `<i data-lucide="loader-2" class="animate-spin"></i> <span>Initializing Razorpay...</span>`;
+      lucide.createIcons();
+
+      try {
+        const res = await fetch('/api/auth/razorpay-order', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ plan: selectedPlanCode })
+        });
+
+        const orderData = await res.json();
+        if (!res.ok) throw new Error(orderData.error || "Failed to initiate Razorpay order.");
+
+        const options = {
+          key: orderData.keyId,
+          amount: orderData.amount * 100, // minor units
+          currency: orderData.currency,
+          name: "AnalytixHub Chatbot",
+          description: `Activate ${selectedPlanCode.toUpperCase()} Plan Subscription`,
+          order_id: orderData.orderId,
+          handler: async function (response) {
+            btn.innerHTML = `<i data-lucide="loader-2" class="animate-spin"></i> <span>Verifying Payment...</span>`;
+            lucide.createIcons();
+
+            try {
+              const verifyRes = await fetch('/api/auth/subscribe', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                  plan: selectedPlanCode,
+                  websiteUrl: websiteUrl,
+                  paymentGateway: 'razorpay',
+                  razorpayOrderId: response.razorpay_order_id,
+                  razorpayPaymentId: response.razorpay_payment_id,
+                  razorpaySignature: response.razorpay_signature
+                })
+              });
+
+              const verifyData = await verifyRes.json();
+              if (!verifyRes.ok) throw new Error(verifyData.error || "Payment verification failed.");
+
+              // Clear local storage promo flag if active
+              localStorage.removeItem('show_onboarding_trial_promo');
+
+              // Show success screen
+              document.getElementById('panel-pricing').classList.add('hidden');
+              document.getElementById('panel-checkout').classList.add('hidden');
+              document.getElementById('panel-success').classList.remove('hidden');
+
+              // Complete the dots status
+              document.getElementById('dot-select').classList.add('active');
+              document.getElementById('dot-pay').classList.add('active');
+
+              setTimeout(() => {
+                window.location.href = '/admin/onboarding.html';
+              }, 2000);
+
+            } catch (err) {
+              showAlert(err.message);
+              btn.disabled = false;
+              btn.innerHTML = originalText;
+              lucide.createIcons();
+            }
+          },
+          prefill: {
+            email: localStorage.getItem('ah_chatbot_username') || ""
+          },
+          theme: {
+            color: "#2563eb"
+          },
+          modal: {
+            ondismiss: function() {
+              btn.disabled = false;
+              btn.innerHTML = originalText;
+              lucide.createIcons();
+            }
+          }
+        };
+
+        const rzp = new Razorpay(options);
+        rzp.open();
+
+      } catch (err) {
+        showAlert(err.message);
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+        lucide.createIcons();
+      }
+    }
+
+    function goBackToPricing() {
+      hideAlert();
+      document.getElementById('dot-pay').classList.remove('active');
+      document.getElementById('dot-select').classList.add('active');
+
+      document.getElementById('panel-checkout').classList.add('hidden');
+      document.getElementById('panel-pricing').classList.remove('hidden');
+    }
+
+    async function handlePaymentSubmit(e) {
+      e.preventDefault();
+      hideAlert();
+
+      const websiteUrl = document.getElementById('orgWebsite').value.trim();
+      const cardholder = document.getElementById('cardholder').value.trim();
+      const cardNumber = document.getElementById('cardNumber').value.trim();
+      const expiry = document.getElementById('expiry').value.trim();
+      const cvv = document.getElementById('cvv').value.trim();
+
+      // Submit checkout details
+      activateSubscription({
+        plan: selectedPlanCode,
+        websiteUrl,
+        cardholder,
+        cardNumber,
+        expiry,
+        cvv
+      });
+    }
+
+    async function activateSubscription(payload) {
+      const btn = document.getElementById('btn-pay-submit');
+      const continueBtn = document.getElementById('btn-pricing-continue');
+      
+      const originalText = btn.innerHTML;
+      const originalContinueText = continueBtn.innerHTML;
+
+      // Enable loading state
+      btn.disabled = true;
+      btn.innerHTML = `<i data-lucide="loader-2" class="animate-spin"></i> <span>Processing Payment...</span>`;
+      
+      continueBtn.disabled = true;
+      continueBtn.innerHTML = `<i data-lucide="loader-2" class="animate-spin"></i> <span>Activating...</span>`;
+      lucide.createIcons();
+
+      try {
+        const res = await fetch('/api/auth/subscribe', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Transaction authorization failed.");
+
+        // Clear local storage promo flag if active
+        localStorage.removeItem('show_onboarding_trial_promo');
+
+        // Show Success screen panel
+        document.getElementById('panel-pricing').classList.add('hidden');
+        document.getElementById('panel-checkout').classList.add('hidden');
+        document.getElementById('panel-success').classList.remove('hidden');
+        
+        // Complete the dots status
+        document.getElementById('dot-select').classList.add('active');
+        document.getElementById('dot-pay').classList.add('active');
+
+        // Redirect after delay for micro-interactions
+        setTimeout(() => {
+          window.location.href = '/admin/onboarding.html';
+        }, 2000);
+
+      } catch (err) {
+        showAlert(err.message);
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+        
+        continueBtn.disabled = false;
+        continueBtn.innerHTML = originalContinueText;
+        lucide.createIcons();
+      }
+    }
+
+    function showAlert(msg) {
+      const box = document.getElementById('alert-box');
+      document.getElementById('alert-msg').textContent = msg;
+      box.classList.remove('hidden');
+      box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function hideAlert() {
+      document.getElementById('alert-box').classList.add('hidden');
+    }
+  </script>
+</body>
+</html>

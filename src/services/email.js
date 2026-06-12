@@ -618,7 +618,115 @@ async function sendTestEmail(tempSettings, testEmailAddress) {
   return true;
 }
 
+/**
+ * Send trial expiration warning email to a tenant admin
+ * @param {string} userEmail 
+ * @param {string} trialEndDate 
+ * @param {string} botId 
+ * @returns {Promise<boolean>}
+ */
+async function sendTrialExpirationEmail(userEmail, trialEndDate, botId = 'bot-default') {
+  const settings = db.getSettings(botId);
+  const provider = settings.emailProvider || process.env.EMAIL_PROVIDER || 'msgraph';
+  
+  let orgName = 'our firm';
+  let orgDomain = 'domain.com';
+  const user = db.getUsers().find(u => u.botId === botId);
+  if (user) {
+    orgName = user.organizationName || 'our firm';
+    if (user.websiteUrl) {
+      orgDomain = user.websiteUrl.replace(/^(https?:\/\/)?(www\.)?/i, '').split('/')[0];
+    } else if (user.username.includes('@')) {
+      orgDomain = user.username.split('@')[1];
+    }
+  }
+
+  const formattedDate = new Date(trialEndDate).toLocaleDateString('en-US', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+  });
+
+  const subject = `Urgent: Your 2-Month Advanced Plan Trial is Expiring Soon!`;
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6; color: #1f2937; margin: 0; padding: 20px; }
+        .card { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); overflow: hidden; border: 1px solid #e5e7eb; }
+        .header { background: linear-gradient(135deg, #ef4444, #f97316); padding: 30px; text-align: center; color: white; }
+        .header h1 { margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.5px; }
+        .content { padding: 30px; }
+        .welcome { font-size: 16px; line-height: 1.6; margin-bottom: 25px; }
+        .details-box { background: #fffbeb; border: 1px solid #fef3c7; border-radius: 8px; padding: 20px; margin-bottom: 25px; }
+        .footer { text-align: center; padding: 20px; font-size: 13px; color: #6b7280; border-top: 1px solid #f3f4f6; background-color: #fafafa; }
+        .footer a { color: #2563eb; text-decoration: none; }
+      </style>
+    </head>
+    <body>
+      <div class="card">
+        <div class="header">
+          <h1>Trial Expiring in 2 Weeks!</h1>
+        </div>
+        <div class="content">
+          <p class="welcome">Hello,</p>
+          <p class="welcome">This is a reminder that the 2-month free trial of your <strong>Advanced Plan</strong> for <strong>${orgName}</strong> is expiring in exactly 2 weeks on <strong>${formattedDate}</strong>.</p>
+          
+          <div class="details-box">
+            <p style="margin: 0; font-size: 15px; color: #b45309; font-weight: 600;">What happens next?</p>
+            <p style="margin: 8px 0 0 0; font-size: 14px; color: #78350f; line-height: 1.5;">
+              After ${formattedDate}, your account will be automatically downgraded to the <strong>Free Plan</strong>. The website crawler, custom SMTP/Microsoft Graph integration, and advanced styling features will be locked.
+            </p>
+          </div>
+          
+          <p class="welcome">To prevent any service interruption, you can upgrade to a premium plan or manually restart your free trial by logging into your admin dashboard.</p>
+        </div>
+        <div class="footer">
+          <p>Sent by AnalytixHub Chatbot Automation System</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  if (provider === 'msgraph') {
+    const tenantId = process.env.MS_GRAPH_TENANT_ID || settings.msGraphTenantId;
+    const clientId = process.env.MS_GRAPH_CLIENT_ID || settings.msGraphClientId;
+    const clientSecret = process.env.MS_GRAPH_CLIENT_SECRET || settings.msGraphClientSecret;
+    const senderEmail = process.env.MS_GRAPH_SENDER_EMAIL || settings.msGraphSenderEmail || settings.adminEmail || 'contactus@analytixhub.org';
+
+    if (tenantId && clientId && clientSecret && senderEmail) {
+      try {
+        const accessToken = await getMSGraphAccessToken(tenantId, clientId, clientSecret);
+        await sendMSGraphEmail(accessToken, senderEmail, userEmail, subject, html);
+        return true;
+      } catch (err) {
+        console.error("Trial reminder email via Graph API failed:", err.message);
+      }
+    }
+  }
+
+  // SMTP Fallback
+  const transporter = getTransporter(settings);
+  if (transporter) {
+    const fromEmail = settings.smtpFrom || `${orgName} Chatbot <no-reply@${orgDomain}>`;
+    try {
+      await transporter.sendMail({
+        from: fromEmail,
+        to: userEmail,
+        subject: subject,
+        html: html
+      });
+      return true;
+    } catch (err) {
+      console.error("Trial reminder email via SMTP failed:", err.message);
+    }
+  }
+  return false;
+}
+
 module.exports = {
   sendBookingEmails,
-  sendTestEmail
+  sendTestEmail,
+  sendTrialExpirationEmail
 };

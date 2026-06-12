@@ -100,13 +100,16 @@ async function handleAuthSubmit(event, action) {
     localStorage.setItem('ah_chatbot_auth_token', data.token);
     localStorage.setItem('ah_chatbot_username', data.username);
     localStorage.setItem('ah_chatbot_bot_id', data.botId);
+    if (!isLogin) {
+      localStorage.setItem('show_onboarding_trial_promo', 'true');
+    }
 
     // Dynamic redirect after delay for smooth micro-interaction
     setTimeout(() => {
       if (isLogin) {
         window.location.href = '/admin/admin.html';
       } else {
-        window.location.href = '/admin/onboarding.html';
+        window.location.href = '/admin/subscription.html';
       }
     }, 1200);
 
