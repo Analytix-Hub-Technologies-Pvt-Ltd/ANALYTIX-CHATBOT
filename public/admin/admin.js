@@ -273,6 +273,25 @@ function populateTrainerUIFromSettings() {
   } else {
     if (mapWrapper) mapWrapper.style.display = "none";
   }
+
+  // Populate Extracted Services List on page load
+  const servicesGrid = document.getElementById("scraped-services-container");
+  if (servicesGrid) {
+    servicesGrid.innerHTML = "";
+    const services = settingsData.companyServices || [];
+    if (services && Array.isArray(services) && services.length > 0) {
+      services.forEach(serv => {
+        const badge = document.createElement("span");
+        badge.className = "purpose-tag";
+        badge.style.margin = "0";
+        badge.innerText = serv;
+        servicesGrid.appendChild(badge);
+      });
+    } else {
+      servicesGrid.innerHTML = `<span style="font-size: 12px; color: var(--text-muted);">No core services parsed.</span>`;
+    }
+  }
+
   
   // Populate console logs to indicate successful training in background!
   if (consolePanel && consoleLogs && consoleLogs.children.length === 0) {

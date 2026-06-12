@@ -184,6 +184,42 @@
         </table>
       </div>
     </div>
+
+    <!-- Global Captured Visitor Leads Panel -->
+    <div class="table-panel" style="margin-top: 40px;">
+      <div class="panel-header">
+        <div class="panel-title">
+          <h3>Global Captured Visitor Leads & Chat Sessions</h3>
+          <p>Monitor visitor interactions, contact information, and business needs captured across all chatbots</p>
+        </div>
+        <div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
+          <div class="search-box">
+            <input type="text" id="leadsSearchInput" class="search-input" placeholder="Search leads by name, email, or tenant...">
+          </div>
+        </div>
+      </div>
+
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Tenant / Bot</th>
+              <th>Visitor Name</th>
+              <th>Contact Details</th>
+              <th>Company / Needs</th>
+              <th>IP & Location</th>
+              <th>Captured Date</th>
+              <th>Chat History</th>
+            </tr>
+          </thead>
+          <tbody id="globalLeadsTableBody">
+            <tr>
+              <td colspan="7" class="no-data">Loading global visitor leads...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
   </main>
 
   <!-- Delete Confirmation Modal Dialog -->
@@ -313,6 +349,29 @@
 
       <div style="display: flex; justify-content: flex-end; gap: 12px;">
         <button id="closeInfoBtn2" class="btn-cancel" style="padding: 8px 20px;">Close Details</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chat Viewer Modal Dialog -->
+  <div id="chatModal" class="modal">
+    <div class="modal-content" style="max-width: 650px; text-align: left; display: flex; flex-direction: column; max-height: 80vh;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; flex-shrink: 0;">
+        <h4 style="margin-bottom: 0; display: flex; align-items: center; gap: 8px; font-size: 20px; color: var(--text-primary);">
+          <i data-feather="message-square" style="color: var(--accent-color); width: 24px; height: 24px;"></i>
+          Conversation Transcript
+        </h4>
+        <button id="closeChatBtn" style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 4px; border-radius: 50%; transition: all 0.2s;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">
+          <i data-feather="x" style="width: 20px; height: 20px;"></i>
+        </button>
+      </div>
+
+      <div id="chatMessagesContainer" style="flex-grow: 1; overflow-y: auto; padding: 16px; background: rgba(0,0,0,0.2); border-radius: 12px; margin-bottom: 20px; display: flex; flex-direction: column; gap: 12px; min-height: 250px;">
+        <!-- Chat bubbles populated dynamically -->
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 12px; flex-shrink: 0;">
+        <button id="closeChatBtn2" class="btn-cancel" style="padding: 8px 20px;">Close Chat</button>
       </div>
     </div>
   </div>

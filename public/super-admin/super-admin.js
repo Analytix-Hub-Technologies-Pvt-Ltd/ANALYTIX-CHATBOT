@@ -123,6 +123,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       allAdmins = await res.json();
       renderAdmins(allAdmins);
+      renderGlobalLeads(allAdmins);
     } catch (err) {
       console.error(err);
       tableBody.innerHTML = `<tr><td colspan="9" class="no-data" style="color:var(--danger-color)">Error loading tenants. Please try reloading the dashboard.</td></tr>`;
@@ -457,6 +458,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // Global Leads Search Filter Handler
+  const leadsSearchInput = document.getElementById('leadsSearchInput');
+  if (leadsSearchInput) {
+    leadsSearchInput.addEventListener('keyup', () => {
+      renderGlobalLeads(allAdmins);
+    });
+  }
+
   // Export Bookings Event Listener
   if (exportBookingsBtn) {
     exportBookingsBtn.addEventListener('click', () => {
@@ -592,6 +601,153 @@ document.addEventListener('DOMContentLoaded', () => {
         eyeIcon.setAttribute('data-feather', isPassword ? 'eye-off' : 'eye');
         feather.replace();
       }
+    });
+  }
+
+  // Chat Modal DOM Elements & Functions
+  const chatModal = document.getElementById('chatModal');
+  const closeChatBtn = document.getElementById('closeChatBtn');
+  const closeChatBtn2 = document.getElementById('closeChatBtn2');
+
+  function openChatModal(e) {
+    let target = e.target;
+    if (target.tagName === 'SVG' || target.tagName === 'path' || target.tagName === 'svg') {
+      target = target.closest('.btn-view-chat');
+    }
+    if (!target) return;
+    const botId = target.getAttribute('data-bot-id');
+    const convId = target.getAttribute('data-conv-id');
+
+    const admin = allAdmins.find(a => a.botId === botId);
+    if (!admin) return;
+
+    const conv = admin.conversations.find(c => c.id === convId);
+    if (!conv) return;
+
+    const messagesContainer = document.getElementById('chatMessagesContainer');
+    messagesContainer.innerHTML = '';
+
+    const messages = conv.messages || [];
+    if (messages.length === 0) {
+      messagesContainer.innerHTML = '<div style="text-align: center; color: var(--text-secondary); font-style: italic; margin-top: 20px;">No messages found in this chat session.</div>';
+    } else {
+      messages.forEach(msg => {
+        const bubble = document.createElement('div');
+        bubble.className = `chat-message ${msg.role === 'user' ? 'user' : 'bot'}`;
+        bubble.innerText = msg.content || '';
+        messagesContainer.appendChild(bubble);
+      });
+    }
+
+    chatModal.style.display = 'flex';
+  }
+
+  function closeChatModalFunc() {
+    chatModal.style.display = 'none';
+  }
+
+  if (closeChatBtn) closeChatBtn.addEventListener('click', closeChatModalFunc);
+  if (closeChatBtn2) closeChatBtn2.addEventListener('click', closeChatModalFunc);
+  window.addEventListener('click', (e) => {
+    if (e.target === chatModal) {
+      closeChatModalFunc();
+    }
+  });
+
+  // Render Global Leads
+  function renderGlobalLeads(admins) {
+    const leadsTableBody = document.getElementById('globalLeadsTableBody');
+    if (!leadsTableBody) return;
+
+    // 1. Gather all conversations across all admins
+    let allConvs = [];
+    admins.forEach(admin => {
+      const convs = admin.conversations || [];
+      convs.forEach(c => {
+        allConvs.push({
+          ...c,
+          tenantEmail: admin.username,
+          tenantOrg: admin.organizationName || 'Not Onboarded',
+          tenantBotId: admin.botId
+        });
+      });
+    });
+
+    // 2. Sort by creation date descending
+    allConvs.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    // 3. Filter by search query if any
+    const query = document.getElementById('leadsSearchInput') ? document.getElementById('leadsSearchInput').value.toLowerCase().trim() : '';
+    if (query) {
+      allConvs = allConvs.filter(c => 
+        c.tenantEmail.toLowerCase().includes(query) ||
+        c.tenantOrg.toLowerCase().includes(query) ||
+        (c.visitorName && c.visitorName.toLowerCase().includes(query)) ||
+        (c.visitorEmail && c.visitorEmail.toLowerCase().includes(query)) ||
+        (c.visitorPhone && c.visitorPhone.toLowerCase().includes(query)) ||
+        (c.visitorCompany && c.visitorCompany.toLowerCase().includes(query)) ||
+        (c.visitorNeeds && c.visitorNeeds.toLowerCase().includes(query))
+      );
+    }
+
+    if (allConvs.length === 0) {
+      leadsTableBody.innerHTML = `<tr><td colspan="7" class="no-data">No chat sessions or visitor leads found.</td></tr>`;
+      return;
+    }
+
+    leadsTableBody.innerHTML = '';
+    allConvs.forEach(conv => {
+      const row = document.createElement('tr');
+
+      // Joined/Created Date
+      const dateStr = conv.createdAt ? new Date(conv.createdAt).toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      }) : 'N/A';
+
+      const visitorNameHtml = conv.visitorName ? `<div style="font-weight:600; color:var(--text-primary);">${escapeHtml(conv.visitorName)}</div>` : '<div style="color:var(--text-secondary); font-style:italic;">Anonymous</div>';
+      
+      const contactParts = [];
+      if (conv.visitorEmail) contactParts.push(`<div style="font-size:11px; color:var(--text-secondary); display:flex; align-items:center; gap:4px; margin-top:2px;"><i data-feather="mail" style="width:10px; height:10px; color:#f59e0b;"></i> ${escapeHtml(conv.visitorEmail)}</div>`);
+      if (conv.visitorPhone) contactParts.push(`<div style="font-size:11px; color:var(--text-secondary); display:flex; align-items:center; gap:4px; margin-top:2px;"><i data-feather="phone" style="width:10px; height:10px; color:#10b981;"></i> ${escapeHtml(conv.visitorPhone)}</div>`);
+      if (contactParts.length === 0) contactParts.push('<span style="color:var(--text-secondary); font-style:italic;">—</span>');
+
+      const businessParts = [];
+      if (conv.visitorCompany) businessParts.push(`<div style="font-size:11px; font-weight:600; color:#a855f7; display:flex; align-items:center; gap:4px;"><i data-feather="briefcase" style="width:10px; height:10px;"></i> ${escapeHtml(conv.visitorCompany)}</div>`);
+      if (conv.visitorNeeds) businessParts.push(`<div style="font-size:11px; color:var(--text-secondary); display:flex; align-items:center; gap:4px; margin-top:2px;"><i data-feather="message-square" style="width:10px; height:10px; color:#60a5fa;"></i> ${escapeHtml(conv.visitorNeeds)}</div>`);
+      if (businessParts.length === 0) businessParts.push('<span style="color:var(--text-secondary); font-style:italic;">—</span>');
+
+      row.innerHTML = `
+        <td>
+          <div style="font-weight:600">${escapeHtml(conv.tenantOrg)}</div>
+          <div style="font-size:11px; color:var(--text-secondary)">${escapeHtml(conv.tenantEmail)}</div>
+        </td>
+        <td>${visitorNameHtml}</td>
+        <td>${contactParts.join('')}</td>
+        <td>${businessParts.join('')}</td>
+        <td style="font-size:12px; color:var(--text-secondary)">
+          <div>${escapeHtml(conv.ipAddress || 'Unknown')}</div>
+          <div style="font-size:10px; color:var(--text-secondary); margin-top:2px;">${escapeHtml(conv.location || 'Unknown Location')}</div>
+        </td>
+        <td style="color:var(--text-secondary); font-size:12px;">${dateStr}</td>
+        <td>
+          <button class="btn-primary btn-view-chat" data-bot-id="${conv.tenantBotId}" data-conv-id="${conv.id}" style="padding: 6px 12px; font-size: 13px; display: inline-flex; align-items: center; gap: 4px; width: auto; margin-top: 0; background: rgba(168, 85, 247, 0.15); border: 1px solid rgba(168, 85, 247, 0.3); color: #c084fc; font-weight: 600; cursor: pointer; border-radius: 6px;">
+            <i data-feather="message-square" style="width:14px; height:14px;"></i> View Chat
+          </button>
+        </td>
+      `;
+      leadsTableBody.appendChild(row);
+    });
+
+    if (window.feather) {
+      feather.replace();
+    }
+
+    // Attach Event Listeners to view chat buttons
+    document.querySelectorAll('.btn-view-chat').forEach(btn => {
+      btn.addEventListener('click', openChatModal);
     });
   }
 

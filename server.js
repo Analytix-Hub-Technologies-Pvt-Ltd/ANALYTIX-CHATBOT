@@ -317,6 +317,7 @@ app.post('/api/auth/subscribe', requireAuth, (req, res) => {
               companyMapLink: (brainConfig.extractedInfo?.mapLink && brainConfig.extractedInfo.mapLink !== "Not specified") ? brainConfig.extractedInfo.mapLink : "",
               companyPhone: (brainConfig.extractedInfo?.phone && brainConfig.extractedInfo.phone !== "Not specified") ? brainConfig.extractedInfo.phone : "",
               adminEmail: (brainConfig.extractedInfo?.email && brainConfig.extractedInfo.email !== "Not specified") ? brainConfig.extractedInfo.email : (db.getSettings(req.botId).adminEmail || ""),
+              companyServices: brainConfig.extractedInfo?.services || [],
               botSubTitle: `${brainConfig.botName} Assistant`
             });
             console.log(`Auto-trained AI brain successfully for website: ${websiteUrl} (Bot: ${req.botId})`);
@@ -387,6 +388,7 @@ app.post('/api/auth/activate-trial', requireAuth, (req, res) => {
               companyMapLink: (brainConfig.extractedInfo?.mapLink && brainConfig.extractedInfo.mapLink !== "Not specified") ? brainConfig.extractedInfo.mapLink : "",
               companyPhone: (brainConfig.extractedInfo?.phone && brainConfig.extractedInfo.phone !== "Not specified") ? brainConfig.extractedInfo.phone : "",
               adminEmail: (brainConfig.extractedInfo?.email && brainConfig.extractedInfo.email !== "Not specified") ? brainConfig.extractedInfo.email : (db.getSettings(req.botId).adminEmail || ""),
+              companyServices: brainConfig.extractedInfo?.services || [],
               botSubTitle: `${brainConfig.botName} Assistant`
             });
             console.log(`Auto-trained AI brain successfully for website: ${websiteUrl} (Bot: ${req.botId})`);
@@ -788,7 +790,8 @@ app.get('/api/super/admins', requireSuperAuth, (req, res) => {
           visitorCompany: c.visitorCompany,
           visitorNeeds: c.visitorNeeds,
           ipAddress: c.ipAddress,
-          location: c.location
+          location: c.location,
+          messages: c.messages || []
         })),
         settings: settings
       };
@@ -923,6 +926,7 @@ app.post('/api/auth/onboard', requireAuth, (req, res) => {
     systemPrompt = systemPrompt.replace(/\+91 7397577392/g, phone || 'our contact line');
 
     // 4. Save customizable branding and newly tailored system prompt
+    // Preserve existing scraper data if already trained/scraped
     const botSettingsUpdate = {
       botName,
       primaryColor,
@@ -931,11 +935,12 @@ app.post('/api/auth/onboard', requireAuth, (req, res) => {
       adminEmail: req.user.username,
       smtpFrom: `${botName} <no-reply@${derivedDomain}>`,
       botSubTitle: `${organizationName} Consultant`,
-      companyAddress: "our virtual headquarters",
-      companyPhone: phone || "",
-      companyMapLink: "",
-      companyWebsite: derivedWebsite,
-      systemPrompt
+      companyAddress: (currentSettings && currentSettings.companyAddress && currentSettings.companyAddress !== "our virtual headquarters") ? currentSettings.companyAddress : "our virtual headquarters",
+      companyPhone: (currentSettings && currentSettings.companyPhone) ? currentSettings.companyPhone : (phone || ""),
+      companyMapLink: (currentSettings && currentSettings.companyMapLink) ? currentSettings.companyMapLink : "",
+      companyWebsite: (currentSettings && currentSettings.companyWebsite && !currentSettings.companyWebsite.includes("yourdomain.com")) ? currentSettings.companyWebsite : derivedWebsite,
+      companyServices: (currentSettings && currentSettings.companyServices) ? currentSettings.companyServices : [],
+      systemPrompt: (currentSettings && currentSettings.systemPrompt && currentSettings.systemPrompt.includes("COMPLETE KNOWLEDGE BASE")) ? currentSettings.systemPrompt : systemPrompt
     };
 
     db.saveSettings(req.user.botId, botSettingsUpdate);
@@ -1673,6 +1678,7 @@ app.post('/api/scraper/crawl', requireAuth, async (req, res) => {
       companyMapLink: (brainConfig.extractedInfo?.mapLink && brainConfig.extractedInfo.mapLink !== "Not specified") ? brainConfig.extractedInfo.mapLink : "",
       companyPhone: (brainConfig.extractedInfo?.phone && brainConfig.extractedInfo.phone !== "Not specified") ? brainConfig.extractedInfo.phone : "",
       adminEmail: (brainConfig.extractedInfo?.email && brainConfig.extractedInfo.email !== "Not specified") ? brainConfig.extractedInfo.email : (db.getSettings(botId).adminEmail || ""),
+      companyServices: brainConfig.extractedInfo?.services || [],
       botSubTitle: `${brainConfig.botName} Assistant`
     });
 
