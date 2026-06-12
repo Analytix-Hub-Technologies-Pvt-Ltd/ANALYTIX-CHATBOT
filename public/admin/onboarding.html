@@ -369,6 +369,27 @@
       padding: 0;
     }
 
+    .preset-combo-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      background: rgba(0, 0, 0, 0.02);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 500;
+      transition: all 0.2s ease;
+    }
+
+    .preset-combo-btn:hover {
+      background: rgba(0, 0, 0, 0.05);
+      color: var(--text-white);
+      transform: translateY(-1px);
+    }
+
     /* Footer Buttons Bar */
     .portal-footer {
       display: flex;
@@ -853,37 +874,37 @@
             <div class="form-group">
               <label>Cohesive Branding Theme Combos</label>
               <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px;">
-                <button type="button" class="preset-combo-btn" onclick="selectOnboardingCombo('#2563eb', '#090d16', this)" style="display: flex; align-items: center; gap: 6px; padding: 5px 10px; background: rgba(255,255,255,0.04); border: 1px solid var(--border-color); border-radius: 20px; color: white; cursor: pointer; font-size: 11px; transition: all 0.2s ease;">
+                <button type="button" class="preset-combo-btn" onclick="selectOnboardingCombo('#2563eb', '#090d16', this)">
                   <span style="width: 8px; height: 8px; border-radius: 50%; background: #2563eb; display: inline-block;"></span>
                   <span style="width: 8px; height: 8px; border-radius: 50%; background: #090d16; display: inline-block; border: 1px solid rgba(255,255,255,0.2);"></span>
                   Midnight Royal
                 </button>
-                <button type="button" class="preset-combo-btn" onclick="selectOnboardingCombo('#10b981', '#030706', this)" style="display: flex; align-items: center; gap: 6px; padding: 5px 10px; background: rgba(255,255,255,0.04); border: 1px solid var(--border-color); border-radius: 20px; color: white; cursor: pointer; font-size: 11px; transition: all 0.2s ease;">
+                <button type="button" class="preset-combo-btn" onclick="selectOnboardingCombo('#10b981', '#030706', this)">
                   <span style="width: 8px; height: 8px; border-radius: 50%; background: #10b981; display: inline-block;"></span>
                   <span style="width: 8px; height: 8px; border-radius: 50%; background: #030706; display: inline-block; border: 1px solid rgba(255,255,255,0.2);"></span>
                   Obsidian Emerald
                 </button>
-                <button type="button" class="preset-combo-btn" onclick="selectOnboardingCombo('#8b5cf6', '#0c0714', this)" style="display: flex; align-items: center; gap: 6px; padding: 5px 10px; background: rgba(255,255,255,0.04); border: 1px solid var(--border-color); border-radius: 20px; color: white; cursor: pointer; font-size: 11px; transition: all 0.2s ease;">
+                <button type="button" class="preset-combo-btn" onclick="selectOnboardingCombo('#8b5cf6', '#0c0714', this)">
                   <span style="width: 8px; height: 8px; border-radius: 50%; background: #8b5cf6; display: inline-block;"></span>
                   <span style="width: 8px; height: 8px; border-radius: 50%; background: #0c0714; display: inline-block; border: 1px solid rgba(255,255,255,0.2);"></span>
                   Cyberpunk Indigo
                 </button>
-                <button type="button" class="preset-combo-btn" onclick="selectOnboardingCombo('#ea580c', '#0e0b09', this)" style="display: flex; align-items: center; gap: 6px; padding: 5px 10px; background: rgba(255,255,255,0.04); border: 1px solid var(--border-color); border-radius: 20px; color: white; cursor: pointer; font-size: 11px; transition: all 0.2s ease;">
+                <button type="button" class="preset-combo-btn" onclick="selectOnboardingCombo('#ea580c', '#0e0b09', this)">
                   <span style="width: 8px; height: 8px; border-radius: 50%; background: #ea580c; display: inline-block;"></span>
                   <span style="width: 8px; height: 8px; border-radius: 50%; background: #0e0b09; display: inline-block; border: 1px solid rgba(255,255,255,0.2);"></span>
                   Eclipse Amber
                 </button>
-                <button type="button" class="preset-combo-btn" onclick="selectOnboardingCombo('#4f46e5', '#ffffff', this)" style="display: flex; align-items: center; gap: 6px; padding: 5px 10px; background: rgba(255,255,255,0.04); border: 1px solid var(--border-color); border-radius: 20px; color: white; cursor: pointer; font-size: 11px; transition: all 0.2s ease;">
+                <button type="button" class="preset-combo-btn" onclick="selectOnboardingCombo('#4f46e5', '#ffffff', this)">
                   <span style="width: 8px; height: 8px; border-radius: 50%; background: #4f46e5; display: inline-block;"></span>
                   <span style="width: 8px; height: 8px; border-radius: 50%; background: #ffffff; display: inline-block; border: 1px solid rgba(255,255,255,0.5);"></span>
                   Pure White
                 </button>
-                <button type="button" class="preset-combo-btn" onclick="selectOnboardingCombo('#0f172a', '#f8fafc', this)" style="display: flex; align-items: center; gap: 6px; padding: 5px 10px; background: rgba(255,255,255,0.04); border: 1px solid var(--border-color); border-radius: 20px; color: white; cursor: pointer; font-size: 11px; transition: all 0.2s ease;">
+                <button type="button" class="preset-combo-btn" onclick="selectOnboardingCombo('#0f172a', '#f8fafc', this)">
                   <span style="width: 8px; height: 8px; border-radius: 50%; background: #0f172a; display: inline-block;"></span>
                   <span style="width: 8px; height: 8px; border-radius: 50%; background: #f8fafc; display: inline-block; border: 1px solid rgba(255,255,255,0.5);"></span>
                   Slate Silver
                 </button>
-                <button type="button" class="preset-combo-btn" onclick="selectOnboardingCombo('#0284c7', '#f0f9ff', this)" style="display: flex; align-items: center; gap: 6px; padding: 5px 10px; background: rgba(255,255,255,0.04); border: 1px solid var(--border-color); border-radius: 20px; color: white; cursor: pointer; font-size: 11px; transition: all 0.2s ease;">
+                <button type="button" class="preset-combo-btn" onclick="selectOnboardingCombo('#0284c7', '#f0f9ff', this)">
                   <span style="width: 8px; height: 8px; border-radius: 50%; background: #0284c7; display: inline-block;"></span>
                   <span style="width: 8px; height: 8px; border-radius: 50%; background: #f0f9ff; display: inline-block; border: 1px solid rgba(255,255,255,0.5);"></span>
                   Nordic Frost
@@ -1255,11 +1276,13 @@
       // Visual feedback for combo buttons
       document.querySelectorAll(".preset-combo-btn").forEach(b => {
         b.style.borderColor = "var(--border-color)";
-        b.style.background = "rgba(255,255,255,0.04)";
+        b.style.background = "rgba(0, 0, 0, 0.02)";
+        b.style.color = "var(--text-muted)";
       });
       if (btn) {
         btn.style.borderColor = primary;
         btn.style.background = hexToRgba(primary, 0.1);
+        btn.style.color = primary;
       }
     }
 
