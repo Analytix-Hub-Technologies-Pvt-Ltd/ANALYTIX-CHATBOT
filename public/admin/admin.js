@@ -262,7 +262,7 @@ function populateTrainerUIFromSettings() {
   const phoneEl = document.getElementById("scraped-phone");
   
   if (locEl) locEl.innerText = settingsData.companyAddress || "Not specified";
-  if (emailEl) emailEl.innerText = settingsData.adminEmail || "Not specified";
+  if (emailEl) emailEl.innerText = settingsData.companyEmail || "Not specified";
   if (phoneEl) phoneEl.innerText = settingsData.companyPhone || "Not specified";
   
   const mapBtn = document.getElementById("scraped-mapLink");

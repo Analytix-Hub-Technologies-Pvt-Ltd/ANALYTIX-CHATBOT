@@ -102,8 +102,8 @@ async function crawlWebsite(startUrl, maxPages = 8) {
         }
       });
 
-      // HTML Cleaning - Strip all tags that contain layout noise, styles, scripts, structures
-      $('script, style, nav, footer, header, svg, form, iframe, noscript, link, meta, head, button, .menu, #menu, .footer, #footer, .nav, #nav, .header, #header').remove();
+      // HTML Cleaning - Strip only tags that contain non-textual layout noise, styles, scripts
+      $('script, style, svg, iframe, noscript, link, meta, head, button').remove();
 
       // Extract metadata
       const pageTitle = $('title').text().trim() || $('h1').first().text().trim() || 'Untitled Page';

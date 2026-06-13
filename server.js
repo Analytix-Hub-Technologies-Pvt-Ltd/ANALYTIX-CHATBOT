@@ -316,7 +316,8 @@ app.post('/api/auth/subscribe', requireAuth, (req, res) => {
               companyAddress: (brainConfig.extractedInfo?.location && brainConfig.extractedInfo.location !== "Not specified") ? brainConfig.extractedInfo.location : "",
               companyMapLink: (brainConfig.extractedInfo?.mapLink && brainConfig.extractedInfo.mapLink !== "Not specified") ? brainConfig.extractedInfo.mapLink : "",
               companyPhone: (brainConfig.extractedInfo?.phone && brainConfig.extractedInfo.phone !== "Not specified") ? brainConfig.extractedInfo.phone : "",
-              adminEmail: (brainConfig.extractedInfo?.email && brainConfig.extractedInfo.email !== "Not specified") ? brainConfig.extractedInfo.email : (db.getSettings(req.botId).adminEmail || ""),
+              adminEmail: db.getSettings(req.botId).adminEmail || req.user.username,
+              companyEmail: (brainConfig.extractedInfo?.email && brainConfig.extractedInfo.email !== "Not specified") ? brainConfig.extractedInfo.email : (db.getSettings(req.botId).companyEmail || ""),
               companyServices: brainConfig.extractedInfo?.services || [],
               botSubTitle: `${brainConfig.botName} Assistant`
             });
@@ -387,7 +388,8 @@ app.post('/api/auth/activate-trial', requireAuth, (req, res) => {
               companyAddress: (brainConfig.extractedInfo?.location && brainConfig.extractedInfo.location !== "Not specified") ? brainConfig.extractedInfo.location : "",
               companyMapLink: (brainConfig.extractedInfo?.mapLink && brainConfig.extractedInfo.mapLink !== "Not specified") ? brainConfig.extractedInfo.mapLink : "",
               companyPhone: (brainConfig.extractedInfo?.phone && brainConfig.extractedInfo.phone !== "Not specified") ? brainConfig.extractedInfo.phone : "",
-              adminEmail: (brainConfig.extractedInfo?.email && brainConfig.extractedInfo.email !== "Not specified") ? brainConfig.extractedInfo.email : (db.getSettings(req.botId).adminEmail || ""),
+              adminEmail: db.getSettings(req.botId).adminEmail || req.user.username,
+              companyEmail: (brainConfig.extractedInfo?.email && brainConfig.extractedInfo.email !== "Not specified") ? brainConfig.extractedInfo.email : (db.getSettings(req.botId).companyEmail || ""),
               companyServices: brainConfig.extractedInfo?.services || [],
               botSubTitle: `${brainConfig.botName} Assistant`
             });
@@ -933,6 +935,7 @@ app.post('/api/auth/onboard', requireAuth, (req, res) => {
       backgroundColor: backgroundColor || '#ffffff',
       welcomeMessage: welcomeMessage || `Hi there! I am your AI assistant representing ${organizationName}. How can I help you today?`,
       adminEmail: req.user.username,
+      companyEmail: (currentSettings && currentSettings.companyEmail) ? currentSettings.companyEmail : req.user.username,
       smtpFrom: `${botName} <no-reply@${derivedDomain}>`,
       botSubTitle: `${organizationName} Consultant`,
       companyAddress: (currentSettings && currentSettings.companyAddress && currentSettings.companyAddress !== "our virtual headquarters") ? currentSettings.companyAddress : "our virtual headquarters",
@@ -1677,7 +1680,8 @@ app.post('/api/scraper/crawl', requireAuth, async (req, res) => {
       companyAddress: (brainConfig.extractedInfo?.location && brainConfig.extractedInfo.location !== "Not specified") ? brainConfig.extractedInfo.location : "",
       companyMapLink: (brainConfig.extractedInfo?.mapLink && brainConfig.extractedInfo.mapLink !== "Not specified") ? brainConfig.extractedInfo.mapLink : "",
       companyPhone: (brainConfig.extractedInfo?.phone && brainConfig.extractedInfo.phone !== "Not specified") ? brainConfig.extractedInfo.phone : "",
-      adminEmail: (brainConfig.extractedInfo?.email && brainConfig.extractedInfo.email !== "Not specified") ? brainConfig.extractedInfo.email : (db.getSettings(botId).adminEmail || ""),
+      adminEmail: db.getSettings(botId).adminEmail || req.user.username,
+      companyEmail: (brainConfig.extractedInfo?.email && brainConfig.extractedInfo.email !== "Not specified") ? brainConfig.extractedInfo.email : (db.getSettings(botId).companyEmail || ""),
       companyServices: brainConfig.extractedInfo?.services || [],
       botSubTitle: `${brainConfig.botName} Assistant`
     });

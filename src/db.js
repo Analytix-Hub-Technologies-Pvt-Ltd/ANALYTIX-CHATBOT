@@ -102,6 +102,7 @@ const DEFAULT_SETTINGS = {
   companyPhone: "+91 7397577392",
   companyMapLink: "https://www.google.com/maps/search/?api=1&query=1st+floor,+Primus+Building,+SP-7A,+Guindy+Industrial+Estate,+Chennai,+Tamil+Nadu+600032",
   companyWebsite: "https://analytixhub.org",
+  companyEmail: "contactus@analytixhub.org",
   bookingSlots: "09:30,10:15,11:00,11:45,14:00,14:45,15:30,16:15,17:00",
   bookingTimezone: "Asia/Kolkata",
   paymentEnabled: false,
